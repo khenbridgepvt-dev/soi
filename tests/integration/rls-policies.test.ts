@@ -19,7 +19,6 @@ import {
 
 /** Every table that must stay fully closed until its own module ticket. */
 const TABLES_WITHOUT_POLICIES = [
-  'tasks',
   'task_assignments',
   'staff_timetables',
   'leave_allowances',

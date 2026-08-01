@@ -820,12 +820,33 @@ export type Database = {
     }
     Functions: {
       accept_lead: { Args: { p_case_id: string }; Returns: Json }
+      check_case_completion: { Args: { p_case_id: string }; Returns: boolean }
+      check_task_prerequisites: { Args: { p_task_id: string }; Returns: undefined }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
+      edit_case_reference: {
+        Args: { p_case_id: string; p_new_reference: string }
+        Returns: Json
+      }
       is_active_user: { Args: never; Returns: boolean }
       jwt_role: { Args: never; Returns: string }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       staff_assigned_active_case_ids: { Args: never; Returns: string[] }
+      update_task_status: {
+        Args: {
+          p_task_id: string
+          p_new_status: Database["public"]["Enums"]["task_status"]
+        }
+        Returns: Json
+      }
+      submit_senior_review: {
+        Args: {
+          p_task_id: string
+          p_outcome: Database["public"]["Enums"]["senior_review_outcome"]
+          p_revision_notes?: string | null
+        }
+        Returns: Json
+      }
     }
     Enums: {
       case_status: "lead_pending" | "active" | "rejected" | "completed"
@@ -840,6 +861,7 @@ export type Database = {
         | "leave_approved"
         | "leave_rejected"
         | "leave_requested"
+        | "senior_revision_alert"
       online_status: "online" | "break" | "offline"
       senior_review_outcome: "pending" | "approved" | "revisions_required"
       task_status: "not_started" | "in_progress" | "completed" | "blocked"

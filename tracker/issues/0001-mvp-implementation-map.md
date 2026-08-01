@@ -38,6 +38,11 @@ The MVP is **operational as a free-tier pilot**: all ten MVP modules (M1–M10) 
 - **0011 cases RLS + list:** migration 00019 RLS/column trigger, EP-02, S-05, seed cases — [Cases RLS and the case list](./0011-cases-rls-and-case-list.md)
 - **0012 create/reject lead:** migration 00020 admin write, EP-01/EP-06, S-07/S-08 — [Create lead and reject lead](./0012-create-lead-and-reject.md)
 - **0013 accept transaction (spike, R1):** migration 00021 `accept_lead` RPC — reference counter UPSERT + status flip + 13 task inserts in one transaction; EP-05 calls it and nothing else; `reference.ts` / `default-tasks.ts` seams; S-08 accept leg; TC-023 rollback and TC-018 concurrency tests — [Accept-lead atomic transaction](./0013-accept-lead-transaction.md)
+- **0014 case detail core:** migration 00022 immutability + `edit_case_reference` + tasks SELECT; EP-03/04 + reference PATCH; S-06 `CaseDetailView`; `use-auto-save` seam; ADR-0009 integration tests — [Case detail page core](./0014-case-detail-page.md)
+- **0015 dependants + urgent:** migrations 00023–00025 dependants write RLS + tasks admin update + archive SELECT; EP-07/09–11; S-06 dependants CRUD + urgent toggle; service-role notification fanout on urgent set — [Dependants and the urgent flag](./0015-dependants-and-urgent-flag.md)
+- **0016 checklist + custom tasks:** migration 00026 tasks RLS + column trigger + custom limit; EP-11b; S-06 checklist UI — [Task checklist and custom tasks](./0016-task-checklist-and-custom-tasks.md)
+- **0017 task status machine:** migrations 00028–00029 prerequisites/completion RPCs; EP-12/16; S-06 status + notes on checklist — [Task status state machine](./0017-task-status-state-machine.md)
+- **0018 Task 8 senior review:** migrations 00030–00031 `submit_senior_review` RPC + trigger bypasses; EP-17; S-06 approve/revisions UI + revision count on detail; ADR-0006 unlimited revisions with admin alert at threshold — [Task 8 senior review gate](./0018-task8-senior-review-gate.md)
 
 ## Not yet specified
 

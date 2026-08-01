@@ -2,8 +2,8 @@
 id: 15
 title: Dependants and the urgent flag
 labels: [wayfinder:task, sprint-3-4]
-status: open
-assignee:
+status: closed
+assignee: blessanai
 parent: 1
 blocked-by: [14]
 mode: AFK
@@ -31,3 +31,15 @@ Complete the case record: dependant management on the detail page, and the urgen
 - No notification UI, realtime, or read-state (ticket 0027) — rows only.
 - No board styling work (ticket 0024 consumes the flag).
 - Client-side use of the service-role key is forbidden (plan §A.2.2).
+
+## Resolution
+
+- Migrations `00023_dependants_urgent.sql` (dependants insert/update + tasks admin update), `00024_dependants_admin_archive_select.sql` (admin SELECT soft-deleted for EP-11 RETURNING), `00025_dependants_update_case_guard.sql` (writable-case guard on dependant updates).
+- EP-09 `POST /api/cases/:id/dependants`, EP-10 `PATCH /api/dependants/:id`, EP-11 `DELETE /api/dependants/:id` — validation via `dependant.ts`; read-only case guard on PATCH/DELETE.
+- EP-07 `POST /api/cases/:id/urgent` — tasks-first cascade with case rollback on failure; notification fanout only on false→true transition.
+- `src/lib/notifications.ts` + `fanout.ts` — service-role `insertNotificationRows` / `fanoutUrgentCaseNotifications` (one `urgent_case` row per assigned staff).
+- S-06 `DependantsSection` (add/edit/remove modals) wired in `CaseDetailView`; admin Flag Urgent / Remove Urgent toggle (hidden for staff — TC-031).
+- `fetch-case-detail.ts` filters `is_deleted = false` on dependants so active detail view excludes soft-deleted rows.
+- Tests: `notification-fanout.test.ts`, `dependant.test.ts` (TC-025), `dependants-crud.test.ts` (TC-024/026), `urgent-flag.test.ts` (TC-029–031).
+- Gate 1 green: lint, typecheck, 185 tests, `supabase db reset`.
+- Manual walk: TC-024–026 dependants CRUD on Vishnu case; TC-029–031 urgent toggle + staff denial at RLS/API.

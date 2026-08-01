@@ -2,8 +2,8 @@
 id: 18
 title: Task 8 senior review gate
 labels: [wayfinder:task, sprint-3-4]
-status: open
-assignee:
+status: closed
+assignee: blessanai
 parent: 1
 blocked-by: [17]
 mode: AFK
@@ -31,3 +31,14 @@ The quality gate in the middle of every case: Task 8 senior review with unlimite
 - No cap on revisions (explicitly unlimited).
 - No blocking of further work at the alert threshold — alert only.
 - No board rendering of the count here (ticket 0024).
+
+## Resolution
+
+- `src/lib/senior-review/revision.ts` — threshold (default 3), outcome/notes validation, admin alert message builder; `errors.ts` RPC → api_spec §3 mapper.
+- `src/lib/notifications/fanout.ts` — `buildRevisionStaffNotificationRows`, `buildSeniorRevisionAdminAlertRows`; `notifications.ts` fanout helpers for staff Task 5 + admin threshold alert (`senior_revision_alert`).
+- Migrations `00030_senior_review.sql` (`submit_senior_review` RPC, `senior_revision_alert` enum, cases trigger bypass), `00031_senior_review_task_trigger.sql` (tasks trigger bypass).
+- EP-17 `POST /api/tasks/[id]/senior-review` — senior/admin only; fanout on revisions (staff on Task 5, admins at count ≥ 3).
+- S-06 Task 8 row: Mark Approved / Request Revisions (senior + admin); revision count on case detail Case Info card.
+- Tests: `senior-revision.test.ts` (unit threshold + validation); `notification-fanout.test.ts` (revision alert builders); `senior-review.test.ts` (integration TC-040–042, staff forbidden, admin override).
+- Gate 1 green: lint, typecheck, 233 tests, `supabase db reset`.
+- Manual walk: Vishnu Task 8 approve/revise; third revision admin alert; Task 9 blocked until approved.

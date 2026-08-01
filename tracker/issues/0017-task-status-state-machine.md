@@ -2,8 +2,8 @@
 id: 17
 title: Task status state machine
 labels: [wayfinder:task, sprint-3-4]
-status: open
-assignee:
+status: closed
+assignee: blessanai
 parent: 1
 blocked-by: [16]
 mode: AFK
@@ -33,3 +33,14 @@ Tasks move: the status workflow with prerequisite gates, completion protection, 
 - No Task 8 review UI/endpoint (ticket 0018) — this ticket only respects `senior_approval` in the gate.
 - No assignment release on block (ticket 0023).
 - Do not soften completion protection for convenience; admin-side reversal is Phase 2.
+
+## Resolution
+
+- `src/lib/utils/prerequisites.ts` — Task 9/10 gate matrix (R7); unit tests in `prerequisites.test.ts`.
+- `src/lib/utils/task-status.ts` + `task-notes.ts` — MVP transition table and notes validation.
+- Migrations `00028_task_status_machine.sql` (`check_task_prerequisites`, `check_case_completion`, `update_task_status` RPC, column trigger completion path), `00029_case_completion_trigger_bypass.sql` (case status flip under staff JWT).
+- EP-12 `PATCH /api/tasks/[id]/status` — TS validation + RPC; EP-16 `PATCH /api/tasks/[id]` notes.
+- S-06 expandable checklist rows with status select + `use-auto-save` notes (`TaskChecklistItem`).
+- Tests: `task-status.test.ts` (unit + integration TC-036–039, TC-043/044, case completion); `status-errors.ts` mapper.
+- Gate 1 green: lint, typecheck, 213 tests, `supabase db reset`.
+- Manual walk: status transitions on Sakura/Bless tasks; prerequisite errors on Task 10; case completes when final task done.

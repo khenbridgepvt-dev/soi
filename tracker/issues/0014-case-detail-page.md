@@ -2,8 +2,8 @@
 id: 14
 title: Case detail page core
 labels: [wayfinder:task, sprint-3-4]
-status: open
-assignee:
+status: closed
+assignee: blessanai
 parent: 1
 blocked-by: [13]
 mode: AFK
@@ -33,3 +33,14 @@ The case's home: the S-06 detail page with client data, editable fields under th
 - No dependants CRUD or urgent toggle (ticket 0015).
 - No checklist rendering (ticket 0016).
 - No soft-delete button (ticket 0030).
+
+## Resolution
+
+- Migration `00022_case_detail_core.sql`: `enforce_cases_immutability` trigger (`last_date` / `appointment_date` cannot be cleared); `edit_case_reference` RPC (ADR-0009 rules 1–4); `tasks` SELECT policies for EP-03.
+- EP-03 `GET /api/cases/[id]` via `fetch-case-detail.ts` — case, dependants, tasks, task_summary, primary staff; staff denied when unassigned (TC-028).
+- EP-04 `PATCH /api/cases/[id]` — admin fields via `update-case.ts` validation; staff notes-only (403 otherwise); immutability enforced at API + DB.
+- `PATCH /api/cases/[id]/reference` — admin-only; calls `edit_case_reference` RPC; returns `adjusted` flag when sequence conflict-shifted.
+- S-06 `CaseDetailView` — two-column client/case cards, reference header 18px/600 (DS-6), notes auto-save with `use-auto-save` + `AutoSaveIndicator` (Saving… → Saved ✓), Edit Case / Edit Reference modals, checklist placeholder for 0016.
+- Tests: `auto-save.test.ts` (debounce, flush, error, unchanged skip); `reference-edit.test.ts` (duplicate reject, conflict shift, counter sync, external alignment, immutability); `case-detail-api.test.ts` (TC-028 staff isolation). Updated `rls-policies.test.ts` — `tasks` removed from deny-by-default list.
+- Gate 1 green: lint, typecheck, build, 173 tests, `supabase db reset`.
+- Manual walk: TC-027 sections visible (checklist placeholder + task counts); TC-028 staff B denied at RLS/API layer.
