@@ -1,0 +1,5 @@
+# No CI/CD for the MVP pilot
+
+The MVP pilot ships **without** GitHub Actions, branch protection, or any automated pipeline. Quality is enforced by three manual gates (per ticket, per sprint, pre-UAT) defined in `IMPLEMENTATION_PLAN.md` §A.3: lint + type-check + Vitest suites run locally against the Supabase local stack, plus manual test-case walks from `test_plan.md`. Deploys are `git push` → Vercel auto-build, made only after a green gate. This supersedes `deployment_guide.md` §6 (CI/CD pipeline) and §6.4 (branch protection) for the pilot; those sections become an optional post-pilot hardening slice.
+
+**Why:** One developer, a 10–20 user pilot, and a free-tier budget: a pipeline automates a coordination problem this team doesn't have, while adding setup and maintenance cost in early sprints. The tests themselves are NOT cut — only their automation trigger. If the pilot converts to production use or the team grows, wire the existing test suites into the deployment_guide §6 pipeline as-is.

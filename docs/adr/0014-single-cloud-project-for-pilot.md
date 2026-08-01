@@ -1,0 +1,5 @@
+# Single cloud project for the pilot
+
+The pilot runs on **one** free Supabase project and **one** free Vercel project. The local Supabase stack (Docker) is the development and staging environment; the cloud project serves sprint demos, then UAT, then pilot production on the same URL. Before UAT, test data is cleared with a documented reset script and real accounts are created; after UAT starts, the cloud database is never reset. This supersedes the two-project (dev + prod) topology in `deployment_guide.md` §1.1/§2 for the pilot.
+
+**Why:** Supabase free projects **pause after ~1 week of inactivity** — a second, rarely-used staging project would spend most of the pilot paused, giving false confidence and demo-day surprises. One project halves env-var and migration-push surface (fewer manual-deploy mistakes per ADR-0013), and local + cloud already gives two environments. The upgrade path (`deployment_guide.md` §1.3) stands: add a second project when the firm funds a real staging environment.

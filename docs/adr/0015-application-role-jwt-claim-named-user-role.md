@@ -1,0 +1,7 @@
+# Application role travels in a `user_role` JWT claim, not `role`
+
+`database_schema.md` §10.2/§10.3 and `api_specification.md` §2.3 read the caller's application role as `auth.jwt() ->> 'role'`. That claim name is unusable. PostgREST treats the top-level `role` claim as the **Postgres** role to `SET LOCAL ROLE` for the request, so an access token carrying `role: "admin"` is rejected before any policy runs — verified against the local stack: `GET /rest/v1/profiles` with such a token returns `401 {"code":"22023","message":"role \"admin\" does not exist"}`, while the same token with `role: "authenticated"` returns `200`.
+
+**Decision:** the `custom_access_token_hook` (migration `00016`) leaves `role` alone and adds the application role as a separate top-level `user_role` claim, sourced from `profiles.role`. Policies read it through `public.jwt_role()`; API routes and middleware read `user_role` from the decoded session. Every occurrence of `auth.jwt() ->> 'role'` in the locked schema docs means `public.jwt_role()` in the migrations.
+
+**Why a claim at all, and why a helper:** the claim keeps role checks free of a `profiles` lookup on every policy evaluation, and `jwt_role()` gives one place to change if the claim moves. Authorisation never rests on the claim alone — a stale JWT after deactivation is caught by `public.is_active_user()`, which reads the live row (`database_schema.md` §10.4 layer 1). A user cannot mint the claim themselves: it is written by GoTrue at token-issue time and `EXECUTE` on the hook is revoked from `anon` and `authenticated`.
