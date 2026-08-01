@@ -7,16 +7,22 @@
 
 export type AppRole = 'admin' | 'senior' | 'staff';
 
+/** Base64url decode without Node `Buffer` — safe for Edge middleware. */
+function decodeBase64Url(input: string): string {
+  const base64 = input.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+  const binary = atob(padded);
+  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
 /** Decodes a JWT payload without verifying the signature (caller must trust the source). */
 export function decodeJwtPayload(token: string): Record<string, unknown> {
   const payload = token.split('.')[1];
   if (!payload) {
     throw new Error('Malformed JWT');
   }
-  const json = Buffer.from(
-    payload.replace(/-/g, '+').replace(/_/g, '/'),
-    'base64',
-  ).toString('utf8');
+  const json = decodeBase64Url(payload);
   return JSON.parse(json) as Record<string, unknown>;
 }
 
