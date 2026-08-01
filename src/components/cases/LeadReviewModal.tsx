@@ -2,13 +2,21 @@
 
 import { useEffect, useState } from 'react';
 import { LEAD_REJECT_REASON_MAX, validateRejectReason } from '@/lib/utils/lead-form';
+import { DEFAULT_TASK_COUNT } from '@/lib/cases/default-tasks';
+import { formatCaseReferencePreview } from '@/lib/utils/reference';
 
 export type LeadReviewTarget = {
   id: string;
   client_first_name: string;
   client_last_name: string;
   application_type_name: string;
+  application_type_code?: string | null;
   notes?: string | null;
+};
+
+export type AcceptedLead = {
+  id: string;
+  reference: string;
 };
 
 type LeadReviewModalProps = {
@@ -16,6 +24,7 @@ type LeadReviewModalProps = {
   lead: LeadReviewTarget | null;
   onClose: () => void;
   onRejected: (message: string) => void;
+  onAccepted: (message: string, accepted: AcceptedLead) => void;
 };
 
 type ApiError = {
@@ -27,11 +36,13 @@ export default function LeadReviewModal({
   lead,
   onClose,
   onRejected,
+  onAccepted,
 }: LeadReviewModalProps) {
   const [reason, setReason] = useState('');
   const [reasonError, setReasonError] = useState<string | null>(null);
   const [bannerError, setBannerError] = useState<string | null>(null);
   const [rejecting, setRejecting] = useState(false);
+  const [accepting, setAccepting] = useState(false);
   const [showRejectConfirm, setShowRejectConfirm] = useState(false);
 
   useEffect(() => {
@@ -40,6 +51,7 @@ export default function LeadReviewModal({
       setReasonError(null);
       setBannerError(null);
       setRejecting(false);
+      setAccepting(false);
       setShowRejectConfirm(false);
     }
   }, [open]);
@@ -84,8 +96,35 @@ export default function LeadReviewModal({
     }
   }
 
-  function handleAcceptStub() {
-    setBannerError('Accept & create tasks will be available after ticket 0013.');
+  async function handleAccept() {
+    if (!lead) {
+      return;
+    }
+
+    setBannerError(null);
+    setAccepting(true);
+
+    try {
+      const response = await fetch(`/api/cases/${lead.id}/accept`, { method: 'POST' });
+      const json = (await response.json()) as ApiError & {
+        data?: { id: string; reference: string; tasks_created: number };
+      };
+
+      if (!response.ok || !json.data) {
+        setBannerError(json.error?.message ?? 'Failed to process. Please try again.');
+        return;
+      }
+
+      onAccepted(
+        `Case ${json.data.reference} created with ${json.data.tasks_created} tasks.`,
+        { id: json.data.id, reference: json.data.reference },
+      );
+      onClose();
+    } catch {
+      setBannerError('Failed to process. Please try again.');
+    } finally {
+      setAccepting(false);
+    }
   }
 
   if (!open || !lead) {
@@ -93,6 +132,13 @@ export default function LeadReviewModal({
   }
 
   const clientName = `${lead.client_first_name} ${lead.client_last_name}`;
+  const busy = accepting || rejecting;
+  const referencePreview = lead.application_type_code
+    ? formatCaseReferencePreview({
+        typeCode: lead.application_type_code,
+        clientFirstName: lead.client_first_name,
+      })
+    : null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
@@ -109,7 +155,8 @@ export default function LeadReviewModal({
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-500 hover:text-slate-800"
+            disabled={busy}
+            className="text-slate-500 hover:text-slate-800 disabled:opacity-50"
             aria-label="Close"
           >
             ✕
@@ -130,7 +177,15 @@ export default function LeadReviewModal({
           )}
 
           <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
-            Accepting this lead will generate a reference and create 13 tasks (ticket 0013).
+            <p className="font-medium text-slate-700">Accepting this lead will:</p>
+            <ul className="mt-1 list-disc space-y-0.5 pl-4">
+              <li>
+                Generate a case reference
+                {referencePreview ? ` (${referencePreview})` : ''}
+              </li>
+              <li>Create {DEFAULT_TASK_COUNT} tasks for the case lifecycle</li>
+              <li>Make the case visible on the task board</li>
+            </ul>
           </div>
 
           {showRejectConfirm && (
@@ -140,7 +195,7 @@ export default function LeadReviewModal({
               </label>
               <textarea
                 value={reason}
-                disabled={rejecting}
+                disabled={busy}
                 rows={3}
                 maxLength={LEAD_REJECT_REASON_MAX}
                 onChange={(event) => setReason(event.target.value)}
@@ -156,15 +211,15 @@ export default function LeadReviewModal({
             <>
               <button
                 type="button"
-                disabled={rejecting}
+                disabled={busy}
                 onClick={() => setShowRejectConfirm(false)}
-                className="rounded-md border border-slate-300 px-4 py-2 text-sm"
+                className="rounded-md border border-slate-300 px-4 py-2 text-sm disabled:opacity-50"
               >
                 Back
               </button>
               <button
                 type="button"
-                disabled={rejecting}
+                disabled={busy}
                 onClick={handleReject}
                 className="rounded-md bg-[#C41E24] px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
               >
@@ -175,19 +230,19 @@ export default function LeadReviewModal({
             <>
               <button
                 type="button"
-                disabled={rejecting}
+                disabled={busy}
                 onClick={() => setShowRejectConfirm(true)}
-                className="rounded-md border border-slate-300 px-4 py-2 text-sm"
+                className="rounded-md border border-slate-300 px-4 py-2 text-sm disabled:opacity-50"
               >
                 Reject Lead
               </button>
               <button
                 type="button"
-                disabled={rejecting}
-                onClick={handleAcceptStub}
-                className="rounded-md bg-[#0F2B5B] px-4 py-2 text-sm font-medium text-white"
+                disabled={busy}
+                onClick={handleAccept}
+                className="rounded-md bg-[#0F2B5B] px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
               >
-                Accept & Create Tasks
+                {accepting ? 'Accepting…' : 'Accept & Create Tasks'}
               </button>
             </>
           )}

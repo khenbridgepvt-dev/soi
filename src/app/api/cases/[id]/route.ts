@@ -26,7 +26,7 @@ export async function GET(_request: Request, context: RouteContext) {
         is_urgent,
         notes,
         created_at,
-        application_types ( id, name )
+        application_types ( id, name, code )
       `,
     )
     .eq('id', id)
@@ -55,6 +55,7 @@ export async function GET(_request: Request, context: RouteContext) {
       notes: data.notes,
       application_type_id: applicationType?.id ?? null,
       application_type_name: applicationType?.name ?? null,
+      application_type_code: applicationType?.code ?? null,
       created_at: data.created_at,
     },
   });

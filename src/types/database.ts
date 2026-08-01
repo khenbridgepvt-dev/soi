@@ -819,11 +819,13 @@ export type Database = {
       }
     }
     Functions: {
+      accept_lead: { Args: { p_case_id: string }; Returns: Json }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       is_active_user: { Args: never; Returns: boolean }
       jwt_role: { Args: never; Returns: string }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      staff_assigned_active_case_ids: { Args: never; Returns: string[] }
     }
     Enums: {
       case_status: "lead_pending" | "active" | "rejected" | "completed"

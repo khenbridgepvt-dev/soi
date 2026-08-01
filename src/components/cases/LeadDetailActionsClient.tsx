@@ -36,6 +36,10 @@ export default function LeadDetailActionsClient({ lead }: LeadDetailActionsClien
           setMessage(successMessage);
           router.refresh();
         }}
+        onAccepted={(successMessage) => {
+          setMessage(successMessage);
+          router.refresh();
+        }}
       />
     </>
   );

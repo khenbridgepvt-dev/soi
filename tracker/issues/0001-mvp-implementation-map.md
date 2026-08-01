@@ -37,6 +37,7 @@ The MVP is **operational as a free-tier pilot**: all ten MVP modules (M1–M10) 
 - **0010 application types:** migration 00018 RLS, EP-35/36/37 API, S-15 settings UI, TC-013–016 test seam — [Application type settings](./0010-application-type-settings.md)
 - **0011 cases RLS + list:** migration 00019 RLS/column trigger, EP-02, S-05, seed cases — [Cases RLS and the case list](./0011-cases-rls-and-case-list.md)
 - **0012 create/reject lead:** migration 00020 admin write, EP-01/EP-06, S-07/S-08 — [Create lead and reject lead](./0012-create-lead-and-reject.md)
+- **0013 accept transaction (spike, R1):** migration 00021 `accept_lead` RPC — reference counter UPSERT + status flip + 13 task inserts in one transaction; EP-05 calls it and nothing else; `reference.ts` / `default-tasks.ts` seams; S-08 accept leg; TC-023 rollback and TC-018 concurrency tests — [Accept-lead atomic transaction](./0013-accept-lead-transaction.md)
 
 ## Not yet specified
 

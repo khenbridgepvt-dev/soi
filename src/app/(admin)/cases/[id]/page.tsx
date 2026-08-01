@@ -1,20 +1,26 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import LeadDetailActionsClient from '@/components/cases/LeadDetailActionsClient';
+import { DEFAULT_TASK_COUNT } from '@/lib/cases/default-tasks';
 import { createClient } from '@/lib/supabase/server';
 import { getUser } from '@/lib/auth/session';
 
 type CaseDetailPageProps = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ accepted?: string }>;
 };
 
-export default async function CaseDetailPage({ params }: CaseDetailPageProps) {
+export default async function CaseDetailPage({
+  params,
+  searchParams,
+}: CaseDetailPageProps) {
   const user = await getUser();
   if (!user) {
     redirect('/login');
   }
 
   const { id } = await params;
+  const { accepted } = await searchParams;
   const supabase = await createClient();
 
   const { data: caseRow, error } = await supabase
@@ -28,7 +34,7 @@ export default async function CaseDetailPage({ params }: CaseDetailPageProps) {
         status,
         notes,
         created_at,
-        application_types ( name )
+        application_types ( name, code )
       `,
     )
     .eq('id', id)
@@ -74,6 +80,12 @@ export default async function CaseDetailPage({ params }: CaseDetailPageProps) {
         </span>
       </div>
 
+      {accepted === '1' && caseRow.status === 'active' && (
+        <div className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+          Case {caseRow.reference} created with {DEFAULT_TASK_COUNT} tasks.
+        </div>
+      )}
+
       {isRejected && (
         <div className="rounded-md border border-slate-300 bg-slate-100 px-4 py-3 text-sm font-semibold uppercase tracking-wide text-slate-600">
           Rejected — read only
@@ -103,6 +115,7 @@ export default async function CaseDetailPage({ params }: CaseDetailPageProps) {
               client_first_name: caseRow.client_first_name,
               client_last_name: caseRow.client_last_name,
               application_type_name: applicationType?.name ?? '—',
+              application_type_code: applicationType?.code ?? null,
               notes: caseRow.notes,
             }}
           />

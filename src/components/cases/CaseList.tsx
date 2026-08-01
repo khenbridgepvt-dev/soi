@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import CreateLeadModal from '@/components/cases/CreateLeadModal';
 import LeadReviewModal, { type LeadReviewTarget } from '@/components/cases/LeadReviewModal';
@@ -66,6 +67,7 @@ const STATUS_BADGE_CLASS: Record<CaseListRow['status'], string> = {
 };
 
 export default function CaseList({ applicationTypes, staffMembers }: CaseListProps) {
+  const router = useRouter();
   const [cases, setCases] = useState<CaseListRow[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [loading, setLoading] = useState(true);
@@ -160,6 +162,7 @@ export default function CaseList({ applicationTypes, staffMembers }: CaseListPro
           client_first_name: json.data.client_first_name,
           client_last_name: json.data.client_last_name,
           application_type_name: json.data.application_type_name,
+          application_type_code: json.data.application_type_code,
           notes: json.data.notes,
         });
         return;
@@ -446,6 +449,12 @@ export default function CaseList({ applicationTypes, staffMembers }: CaseListPro
           setSuccessMessage(message);
           setReviewLead(null);
           loadCases();
+        }}
+        onAccepted={(_message, accepted) => {
+          setReviewLead(null);
+          // S-08: acceptance lands on the case detail screen (S-06), which
+          // carries the confirmation — this list unmounts on navigation.
+          router.push(`/cases/${accepted.id}?accepted=1`);
         }}
       />
     </div>
