@@ -4,7 +4,7 @@ import type { AppRole } from '@/lib/auth/jwt';
 export const PUBLIC_PATH_PREFIXES = ['/login', '/auth', '/api/health'] as const;
 
 /** Admin-only URL prefixes (expand as admin module tickets land). */
-export const ADMIN_PATH_PREFIXES = ['/dashboard'] as const;
+export const ADMIN_PATH_PREFIXES = ['/dashboard', '/cases', '/settings'] as const;
 
 /** Staff/senior URL prefix — all routes under `/staff`. */
 export const STAFF_PATH_PREFIX = '/staff';

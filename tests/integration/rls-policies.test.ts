@@ -19,9 +19,6 @@ import {
 
 /** Every table that must stay fully closed until its own module ticket. */
 const TABLES_WITHOUT_POLICIES = [
-  'application_types',
-  'cases',
-  'dependants',
   'tasks',
   'task_assignments',
   'staff_timetables',
@@ -293,6 +290,27 @@ describe('RLS: anonymous access', () => {
 
     expect(data).toBeNull();
     expect(error).not.toBeNull();
+  });
+
+  it('reads no rows from application_types', async () => {
+    const { data, error } = await anon.from('application_types').select('id');
+
+    expect(error).toBeNull();
+    expect(data).toHaveLength(0);
+  });
+
+  it('reads no rows from cases', async () => {
+    const { data, error } = await anon.from('cases').select('id');
+
+    expect(error).toBeNull();
+    expect(data).toHaveLength(0);
+  });
+
+  it('reads no rows from dependants', async () => {
+    const { data, error } = await anon.from('dependants').select('id');
+
+    expect(error).toBeNull();
+    expect(data).toHaveLength(0);
   });
 
   it.each(TABLES_WITHOUT_POLICIES)('reads no rows from %s', async (table) => {

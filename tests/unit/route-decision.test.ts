@@ -92,6 +92,28 @@ describe('getRouteDecision', () => {
     ).toEqual({ action: 'redirect', url: '/staff/dashboard' });
   });
 
+  it('redirects staff from /settings/application-types to /staff/dashboard', () => {
+    expect(
+      getRouteDecision({
+        pathname: '/settings/application-types',
+        isAuthenticated: true,
+        role: 'staff',
+        isActive: true,
+      }),
+    ).toEqual({ action: 'redirect', url: '/staff/dashboard' });
+  });
+
+  it('redirects staff from /cases to /staff/dashboard', () => {
+    expect(
+      getRouteDecision({
+        pathname: '/cases',
+        isAuthenticated: true,
+        role: 'staff',
+        isActive: true,
+      }),
+    ).toEqual({ action: 'redirect', url: '/staff/dashboard' });
+  });
+
   it('redirects admin from /staff/dashboard to /dashboard', () => {
     expect(
       getRouteDecision({

@@ -1,0 +1,453 @@
+'use client';
+
+import Link from 'next/link';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import CreateLeadModal from '@/components/cases/CreateLeadModal';
+import LeadReviewModal, { type LeadReviewTarget } from '@/components/cases/LeadReviewModal';
+
+type CaseListRow = {
+  id: string;
+  reference: string | null;
+  client_first_name: string;
+  client_last_name: string;
+  dependant_count: number;
+  application_type_name: string;
+  status: 'lead_pending' | 'active' | 'rejected' | 'completed';
+  is_urgent: boolean;
+  last_date: string | null;
+  appointment_date: string | null;
+  assigned_staff_name: string | null;
+  task_completed_count: number;
+  task_total_count: number;
+  has_blocked_tasks: boolean;
+  created_at: string;
+};
+
+type ApplicationTypeOption = {
+  id: string;
+  name: string;
+};
+
+type StaffOption = {
+  id: string;
+  full_name: string;
+};
+
+type Pagination = {
+  page: number;
+  limit: number;
+  total: number;
+  total_pages: number;
+  has_next: boolean;
+  has_prev: boolean;
+};
+
+type CaseListProps = {
+  applicationTypes: ApplicationTypeOption[];
+  staffMembers: StaffOption[];
+};
+
+type ApiError = {
+  error?: { message?: string };
+};
+
+const STATUS_LABELS: Record<CaseListRow['status'], string> = {
+  lead_pending: 'Lead Pending',
+  active: 'Active',
+  rejected: 'Rejected',
+  completed: 'Completed',
+};
+
+const STATUS_BADGE_CLASS: Record<CaseListRow['status'], string> = {
+  lead_pending: 'bg-[#ECEFF3] text-[#5C6B7A]',
+  active: 'bg-[#E8F4FD] text-[#0F2B5B]',
+  rejected: 'bg-[#FEE2E2] text-[#C41E24]',
+  completed: 'bg-[#E8F5EC] text-[#1B7F4B]',
+};
+
+export default function CaseList({ applicationTypes, staffMembers }: CaseListProps) {
+  const [cases, setCases] = useState<CaseListRow[]>([]);
+  const [pagination, setPagination] = useState<Pagination | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [bannerError, setBannerError] = useState<string | null>(null);
+
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('');
+  const [typeId, setTypeId] = useState('');
+  const [staffId, setStaffId] = useState('');
+  const [urgency, setUrgency] = useState('');
+  const [page, setPage] = useState(1);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [reviewLead, setReviewLead] = useState<LeadReviewTarget | null>(null);
+
+  const queryString = useMemo(() => {
+    const params = new URLSearchParams();
+    params.set('page', String(page));
+    params.set('limit', '25');
+
+    if (search.trim()) {
+      params.set('q', search.trim());
+    }
+    if (status) {
+      params.set('status', status);
+    }
+    if (typeId) {
+      params.set('application_type_id', typeId);
+    }
+    if (staffId) {
+      params.set('assigned_to', staffId);
+    }
+    if (urgency === 'urgent') {
+      params.set('is_urgent', 'true');
+    } else if (urgency) {
+      params.set('urgency', urgency);
+    }
+
+    return params.toString();
+  }, [page, search, status, typeId, staffId, urgency]);
+
+  const loadCases = useCallback(async () => {
+    setLoading(true);
+    setBannerError(null);
+
+    try {
+      const response = await fetch(`/api/cases?${queryString}`);
+      const json = (await response.json()) as {
+        data?: CaseListRow[];
+        pagination?: Pagination;
+      } & ApiError;
+
+      if (!response.ok) {
+        setBannerError(json.error?.message ?? 'Failed to load cases.');
+        return;
+      }
+
+      setCases(json.data ?? []);
+      setPagination(json.pagination ?? null);
+    } catch {
+      setBannerError('Unable to connect. Check your internet connection.');
+    } finally {
+      setLoading(false);
+    }
+  }, [queryString]);
+
+  useEffect(() => {
+    loadCases();
+  }, [loadCases]);
+
+  function clearFilters() {
+    setSearch('');
+    setStatus('');
+    setTypeId('');
+    setStaffId('');
+    setUrgency('');
+    setPage(1);
+  }
+
+  const hasFilters = search || status || typeId || staffId || urgency;
+
+  async function openLeadReview(caseRow: CaseListRow) {
+    try {
+      const response = await fetch(`/api/cases/${caseRow.id}`);
+      const json = (await response.json()) as {
+        data?: LeadReviewTarget & { notes?: string | null };
+      };
+
+      if (response.ok && json.data) {
+        setReviewLead({
+          id: json.data.id,
+          client_first_name: json.data.client_first_name,
+          client_last_name: json.data.client_last_name,
+          application_type_name: json.data.application_type_name,
+          notes: json.data.notes,
+        });
+        return;
+      }
+    } catch {
+      // Fall back to list row data when detail fetch fails.
+    }
+
+    setReviewLead({
+      id: caseRow.id,
+      client_first_name: caseRow.client_first_name,
+      client_last_name: caseRow.client_last_name,
+      application_type_name: caseRow.application_type_name,
+    });
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-semibold text-slate-900">Cases</h1>
+        <button
+          type="button"
+          onClick={() => setCreateOpen(true)}
+          className="rounded-md bg-[#0F2B5B] px-4 py-2 text-sm font-medium text-white"
+        >
+          + Create Lead
+        </button>
+      </div>
+
+      {successMessage && (
+        <div className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+          {successMessage}
+        </div>
+      )}
+
+      {bannerError && (
+        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          {bannerError}
+        </div>
+      )}
+
+      <div className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-2 lg:grid-cols-5">
+        <input
+          type="search"
+          placeholder="Search cases..."
+          value={search}
+          onChange={(event) => {
+            setSearch(event.target.value);
+            setPage(1);
+          }}
+          className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+        />
+        <select
+          value={status}
+          onChange={(event) => {
+            setStatus(event.target.value);
+            setPage(1);
+          }}
+          className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+        >
+          <option value="">All statuses</option>
+          <option value="lead_pending">Lead — Pending</option>
+          <option value="active">Active</option>
+          <option value="rejected">Rejected</option>
+          <option value="completed">Completed</option>
+        </select>
+        <select
+          value={typeId}
+          onChange={(event) => {
+            setTypeId(event.target.value);
+            setPage(1);
+          }}
+          className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+        >
+          <option value="">All types</option>
+          {applicationTypes.map((type) => (
+            <option key={type.id} value={type.id}>{type.name}</option>
+          ))}
+        </select>
+        <select
+          value={staffId}
+          onChange={(event) => {
+            setStaffId(event.target.value);
+            setPage(1);
+          }}
+          className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+        >
+          <option value="">All staff</option>
+          <option value="unassigned">Unassigned</option>
+          {staffMembers.map((staff) => (
+            <option key={staff.id} value={staff.id}>{staff.full_name}</option>
+          ))}
+        </select>
+        <select
+          value={urgency}
+          onChange={(event) => {
+            setUrgency(event.target.value);
+            setPage(1);
+          }}
+          className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+        >
+          <option value="">All urgency</option>
+          <option value="urgent">Urgent</option>
+          <option value="blocked">Blocked</option>
+          <option value="overdue">Overdue</option>
+        </select>
+      </div>
+
+      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+        <table className="min-w-full divide-y divide-slate-200 text-sm">
+          <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <tr>
+              <th className="px-4 py-3">Reference</th>
+              <th className="px-4 py-3">Client</th>
+              <th className="px-4 py-3">Type</th>
+              <th className="px-4 py-3">Staff</th>
+              <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">Progress</th>
+              <th className="px-4 py-3">Urgent</th>
+              <th className="px-4 py-3">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {loading &&
+              Array.from({ length: 5 }).map((_, index) => (
+                <tr key={index}>
+                  <td className="px-4 py-4" colSpan={8}>
+                    <div className="h-4 w-full animate-pulse rounded bg-slate-100" />
+                  </td>
+                </tr>
+              ))}
+
+            {!loading && cases.length === 0 && (
+              <tr>
+                <td className="px-4 py-10 text-center text-slate-500" colSpan={8}>
+                  {hasFilters
+                    ? (
+                        <span>
+                          No cases match your filters.{' '}
+                          <button
+                            type="button"
+                            onClick={clearFilters}
+                            className="font-medium text-[#0F2B5B] underline"
+                          >
+                            Clear filters
+                          </button>
+                        </span>
+                      )
+                    : 'No cases yet.'}
+                </td>
+              </tr>
+            )}
+
+            {!loading &&
+              cases.map((caseRow) => {
+                const clientLabel =
+                  caseRow.dependant_count > 0
+                    ? `${caseRow.client_first_name} ${caseRow.client_last_name} +${caseRow.dependant_count} dep`
+                    : `${caseRow.client_first_name} ${caseRow.client_last_name}`;
+                const progressPct =
+                  caseRow.task_total_count > 0
+                    ? Math.round(
+                        (caseRow.task_completed_count / caseRow.task_total_count) * 100,
+                      )
+                    : 0;
+
+                return (
+                  <tr key={caseRow.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3 font-mono text-xs text-slate-700">
+                      {caseRow.reference ?? '—'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/cases/${caseRow.id}`}
+                        className="font-medium text-[#0F2B5B] hover:underline"
+                      >
+                        {clientLabel}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 text-slate-700">{caseRow.application_type_name}</td>
+                    <td className="px-4 py-3 text-slate-700">
+                      {caseRow.assigned_staff_name ?? '—'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex h-5 items-center rounded-full px-2 text-[10px] font-semibold uppercase tracking-wide ${STATUS_BADGE_CLASS[caseRow.status]}`}
+                      >
+                        {STATUS_LABELS[caseRow.status]}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {caseRow.status === 'lead_pending' || caseRow.task_total_count === 0
+                        ? '—'
+                        : (
+                            <div className="flex items-center gap-2">
+                              <div className="h-2 w-16 rounded bg-slate-200">
+                                <div
+                                  className="h-2 rounded bg-[#0F2B5B]"
+                                  style={{ width: `${progressPct}%` }}
+                                />
+                              </div>
+                              <span className="text-xs text-slate-600">
+                                {caseRow.task_completed_count}/{caseRow.task_total_count}
+                              </span>
+                            </div>
+                          )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {caseRow.is_urgent && (
+                        <span className="text-red-600" title="Urgent">🔴</span>
+                      )}
+                      {caseRow.has_blocked_tasks && (
+                        <span className="text-xs font-semibold uppercase text-amber-700">
+                          BLOCKED
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {caseRow.status === 'lead_pending' && (
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openLeadReview(caseRow)}
+                            className="text-xs font-medium text-[#0F2B5B] hover:underline"
+                          >
+                            Review
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => openLeadReview(caseRow)}
+                            className="text-xs font-medium text-[#C41E24] hover:underline"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+          </tbody>
+        </table>
+      </div>
+
+      {pagination && pagination.total_pages > 1 && (
+        <div className="flex items-center justify-end gap-3 text-sm text-slate-600">
+          <span>
+            Page {pagination.page} of {pagination.total_pages}
+          </span>
+          <button
+            type="button"
+            disabled={!pagination.has_prev}
+            onClick={() => setPage((current) => Math.max(1, current - 1))}
+            className="rounded border border-slate-300 px-3 py-1 disabled:opacity-40"
+          >
+            Previous
+          </button>
+          <button
+            type="button"
+            disabled={!pagination.has_next}
+            onClick={() => setPage((current) => current + 1)}
+            className="rounded border border-slate-300 px-3 py-1 disabled:opacity-40"
+          >
+            Next
+          </button>
+        </div>
+      )}
+
+      <CreateLeadModal
+        open={createOpen}
+        applicationTypes={applicationTypes}
+        onClose={() => setCreateOpen(false)}
+        onCreated={(message) => {
+          setSuccessMessage(message);
+          loadCases();
+        }}
+      />
+
+      <LeadReviewModal
+        open={reviewLead !== null}
+        lead={reviewLead}
+        onClose={() => setReviewLead(null)}
+        onRejected={(message) => {
+          setSuccessMessage(message);
+          setReviewLead(null);
+          loadCases();
+        }}
+      />
+    </div>
+  );
+}

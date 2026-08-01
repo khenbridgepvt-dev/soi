@@ -1,7 +1,6 @@
-import AppShell from '@/components/layout/AppShell';
+import AdminAppShell from '@/components/layout/AdminAppShell';
+import { ADMIN_NAV } from '@/lib/nav/admin';
 import { getUser } from '@/lib/auth/session';
-
-const ADMIN_NAV = [{ href: '/dashboard', label: 'Dashboard' }];
 
 export default async function AdminLayout({
   children,
@@ -12,14 +11,12 @@ export default async function AdminLayout({
   const appName = process.env.NEXT_PUBLIC_APP_NAME ?? 'Task Manager';
 
   return (
-    <AppShell
+    <AdminAppShell
       appName={appName}
-      dashboardHref="/dashboard"
       navItems={ADMIN_NAV}
-      activeHref="/dashboard"
       userEmail={user?.email}
     >
       {children}
-    </AppShell>
+    </AdminAppShell>
   );
 }

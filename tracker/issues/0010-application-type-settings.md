@@ -2,8 +2,8 @@
 id: 10
 title: Application type settings
 labels: [wayfinder:task, sprint-3-4]
-status: open
-assignee:
+status: closed
+assignee: blessanai
 parent: 1
 blocked-by: [7]
 mode: AFK
@@ -30,3 +30,11 @@ Admin can manage application types — the lookup every case depends on ("must e
 
 - No DELETE endpoint — deactivation only (EP list has no delete).
 - No per-type task lists ([ADR-0002](../../docs/adr/0002-fixed-13-task-lifecycle-for-mvp.md) — fixed 13 for all types).
+
+## Resolution
+
+- Migration `00018_application_types_rls.sql`: authenticated read (`is_active` rows for all roles; inactive rows admin-only); admin INSERT/UPDATE.
+- API: `GET/POST /api/application-types` (EP-35/36), `PATCH /api/application-types/[id]` (EP-37) — name + `is_active` only; strict boolean validation on `is_active`.
+- UI: S-15 at `/settings/application-types` — table, add/edit modal, activate/deactivate; linked in admin nav.
+- Tests: TC-015 unit (code format); RLS harness (`application-types-rls.test.ts`); `rls-policies.test.ts` updated (application_types no longer deny-by-default).
+- Gate 1 green: lint, typecheck, 110 tests, `supabase db reset`.

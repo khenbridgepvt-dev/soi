@@ -33,6 +33,10 @@ The MVP is **operational as a free-tier pilot**: all ten MVP modules (M1–M10) 
 - **0005 RLS + role claim:** RLS on all tables (deny-by-default), profiles policies + staff view + column guard, `user_role` JWT claim ([ADR-0015](../../docs/adr/0015-application-role-jwt-claim-named-user-role.md)), reusable sign-in-as-role test harness — [RLS, profiles policies, and role JWT claims](./0005-rls-profiles-policies-and-role-claims.md)
 - **0006 login:** S-01 login page, cookie session (@supabase/ssr), logout, password reset via Mailpit, `/app` placeholder — [Login, session, and password reset](./0006-login-session-and-password-reset.md)
 - **0007 middleware + shells:** role-routed middleware (§10.4 layer 3), app shell, stub S-02/S-10 at `/dashboard` and `/staff/dashboard` — [Role-routed middleware and dashboard shells](./0007-role-routed-middleware-and-dashboard-shells.md)
+- **0009 cloud deploy:** Vercel https://soicrm.vercel.app, Supabase `yuwfifidcxvybmwwvqao`, auth hook enabled, smoke passed — [Free-tier cloud setup and first manual deploy](./0009-provision-cloud-infra-and-staging-deploy.md)
+- **0010 application types:** migration 00018 RLS, EP-35/36/37 API, S-15 settings UI, TC-013–016 test seam — [Application type settings](./0010-application-type-settings.md)
+- **0011 cases RLS + list:** migration 00019 RLS/column trigger, EP-02, S-05, seed cases — [Cases RLS and the case list](./0011-cases-rls-and-case-list.md)
+- **0012 create/reject lead:** migration 00020 admin write, EP-01/EP-06, S-07/S-08 — [Create lead and reject lead](./0012-create-lead-and-reject.md)
 
 ## Not yet specified
 

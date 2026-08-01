@@ -2,12 +2,13 @@
 id: 9
 title: Free-tier cloud setup and first manual deploy
 labels: [wayfinder:task, sprint-1-2]
-status: open
-assignee:
+status: closed
+assignee: blessanai
 parent: 1
 blocked-by: [7]
 mode: HITL
 created: 2026-08-01
+closed: 2026-08-01
 ---
 
 ## Question
@@ -33,3 +34,24 @@ Put the foundation on the internet: one free Supabase project + one free Vercel 
 - No GitHub Actions, no branch protection (ADR-0013).
 - No second Supabase project, no custom domain (upgrade path only, deployment_guide §1.3).
 - Never run `supabase db reset` against the cloud project.
+
+## Resolution
+
+Free-tier pilot infrastructure live per [ADR-0014](../../docs/adr/0014-single-cloud-project-for-pilot.md) and deployment_guide §2/§4.4/§5.
+
+| Item | Value |
+|------|--------|
+| **Vercel URL** | https://soicrm.vercel.app |
+| **Supabase project ref** | `yuwfifidcxvybmwwvqao` |
+| **Supabase API URL** | https://yuwfifidcxvybmwwvqao.supabase.co |
+| **Custom Access Token hook** | Enabled — `public.custom_access_token_hook` (ADR-0015 `user_role` claim) |
+
+**Provisioning:** Supabase project created and linked; migrations pushed via `supabase db push` (no cloud `db reset`). Vercel Hobby project connected to GitHub; five env vars set (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_APP_NAME`); service role marked Sensitive. Deploy via `git push` to `main`.
+
+**Smoke tests (passed on cloud URL):**
+- `/api/health` responds
+- Admin login → `/dashboard`
+- Staff login → `/staff/dashboard`
+- Role routing and session behave as on local stack
+
+Cloud demo accounts created via Supabase dashboard (staff-creation UI deferred to ticket 0019).

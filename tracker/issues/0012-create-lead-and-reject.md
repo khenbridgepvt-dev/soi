@@ -2,8 +2,8 @@
 id: 12
 title: Create lead and reject lead
 labels: [wayfinder:task, sprint-3-4]
-status: open
-assignee:
+status: closed
+assignee: blessanai
 parent: 1
 blocked-by: [10, 11]
 mode: AFK
@@ -32,3 +32,12 @@ Leads enter the system and can be turned away: create-lead modal and the reject 
 - No accept flow — that is the ticket 0013 spike; keep the S-08 accept button wired to a stub until then.
 - No reference generation of any kind here.
 - No dependants on the create form (ticket 0015 adds them on the detail page).
+
+## Resolution
+
+- Migration `00020_cases_admin_insert_update.sql`: admin INSERT + UPDATE on cases.
+- `POST /api/cases` (EP-01): create `lead_pending` lead with validation; `POST /api/cases/[id]/reject` (EP-06) with optional reason, notification to other admins, reason appended to notes.
+- `GET /api/cases/[id]`: minimal case summary for lead review/detail.
+- UI: S-07 `CreateLeadModal`, S-08 `LeadReviewModal` (accept stub), wired from case list + `/cases/[id]` for leads.
+- Tests: `lead-form.test.ts` validation unit tests; `create-lead-reject.test.ts` admin insert/reject + staff deny.
+- Gate 1 green: lint, typecheck, 132 tests, `supabase db reset`.
