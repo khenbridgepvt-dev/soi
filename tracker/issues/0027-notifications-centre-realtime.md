@@ -2,8 +2,8 @@
 id: 27
 title: Notification centre with realtime delivery
 labels: [wayfinder:task, sprint-7-8]
-status: open
-assignee:
+status: closed
+assignee: composer
 parent: 1
 blocked-by: [15, 18, 23]
 mode: AFK

@@ -2,8 +2,8 @@
 id: 23
 title: Block, unblock, and the blocked-task pool
 labels: [wayfinder:task, sprint-5-6]
-status: open
-assignee:
+status: closed
+assignee: composer
 parent: 1
 blocked-by: [17, 22]
 mode: AFK
@@ -31,3 +31,11 @@ The client-unresponsive workflow: blocking a task frees its calendar time, admin
 - No auto-rescheduling on unblock — deliberate manual step.
 - No >48h blocked reminders (Phase 2, [scope_matrix.md](../../docs/scope_matrix.md) M7 Advanced).
 - No board rendering here (ticket 0024 consumes blocked state).
+
+## Resolution
+
+Delivered migration `00034_release_assignment_on_block.sql`, shared `block-task.ts` / `unblock-task.ts` with required block reason validation, EP-14/15 API routes, admin `task_blocked` notification fanout, and `GET /api/tasks/blocked` for S-17.
+
+**UI:** `/blocked` Blocked Tasks Pool (table with stripe + BLOCKED label, staff filter, unblock/reassign actions); **Mark blocked** / **Unblock task** on case detail checklist; admin nav link.
+
+**Tests:** `block-reason.test.ts` unit; `block-unblock.test.ts` integration (TC-064/065, future vs past release-on-block). Gate 1 green — 399 tests after `supabase db reset`.

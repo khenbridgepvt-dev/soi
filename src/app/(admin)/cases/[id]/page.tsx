@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 
 type CaseDetailPageProps = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ accepted?: string }>;
+  searchParams: Promise<{ accepted?: string; task?: string }>;
 };
 
 export default async function CaseDetailPage({
@@ -18,7 +18,7 @@ export default async function CaseDetailPage({
   }
 
   const { id } = await params;
-  const { accepted } = await searchParams;
+  const { accepted, task } = await searchParams;
   const { role, session } = sessionWithRole;
 
   if (role !== 'admin') {
@@ -39,6 +39,7 @@ export default async function CaseDetailPage({
       role={role}
       userId={session.user.id}
       accepted={accepted === '1'}
+      focusTaskId={task}
       applicationTypes={applicationTypes ?? []}
     />
   );

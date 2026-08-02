@@ -97,4 +97,47 @@ describe('createAutoSaveController', () => {
     expect(onSave).not.toHaveBeenCalled();
     expect(controller.getStatus()).toBe('idle');
   });
+
+  it('retries failed saves with exponential backoff', async () => {
+    vi.useFakeTimers();
+    const onSave = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('network'))
+      .mockRejectedValueOnce(new Error('network'))
+      .mockResolvedValueOnce(undefined);
+    const controller = createAutoSaveController({ onSave, debounceMs: 100 });
+
+    controller.schedule('retry me');
+    await vi.advanceTimersByTimeAsync(100);
+    await vi.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(2000);
+    await vi.runAllTimersAsync();
+
+    expect(onSave).toHaveBeenCalledTimes(3);
+    expect(controller.getStatus()).toBe('saved');
+  });
+
+  it('rolls back via onError after retries are exhausted', async () => {
+    vi.useFakeTimers();
+    const onError = vi.fn();
+    const onSave = vi.fn(async () => {
+      throw new Error('network');
+    });
+    const controller = createAutoSaveController({
+      onSave,
+      debounceMs: 100,
+      onError,
+    });
+
+    controller.schedule('draft');
+    await vi.advanceTimersByTimeAsync(100);
+    await vi.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(2000);
+    await vi.advanceTimersByTimeAsync(4000);
+    await vi.runAllTimersAsync();
+
+    expect(onSave).toHaveBeenCalledTimes(4);
+    expect(onError).toHaveBeenCalledWith('draft', undefined);
+    expect(controller.getStatus()).toBe('error');
+  });
 });

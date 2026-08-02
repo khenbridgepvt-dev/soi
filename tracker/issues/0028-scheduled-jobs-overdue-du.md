@@ -2,8 +2,8 @@
 id: 28
 title: Scheduled jobs — overdue and DU alerts
 labels: [wayfinder:task, sprint-7-8]
-status: open
-assignee:
+status: closed
+assignee: composer
 parent: 1
 blocked-by: [27]
 mode: AFK

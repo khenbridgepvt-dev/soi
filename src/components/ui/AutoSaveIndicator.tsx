@@ -10,7 +10,7 @@ export function AutoSaveIndicator({ status }: { status: AutoSaveStatus }) {
       ? 'Saving…'
       : status === 'saved'
         ? 'Saved ✓'
-        : 'Save failed';
+        : '⚠ Not saved';
 
   return (
     <span

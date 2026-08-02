@@ -111,6 +111,7 @@ export async function fetchCaseDetail(
       `,
     )
     .eq('id', caseId)
+    .eq('is_deleted', false)
     .maybeSingle();
 
   if (caseError || !caseRow) {

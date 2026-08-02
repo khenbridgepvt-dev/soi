@@ -873,19 +873,19 @@ lawcrm/
 
 ### 11.1 Supabase Edge Functions
 
-Edge Functions are deployed separately from the Next.js application.
+Edge Functions are deployed separately from the Next.js application. See [scheduled-jobs.md](./scheduled-jobs.md) for MVP pilot deploy and cron registration (ticket 0028).
 
 ```bash
-# Deploy edge functions
+# Deploy edge functions (manual — ADR-0013)
 supabase functions deploy detect-overdue
-supabase functions deploy escalation-alerts
-supabase functions deploy blocked-reminders
+supabase functions deploy du-alerts
 
 # Set up cron schedules via Supabase dashboard:
-# detect-overdue     → every 15 minutes
-# escalation-alerts  → daily at 09:00 UTC
-# blocked-reminders  → daily at 09:00 UTC
+# detect-overdue → every 15 minutes (`*/15 * * * *`)
+# du-alerts      → daily at 09:00 UTC (`0 9 * * *`)
 ```
+
+Phase 2 functions (out of MVP scope): `escalation-alerts`, `blocked-reminders`.
 
 ### 11.2 Supabase Realtime Configuration
 

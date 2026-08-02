@@ -2,8 +2,8 @@
 id: 22
 title: Assign task modal and conflict detection
 labels: [wayfinder:task, sprint-5-6]
-status: open
-assignee:
+status: closed
+assignee: composer
 parent: 1
 blocked-by: [21]
 mode: AFK
@@ -33,3 +33,13 @@ Admin puts work on the calendar: the S-09 assign modal with TLS schedule preview
 - No drag-and-drop, no bulk assignment (Phase 2).
 - No overtime proposals (Phase 2) — outside-hours is a warning only.
 - No blocked-task handling (ticket 0023).
+
+## Resolution
+
+Delivered EP-13/58/59 assign/release/reassign with shared `assign-task.ts` validation ladder (conflict check + DB `no_overlap` exclusion as backstop), `assign-errors.ts` mapping, and assignment notification fanout. Extended `availability.ts` with conflict/duration helpers and `assign-task-validation.test.ts` unit coverage.
+
+**API:** `POST /api/tasks/:id/assign`, `DELETE /api/tasks/:taskId/assignments/:assignmentId`, `POST /api/tasks/:id/reassign`, `GET /api/tasks/assignable`.
+
+**UI:** S-09 `AssignTaskModal` (560px / two-column desktop) with `SchedulePreviewColumn`, TLS slot picker, confirm panel, conflict flash, outside-hours warning (MVP allow), and toast. Wired from S-04 grid click (staff/date/start prefilled + task select) and S-06 **Assign task** button.
+
+**Tests:** 8 integration tests (TC-055–059, racing double-book, release, reassign); Gate 1 green — 392 tests after `supabase db reset`.

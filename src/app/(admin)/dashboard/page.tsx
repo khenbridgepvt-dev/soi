@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import MetricCard from '@/components/layout/MetricCard';
+import AdminDashboardView from '@/components/dashboard/AdminDashboardView';
 import { getUser } from '@/lib/auth/session';
 import { createClient } from '@/lib/supabase/server';
 import { getGreeting } from '@/lib/utils/greeting';
@@ -11,17 +11,25 @@ export const metadata: Metadata = {
 export default async function AdminDashboardPage() {
   const user = await getUser();
   const supabase = await createClient();
+  const [{ data: profile }, { data: applicationTypes }] = await Promise.all([
+    user
+      ? supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', user.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabase
+      .from('application_types')
+      .select('id, name')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+      .order('name', { ascending: true }),
+  ]);
 
   let fullName = 'Admin';
-  if (user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('full_name')
-      .eq('id', user.id)
-      .maybeSingle();
-    if (profile?.full_name) {
-      fullName = profile.full_name;
-    }
+  if (profile?.full_name) {
+    fullName = profile.full_name;
   }
 
   const now = new Date();
@@ -43,16 +51,7 @@ export default async function AdminDashboardPage() {
         <p className="text-sm text-text-secondary tabular-nums">{dateTime}</p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard label="Active Cases" />
-        <MetricCard label="Urgent Cases" />
-        <MetricCard label="Blocked Tasks" />
-        <MetricCard label="Overdue Tasks" />
-      </div>
-
-      <div className="rounded-lg border border-dashed border-border bg-surface p-8 text-center text-sm text-text-secondary">
-        Pending leads, team status, and schedule widgets arrive in ticket 0024.
-      </div>
+      <AdminDashboardView applicationTypes={applicationTypes ?? []} />
     </div>
   );
 }

@@ -13,6 +13,7 @@ type AdminAppShellProps = {
   appName: string;
   navItems: NavItem[];
   userEmail?: string | null;
+  userId?: string;
 };
 
 export default function AdminAppShell({
@@ -20,6 +21,7 @@ export default function AdminAppShell({
   appName,
   navItems,
   userEmail,
+  userId,
 }: AdminAppShellProps) {
   const pathname = usePathname();
 
@@ -30,6 +32,7 @@ export default function AdminAppShell({
       navItems={navItems}
       activeHref={pathname}
       userEmail={userEmail}
+      userId={userId}
     >
       {children}
     </AppShell>

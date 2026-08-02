@@ -12,6 +12,7 @@ type UseAutoSaveOptions<T> = {
   onSave: (value: T) => Promise<void>;
   debounceMs?: number;
   disabled?: boolean;
+  onError?: (value: T, lastSavedValue: T | undefined) => void;
 };
 
 type UseAutoSaveResult<T> = {
@@ -31,10 +32,11 @@ export function useAutoSave<T>(options: UseAutoSaveOptions<T>): UseAutoSaveResul
       createAutoSaveController<T>({
         debounceMs: options.debounceMs ?? AUTO_SAVE_DEFAULT_DEBOUNCE_MS,
         disabled: options.disabled,
+        onError: options.onError,
         onStatusChange: setStatus,
         onSave: async (value) => onSaveRef.current(value),
       }),
-    [options.debounceMs, options.disabled],
+    [options.debounceMs, options.disabled, options.onError],
   );
 
   const controllerRef = useRef(controller);

@@ -829,6 +829,10 @@ export type Database = {
       }
       is_active_user: { Args: never; Returns: boolean }
       jwt_role: { Args: never; Returns: string }
+      release_assignment_on_block: {
+        Args: { p_task_id: string }
+        Returns: number
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       staff_assigned_active_case_ids: { Args: never; Returns: string[] }
@@ -847,8 +851,29 @@ export type Database = {
         }
         Returns: Json
       }
+      search_cases: {
+        Args: { p_query: string; p_limit?: number }
+        Returns: {
+          id: string
+          reference: string | null
+          client_name: string
+          status: Database["public"]["Enums"]["case_status"]
+          is_urgent: boolean
+          assigned_staff: string | null
+        }[]
+      }
+      soft_delete_case: { Args: { p_case_id: string }; Returns: Json }
+      restore_archived_record: {
+        Args: {
+          p_id: string
+          p_type: Database["public"]["Enums"]["archive_record_type"]
+        }
+        Returns: Json
+      }
+      purge_expired_records: { Args: { p_retention_days?: number }; Returns: Json }
     }
     Enums: {
+      archive_record_type: "case" | "task" | "dependant"
       case_status: "lead_pending" | "active" | "rejected" | "completed"
       excess_leave_handling: "paid" | "salary_deduction"
       leave_status: "pending" | "approved" | "rejected"
@@ -862,6 +887,7 @@ export type Database = {
         | "leave_rejected"
         | "leave_requested"
         | "senior_revision_alert"
+        | "du_alert"
       online_status: "online" | "break" | "offline"
       senior_review_outcome: "pending" | "approved" | "revisions_required"
       task_status: "not_started" | "in_progress" | "completed" | "blocked"
@@ -1008,6 +1034,8 @@ export const Constants = {
         "leave_approved",
         "leave_rejected",
         "leave_requested",
+        "senior_revision_alert",
+        "du_alert",
       ],
       online_status: ["online", "break", "offline"],
       senior_review_outcome: ["pending", "approved", "revisions_required"],

@@ -2,8 +2,8 @@
 id: 19
 title: Staff management
 labels: [wayfinder:task, sprint-5-6]
-status: open
-assignee:
+status: closed
+assignee: blessanai
 parent: 1
 blocked-by: [7]
 mode: AFK
@@ -33,3 +33,14 @@ Admin runs the team from the app: create staff (with auth accounts), edit profil
 - No timetable editing (ticket 0020 adds that S-16 section).
 - No leave anything ([ADR-0001](../../docs/adr/0001-leave-management-deferred-to-phase-2.md)).
 - Service-role calls live server-side only (plan §A.2.2).
+
+## Resolution
+
+- `src/lib/staff/` — validation, `createStaffMember`, `fetchStaffList`, `auth-ban` (ban_duration §10.4 layer 2), `working-hours` formatter.
+- EP-18 `POST /api/staff`, EP-19 `GET /api/staff`, EP-20 `PATCH /api/staff/:id` (deactivate → ban; reactivate → unban).
+- EP-55 `POST /api/auth/change-password`, EP-56 `POST /api/admin/reset-password/:userId`.
+- S-16 `/settings/staff` staff table + add/edit/deactivate; S-12 `/team` team overview; `/settings/profile` + `/staff/profile` change password.
+- `requireApiAuth` + `LoginForm` check `is_active`; admin nav + `/team` route guard.
+- Tests: `staff-validation.test.ts`, `working-hours.test.ts`, `staff-management.test.ts` (create, duplicate, §10.4 deactivation layers, EP-20).
+- Gate 1 green: lint, typecheck, 250 tests.
+- Manual walk: TC-088 team overview; create staff login + role route; TC-003 deactivated login.

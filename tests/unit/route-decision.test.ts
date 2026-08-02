@@ -147,6 +147,28 @@ describe('getRouteDecision', () => {
     ).toEqual({ action: 'allow' });
   });
 
+  it('allows admin on /schedule (S-04)', () => {
+    expect(
+      getRouteDecision({
+        pathname: '/schedule',
+        isAuthenticated: true,
+        role: 'admin',
+        isActive: true,
+      }),
+    ).toEqual({ action: 'allow' });
+  });
+
+  it('redirects staff away from /schedule (ADR-0010)', () => {
+    expect(
+      getRouteDecision({
+        pathname: '/schedule',
+        isAuthenticated: true,
+        role: 'staff',
+        isActive: true,
+      }),
+    ).toEqual({ action: 'redirect', url: '/staff/dashboard' });
+  });
+
   it('redirects deactivated session to /login', () => {
     expect(
       getRouteDecision({

@@ -4,7 +4,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import CreateLeadModal from '@/components/cases/CreateLeadModal';
+import DeleteCaseButton from '@/components/cases/DeleteCaseButton';
 import LeadReviewModal, { type LeadReviewTarget } from '@/components/cases/LeadReviewModal';
+import {
+  CASE_LIST_SORT_FIELDS,
+  type CaseListSortField,
+} from '@/lib/cases/list-query';
 
 type CaseListRow = {
   id: string;
@@ -52,6 +57,13 @@ type ApiError = {
   error?: { message?: string };
 };
 
+const SORT_LABELS: Record<CaseListSortField, string> = {
+  created_at: 'Created',
+  client_last_name: 'Client name',
+  status: 'Status',
+  last_date: 'Last date',
+};
+
 const STATUS_LABELS: Record<CaseListRow['status'], string> = {
   lead_pending: 'Lead Pending',
   active: 'Active',
@@ -78,6 +90,8 @@ export default function CaseList({ applicationTypes, staffMembers }: CaseListPro
   const [typeId, setTypeId] = useState('');
   const [staffId, setStaffId] = useState('');
   const [urgency, setUrgency] = useState('');
+  const [sortBy, setSortBy] = useState<CaseListSortField>('created_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [page, setPage] = useState(1);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
@@ -106,8 +120,11 @@ export default function CaseList({ applicationTypes, staffMembers }: CaseListPro
       params.set('urgency', urgency);
     }
 
+    params.set('sort_by', sortBy);
+    params.set('sort_order', sortOrder);
+
     return params.toString();
-  }, [page, search, status, typeId, staffId, urgency]);
+  }, [page, search, status, typeId, staffId, urgency, sortBy, sortOrder]);
 
   const loadCases = useCallback(async () => {
     setLoading(true);
@@ -144,7 +161,28 @@ export default function CaseList({ applicationTypes, staffMembers }: CaseListPro
     setTypeId('');
     setStaffId('');
     setUrgency('');
+    setSortBy('created_at');
+    setSortOrder('desc');
     setPage(1);
+  }
+
+  function toggleSort(column: CaseListSortField) {
+    setPage(1);
+    if (sortBy === column) {
+      setSortOrder((current) => (current === 'asc' ? 'desc' : 'asc'));
+      return;
+    }
+
+    setSortBy(column);
+    setSortOrder(column === 'client_last_name' ? 'asc' : 'desc');
+  }
+
+  function sortIndicator(column: CaseListSortField): string {
+    if (sortBy !== column) {
+      return '';
+    }
+
+    return sortOrder === 'asc' ? ' ↑' : ' ↓';
   }
 
   const hasFilters = search || status || typeId || staffId || urgency;
@@ -204,7 +242,7 @@ export default function CaseList({ applicationTypes, staffMembers }: CaseListPro
         </div>
       )}
 
-      <div className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-2 lg:grid-cols-6">
         <input
           type="search"
           placeholder="Search cases..."
@@ -269,6 +307,36 @@ export default function CaseList({ applicationTypes, staffMembers }: CaseListPro
           <option value="blocked">Blocked</option>
           <option value="overdue">Overdue</option>
         </select>
+        <select
+          value={sortBy}
+          onChange={(event) => {
+            const next = event.target.value as CaseListSortField;
+            if (CASE_LIST_SORT_FIELDS.includes(next)) {
+              setSortBy(next);
+              setPage(1);
+            }
+          }}
+          className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+          aria-label="Sort cases by"
+        >
+          {CASE_LIST_SORT_FIELDS.map((field) => (
+            <option key={field} value={field}>
+              Sort: {SORT_LABELS[field]}
+            </option>
+          ))}
+        </select>
+        <select
+          value={sortOrder}
+          onChange={(event) => {
+            setSortOrder(event.target.value === 'asc' ? 'asc' : 'desc');
+            setPage(1);
+          }}
+          className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+          aria-label="Sort order"
+        >
+          <option value="desc">Descending</option>
+          <option value="asc">Ascending</option>
+        </select>
       </div>
 
       <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
@@ -276,10 +344,26 @@ export default function CaseList({ applicationTypes, staffMembers }: CaseListPro
           <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
             <tr>
               <th className="px-4 py-3">Reference</th>
-              <th className="px-4 py-3">Client</th>
+              <th className="px-4 py-3">
+                <button
+                  type="button"
+                  onClick={() => toggleSort('client_last_name')}
+                  className="inline-flex items-center gap-1 hover:text-slate-700"
+                >
+                  Client{sortIndicator('client_last_name')}
+                </button>
+              </th>
               <th className="px-4 py-3">Type</th>
               <th className="px-4 py-3">Staff</th>
-              <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">
+                <button
+                  type="button"
+                  onClick={() => toggleSort('status')}
+                  className="inline-flex items-center gap-1 hover:text-slate-700"
+                >
+                  Status{sortIndicator('status')}
+                </button>
+              </th>
               <th className="px-4 py-3">Progress</th>
               <th className="px-4 py-3">Urgent</th>
               <th className="px-4 py-3">Actions</th>
@@ -381,24 +465,33 @@ export default function CaseList({ applicationTypes, staffMembers }: CaseListPro
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      {caseRow.status === 'lead_pending' && (
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => openLeadReview(caseRow)}
-                            className="text-xs font-medium text-[#0F2B5B] hover:underline"
-                          >
-                            Review
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => openLeadReview(caseRow)}
-                            className="text-xs font-medium text-[#C41E24] hover:underline"
-                          >
-                            Reject
-                          </button>
-                        </div>
-                      )}
+                      <div className="flex flex-wrap gap-2">
+                        {caseRow.status === 'lead_pending' && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => openLeadReview(caseRow)}
+                              className="text-xs font-medium text-[#0F2B5B] hover:underline"
+                            >
+                              Review
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => openLeadReview(caseRow)}
+                              className="text-xs font-medium text-[#C41E24] hover:underline"
+                            >
+                              Reject
+                            </button>
+                          </>
+                        )}
+                        {caseRow.status !== 'lead_pending' && (
+                          <DeleteCaseButton
+                            caseId={caseRow.id}
+                            caseLabel={caseRow.reference ?? clientLabel}
+                            className="text-xs font-medium text-red-700 hover:underline"
+                          />
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );

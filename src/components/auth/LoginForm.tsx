@@ -62,11 +62,11 @@ export default function LoginForm() {
 
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('id')
+        .select('id, is_active')
         .eq('id', userId)
         .single();
 
-      if (profileError || !profile) {
+      if (profileError || !profile || !profile.is_active) {
         await supabase.auth.signOut();
         setInlineError(DEACTIVATED_MESSAGE);
         setPassword('');

@@ -2,8 +2,8 @@
 id: 20
 title: Staff timetables
 labels: [wayfinder:task, sprint-5-6]
-status: open
-assignee:
+status: closed
+assignee: composer
 parent: 1
 blocked-by: [19]
 mode: AFK
@@ -32,3 +32,14 @@ Working hours become data: the 7-day timetable editor and its access rules — t
 - No availability computation or grid (ticket 0021).
 - No overtime detection ([scope_matrix.md](../../docs/scope_matrix.md) M12 — Phase 2).
 - No leave tables touched.
+
+## Resolution
+
+- Migration `00032_staff_timetables_rls.sql` — admin SELECT/UPDATE all; staff/senior SELECT own only; `is_active_user()` §10.4 guard on every policy.
+- EP-22 `PUT /api/staff/:id/timetable` (admin), EP-23 `GET /api/staff/:id/timetable` (admin or self).
+- `src/lib/utils/dates.ts` — pair validation (end > start, 30-min alignment, null pairs), weekly hours, time-slot generator.
+- `src/lib/staff/timetable.ts` — serialize/parse helpers.
+- S-16 timetable section: `TimetableEditor` (7-day, working-day checkbox, 30-min selects) integrated into staff edit modal on `/settings/staff`.
+- Tests: `timetable-validation.test.ts` (unit), `staff-timetables.test.ts` (RLS + EP-22); `rls-policies.test.ts` updated (staff_timetables removed from deny-by-default list).
+- Gate 1 green: lint, typecheck, 273 tests.
+- Manual walk: TC-051 configure hours + day off; TC-052 end-before-start rejected.

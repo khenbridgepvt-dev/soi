@@ -2,8 +2,8 @@
 id: 26
 title: Staff day calendar
 labels: [wayfinder:task, sprint-7-8]
-status: open
-assignee:
+status: closed
+assignee: composer
 parent: 1
 blocked-by: [22]
 mode: AFK

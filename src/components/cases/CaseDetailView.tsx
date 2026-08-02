@@ -3,8 +3,10 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import LeadDetailActionsClient from '@/components/cases/LeadDetailActionsClient';
+import DeleteCaseButton from '@/components/cases/DeleteCaseButton';
 import DependantsSection from '@/components/cases/DependantsSection';
 import TaskChecklistSection from '@/components/cases/TaskChecklistSection';
+import { useAutoSaveStatusReporter } from '@/components/layout/AutoSaveStatusProvider';
 import type { CaseDetailResponse } from '@/lib/cases/fetch-case-detail';
 import { AutoSaveIndicator } from '@/components/ui/AutoSaveIndicator';
 import { useAutoSave } from '@/lib/hooks/use-auto-save';
@@ -21,6 +23,7 @@ type CaseDetailViewProps = {
   role: AppRole;
   userId: string;
   accepted?: boolean;
+  focusTaskId?: string;
   applicationTypes?: ApplicationTypeOption[];
 };
 
@@ -80,6 +83,7 @@ export default function CaseDetailView({
   role,
   userId,
   accepted,
+  focusTaskId,
   applicationTypes = [],
 }: CaseDetailViewProps) {
   const [caseData, setCaseData] = useState<CaseDetailResponse | null>(null);
@@ -126,7 +130,12 @@ export default function CaseDetailView({
 
       setNotes(notesValue ?? '');
     },
+    onError: (_value, lastSaved) => {
+      setNotes(lastSaved ?? '');
+    },
   });
+
+  useAutoSaveStatusReporter('case-notes', notesAutoSave.status);
 
   const resetNotesAutoSave = notesAutoSave.reset;
 
@@ -317,36 +326,45 @@ export default function CaseDetailView({
           <p className="mt-1 text-sm text-slate-600">{clientName}</p>
         </div>
 
-        {isAdmin && !isReadOnly && (
+        {isAdmin && (
           <div className="flex flex-wrap gap-2">
-            {caseData.reference && (
-              <button
-                type="button"
-                onClick={() => {
-                  setReferenceInput(caseData.reference ?? '');
-                  setReferenceOpen(true);
-                }}
-                className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
-              >
-                Edit Reference
-              </button>
+            {!isReadOnly && (
+              <>
+                {caseData.reference && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReferenceInput(caseData.reference ?? '');
+                      setReferenceOpen(true);
+                    }}
+                    className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+                  >
+                    Edit Reference
+                  </button>
+                )}
+                <button
+                  type="button"
+                  disabled={urgentSaving}
+                  onClick={handleUrgentToggle}
+                  className={`rounded-md border px-3 py-1.5 text-sm disabled:opacity-50 ${
+                    caseData.is_urgent
+                      ? 'border-slate-300 text-slate-700 hover:bg-slate-50'
+                      : 'border-[#C41E24] bg-[#FEE2E2] text-[#C41E24] hover:bg-[#FEE2E2]/80'
+                  }`}
+                >
+                  {urgentSaving
+                    ? 'Updating…'
+                    : caseData.is_urgent
+                      ? 'Remove Urgent'
+                      : 'Flag Urgent'}
+                </button>
+              </>
             )}
-            <button
-              type="button"
-              disabled={urgentSaving}
-              onClick={handleUrgentToggle}
-              className={`rounded-md border px-3 py-1.5 text-sm disabled:opacity-50 ${
-                caseData.is_urgent
-                  ? 'border-slate-300 text-slate-700 hover:bg-slate-50'
-                  : 'border-[#C41E24] bg-[#FEE2E2] text-[#C41E24] hover:bg-[#FEE2E2]/80'
-              }`}
-            >
-              {urgentSaving
-                ? 'Updating…'
-                : caseData.is_urgent
-                  ? 'Remove Urgent'
-                  : 'Flag Urgent'}
-            </button>
+            <DeleteCaseButton
+              caseId={caseId}
+              caseLabel={caseData.reference ?? clientName}
+              className="rounded-md border border-red-200 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50"
+            />
           </div>
         )}
       </div>
@@ -477,11 +495,18 @@ export default function CaseDetailView({
 
       <TaskChecklistSection
         caseId={caseId}
+        caseReference={caseData.reference}
+        caseLabel={
+          caseData.reference
+            ? `${caseData.reference} — ${caseData.client_first_name} ${caseData.client_last_name}`
+            : `${caseData.client_first_name} ${caseData.client_last_name}`
+        }
         tasks={caseData.tasks}
         readOnly={isReadOnly}
         isAdmin={isAdmin}
         canReviewSenior={canReviewSenior}
         userId={userId}
+        focusTaskId={focusTaskId}
         onChanged={loadCase}
         onError={setBannerError}
       />

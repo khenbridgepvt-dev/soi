@@ -75,3 +75,40 @@ export function todayDateString(): string {
   const day = String(now.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
+
+const KIM_LEAD_CASE_ID = 'c0000000-0000-4000-8000-000000000003';
+const ADMIN_ID = 'a0000000-0000-4000-8000-000000000001';
+
+/** Re-seeds the Kim Park lead when a prior purge test removed it. */
+export async function ensureKimLeadCase(
+  client: SupabaseClient<Database>,
+): Promise<void> {
+  const { data } = await client
+    .from('cases')
+    .select('id')
+    .eq('id', KIM_LEAD_CASE_ID)
+    .maybeSingle();
+
+  if (data) {
+    return;
+  }
+
+  const applicationTypeId = await getApplicationTypeId(client, 'SPV');
+
+  const { error } = await client.from('cases').insert({
+    id: KIM_LEAD_CASE_ID,
+    client_first_name: 'Kim',
+    client_last_name: 'Park',
+    application_type_id: applicationTypeId,
+    status: 'lead_pending',
+    is_urgent: false,
+    created_by: ADMIN_ID,
+    is_deleted: false,
+    deleted_at: null,
+    deleted_by: null,
+  });
+
+  if (error) {
+    throw error;
+  }
+}

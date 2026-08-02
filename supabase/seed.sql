@@ -358,3 +358,43 @@ WHERE NOT EXISTS (
     AND t.sequence = seed.sequence
     AND t.is_deleted = false
 );
+
+-- Dev task assignments for ticket 0021 (S-04 scheduling grid). Dated from
+-- CURRENT_DATE because task_assignments.date carries a `>= CURRENT_DATE` check,
+-- and keyed by (case, sequence) because task ids are generated.
+INSERT INTO public.task_assignments (
+  task_id,
+  staff_id,
+  date,
+  start_time,
+  end_time,
+  duration_minutes
+)
+SELECT
+  t.id,
+  seed.staff_id,
+  CURRENT_DATE,
+  seed.start_time::time,
+  seed.end_time::time,
+  seed.duration_minutes
+FROM (
+  VALUES
+    -- Asha: two blocks on the Fatima case, leaving 11:00-13:00 and 14:30-17:00 free
+    ('c0000000-0000-4000-8000-000000000004'::uuid, 7, 'a0000000-0000-4000-8000-000000000003'::uuid, '09:00', '11:00', 120),
+    ('c0000000-0000-4000-8000-000000000004', 8, 'a0000000-0000-4000-8000-000000000003', '13:00', '14:30', 90),
+    -- Bless: one mid-morning block on the Sakura case
+    ('c0000000-0000-4000-8000-000000000002', 5, 'a0000000-0000-4000-8000-000000000004', '10:00', '12:00', 120),
+    -- Senior: the Vishnu review still in progress
+    ('c0000000-0000-4000-8000-000000000001', 8, 'a0000000-0000-4000-8000-000000000002', '14:00', '16:00', 120)
+) AS seed (case_id, sequence, staff_id, start_time, end_time, duration_minutes)
+JOIN public.tasks t
+  ON t.case_id = seed.case_id
+ AND t.sequence = seed.sequence
+ AND t.is_deleted = false
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM public.task_assignments ta
+  WHERE ta.task_id = t.id
+    AND ta.date = CURRENT_DATE
+);
+

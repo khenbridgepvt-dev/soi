@@ -41,11 +41,11 @@ export async function requireApiAuth(
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id')
+    .select('id, is_active')
     .eq('id', user.id)
     .maybeSingle();
 
-  if (!profile) {
+  if (!profile || !profile.is_active) {
     return apiError(
       403,
       'FORBIDDEN',
@@ -62,6 +62,10 @@ export async function requireApiAuth(
   }
 
   return { userId: user.id, role, supabase };
+}
+
+export async function requireStaffApiAuth(): Promise<ApiAuthContext | Response> {
+  return requireApiAuth({ role: ['staff', 'senior'] });
 }
 
 export async function requireAdminApiAuth(): Promise<ApiAuthContext | Response> {

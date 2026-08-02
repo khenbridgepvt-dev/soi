@@ -133,3 +133,31 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   return Response.json({ data: updated });
 }
+
+/** EP-08 · DELETE /api/cases/:id — soft-delete case and cascade children. */
+export async function DELETE(_request: Request, context: RouteContext) {
+  const auth = await requireApiAuth({ role: 'admin' });
+  if (auth instanceof Response) {
+    return auth;
+  }
+
+  const { id } = await context.params;
+  if (!isUuid(id)) {
+    return apiError(404, 'NOT_FOUND', 'Case not found.');
+  }
+
+  try {
+    const { softDeleteCase } = await import('@/lib/archive/soft-delete-case');
+    const data = await softDeleteCase(auth.supabase, id);
+    return Response.json({ data });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '';
+    if (message.includes('not found') || message.includes('P0002')) {
+      return apiError(404, 'NOT_FOUND', 'Case not found.');
+    }
+    if (message.includes('Permission denied')) {
+      return apiError(403, 'FORBIDDEN', 'You do not have permission to delete this case.');
+    }
+    return apiError(500, 'INTERNAL_ERROR', 'Failed to delete case.');
+  }
+}

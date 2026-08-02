@@ -2,8 +2,8 @@
 id: 21
 title: Scheduling grid
 labels: [wayfinder:task, sprint-5-6]
-status: open
-assignee:
+status: closed
+assignee: composer
 parent: 1
 blocked-by: [13, 20]
 mode: AFK
@@ -34,3 +34,14 @@ The densest screen in the app (risk R3): the admin day-view scheduling grid comp
 - No week/month views, no leave overlay (Phase 2).
 - No client-side availability math — server computes (R3 mitigation).
 - No slot pills anywhere but S-04/S-09 (design_system §9 rule 1).
+
+## Resolution
+
+- Migration `00033_task_assignments_rls.sql` — admin ALL; staff/senior SELECT own; `is_active_user()` §10.4 guard. No staff write path (0022 adds insert).
+- Pure seam `src/lib/utils/availability.ts` — `computeAvailableSlots` (timetable − assignments), `computeSlotStates` (available/booked/off_hours + span), `computeGridRange` / `buildSlotTimeline` (30-min DS-1). Client never recomputes.
+- EP-24 `GET /api/schedule?date=` (admin); EP-25 `GET /api/schedule/:staffId` (admin or self) via `fetchSchedule`.
+- S-04 `/schedule`: TLS `SlotBlock` states, 56px sticky gutter (`tabular-nums`), sticky staff headers, legend, date chevrons + picker, 36px rows; booked → case detail; available click → selection stub for 0022; per-staff booked/working chips (TC-063 strip).
+- Seed: `task_assignments` rows for today for manual TC-060 walk.
+- Tests: `availability.test.ts` (51), `schedule-dates.test.ts`, `schedule-grid.test.ts` (EP-24/25 + RLS + no_overlap).
+- Gate 1 green after `supabase db reset`: lint, typecheck, 370 tests.
+- Manual walk: TC-060 day view; TC-061 available-slot stub; TC-062 via EP-25 self; TC-063 workload chips on grid (dashboard widget remains 0024).

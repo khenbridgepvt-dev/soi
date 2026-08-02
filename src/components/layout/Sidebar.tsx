@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 type NavItem = {
   href: string;
@@ -7,17 +10,20 @@ type NavItem = {
 
 type SidebarProps = {
   items: NavItem[];
-  activeHref: string;
+  activeHref?: string;
 };
 
 export default function Sidebar({ items, activeHref }: SidebarProps) {
+  const pathname = usePathname();
+  const resolvedActive = activeHref ?? pathname;
+
   return (
     <aside className="flex w-[240px] shrink-0 flex-col border-r border-border bg-surface">
       <nav className="flex flex-col gap-1 p-3" aria-label="Main navigation">
         {items.map((item) => {
           const isActive =
-            activeHref === item.href ||
-            activeHref.startsWith(`${item.href}/`);
+            resolvedActive === item.href ||
+            resolvedActive.startsWith(`${item.href}/`);
 
           return (
             <Link

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { CaseDetailTask } from '@/lib/cases/fetch-case-detail';
 import TaskChecklistItem from '@/components/cases/TaskChecklistItem';
 import { DEFAULT_TASK_COUNT } from '@/lib/cases/default-tasks';
@@ -12,11 +12,14 @@ import {
 
 type TaskChecklistSectionProps = {
   caseId: string;
+  caseReference: string | null;
+  caseLabel: string;
   tasks: CaseDetailTask[];
   readOnly: boolean;
   isAdmin: boolean;
   canReviewSenior: boolean;
   userId: string;
+  focusTaskId?: string;
   onChanged: () => void;
   onError: (message: string) => void;
 };
@@ -27,17 +30,35 @@ type ApiError = {
 
 export default function TaskChecklistSection({
   caseId,
+  caseReference,
+  caseLabel,
   tasks,
   readOnly,
   isAdmin,
   canReviewSenior,
   userId,
+  focusTaskId,
   onChanged,
   onError,
 }: TaskChecklistSectionProps) {
   const [addOpen, setAddOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!focusTaskId || !tasks.some((task) => task.id === focusTaskId)) {
+      return;
+    }
+
+    setExpandedTaskId(focusTaskId);
+
+    const frame = window.requestAnimationFrame(() => {
+      const element = document.getElementById(`task-${focusTaskId}`);
+      element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [focusTaskId, tasks]);
 
   const [name, setName] = useState('');
   const [abbreviation, setAbbreviation] = useState('');
@@ -142,6 +163,9 @@ export default function TaskChecklistSection({
             isAdmin={isAdmin}
             canReviewSenior={canReviewSenior}
             userId={userId}
+            caseId={caseId}
+            caseReference={caseReference}
+            caseLabel={caseLabel}
             onStatusChanged={onChanged}
             onError={onError}
           />

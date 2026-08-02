@@ -1,5 +1,6 @@
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createAnonClient, OTHER_STAFF, signIn, signInAsRole } from './rls-harness';
+import { createServiceClient, ensureKimLeadCase } from './helpers';
 
 const VISHNU_CASE_ID = 'c0000000-0000-4000-8000-000000000001';
 const SAKURA_CASE_ID = 'c0000000-0000-4000-8000-000000000002';
@@ -8,6 +9,10 @@ const FATIMA_CASE_ID = 'c0000000-0000-4000-8000-000000000004';
 const RAHMAN_CASE_ID = 'c0000000-0000-4000-8000-000000000005';
 
 describe('cases + dependants RLS (ticket 0011)', () => {
+  beforeAll(async () => {
+    await ensureKimLeadCase(createServiceClient());
+  });
+
   afterAll(async () => {
     const { client } = await signInAsRole('admin');
     await client.auth.signOut();

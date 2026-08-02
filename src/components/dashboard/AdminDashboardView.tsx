@@ -1,0 +1,256 @@
+'use client';
+
+import Link from 'next/link';
+import { useCallback, useEffect, useState } from 'react';
+import CreateLeadModal from '@/components/cases/CreateLeadModal';
+import LeadReviewModal, { type LeadReviewTarget } from '@/components/cases/LeadReviewModal';
+import MetricCard from '@/components/layout/MetricCard';
+import type { AdminDashboardPayload } from '@/lib/dashboard/fetch-admin-dashboard';
+
+type ApiError = {
+  error?: { message?: string };
+};
+
+const ONLINE_DOT: Record<string, string> = {
+  online: 'bg-[#1B7F4B]',
+  break: 'bg-[#B86E00]',
+  offline: 'bg-[#8B97A6]',
+};
+
+type ApplicationTypeOption = {
+  id: string;
+  name: string;
+};
+
+type AdminDashboardViewProps = {
+  applicationTypes: ApplicationTypeOption[];
+};
+
+export default function AdminDashboardView({
+  applicationTypes,
+}: AdminDashboardViewProps) {
+  const [data, setData] = useState<AdminDashboardPayload | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [createLeadOpen, setCreateLeadOpen] = useState(false);
+  const [reviewLead, setReviewLead] = useState<LeadReviewTarget | null>(null);
+
+  const loadDashboard = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/dashboard/admin');
+      const json = (await response.json()) as { data?: AdminDashboardPayload } & ApiError;
+
+      if (!response.ok) {
+        setError(json.error?.message ?? 'Failed to load dashboard.');
+        setData(null);
+        return;
+      }
+
+      setData(json.data ?? null);
+    } catch {
+      setError('Unable to connect. Check your internet connection.');
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadDashboard();
+  }, [loadDashboard]);
+
+  const metrics = data ?? {
+    active_cases: 0,
+    urgent_cases: 0,
+    blocked_tasks: 0,
+    overdue_tasks: 0,
+    pending_leads: [],
+    team_status: [],
+    schedule_summary: [],
+  };
+
+  return (
+    <div className="space-y-6">
+      {error && (
+        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+          {error}
+        </div>
+      )}
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Link href="/cases?status=active">
+          <MetricCard
+            label="Active Cases"
+            value={loading ? '—' : String(metrics.active_cases)}
+          />
+        </Link>
+        <Link href="/cases?status=active&urgent=true">
+          <MetricCard
+            label="Urgent Cases"
+            value={loading ? '—' : String(metrics.urgent_cases)}
+          />
+        </Link>
+        <Link href="/task-board?filter=blocked">
+          <MetricCard
+            label="Blocked Tasks"
+            value={loading ? '—' : String(metrics.blocked_tasks)}
+          />
+        </Link>
+        <Link href="/task-board?filter=urgent">
+          <MetricCard
+            label="Overdue Tasks"
+            value={loading ? '—' : String(metrics.overdue_tasks)}
+          />
+        </Link>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section className="rounded-lg border border-border bg-surface p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-base font-semibold text-text">Pending leads</h2>
+            <Link href="/cases?status=lead_pending" className="text-xs text-primary">
+              View all →
+            </Link>
+          </div>
+          {loading && <p className="text-sm text-text-muted">Loading…</p>}
+          {!loading && metrics.pending_leads.length === 0 && (
+            <div className="py-6 text-center">
+              <p className="text-sm text-text-secondary">No pending leads</p>
+              <button
+                type="button"
+                onClick={() => setCreateLeadOpen(true)}
+                className="mt-3 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-white"
+              >
+                + Create Lead
+              </button>
+            </div>
+          )}
+          {!loading && metrics.pending_leads.length > 0 && (
+            <ul className="divide-y divide-border">
+              {metrics.pending_leads.map((lead) => (
+                <li
+                  key={lead.id}
+                  className="flex flex-wrap items-center justify-between gap-2 py-3"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-text">{lead.client_name}</p>
+                    <p className="text-xs text-text-secondary">{lead.application_type}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setReviewLead({
+                        id: lead.id,
+                        client_first_name: lead.client_name.split(' ')[0] ?? lead.client_name,
+                        client_last_name: lead.client_name.split(' ').slice(1).join(' '),
+                        application_type_name: lead.application_type,
+                      })
+                    }
+                    className="rounded border border-border px-2 py-1 text-xs font-medium text-text hover:bg-page"
+                  >
+                    Review
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="rounded-lg border border-border bg-surface p-4">
+          <h2 className="mb-3 text-base font-semibold text-text">Team status</h2>
+          {loading && <p className="text-sm text-text-muted">Loading…</p>}
+          {!loading && (
+            <ul className="divide-y divide-border">
+              {metrics.team_status.map((member) => (
+                <li
+                  key={member.id}
+                  className="flex items-center justify-between py-2.5"
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`inline-block h-2 w-2 rounded-full ${ONLINE_DOT[member.online_status] ?? ONLINE_DOT.offline}`}
+                      aria-hidden
+                    />
+                    <span className="text-sm text-text">{member.full_name}</span>
+                  </div>
+                  <span className="text-xs text-text-secondary tabular-nums">
+                    {member.active_task_count} active
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
+
+      <section className="rounded-lg border border-border bg-surface p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-base font-semibold text-text">Today&apos;s schedule summary</h2>
+          <Link href="/schedule" className="text-xs text-primary">
+            Open grid →
+          </Link>
+        </div>
+        {loading && <p className="text-sm text-text-muted">Loading…</p>}
+        {!loading && (
+          <ul className="space-y-3">
+            {metrics.schedule_summary.map((row) => (
+              <li key={row.staff_id}>
+                <div className="mb-1 flex items-center justify-between text-sm">
+                  <span className="font-medium text-text">{row.staff_name}</span>
+                  {row.is_on_leave ? (
+                    <span className="text-xs text-text-secondary">On Leave</span>
+                  ) : row.total_hours === 0 ? (
+                    <span className="text-xs text-text-secondary">Off</span>
+                  ) : (
+                    <span className="text-xs text-text-secondary tabular-nums">
+                      {row.booked_hours}/{row.total_hours} hrs booked
+                    </span>
+                  )}
+                </div>
+                {!row.is_on_leave && row.total_hours > 0 && (
+                  <div className="h-2 overflow-hidden rounded-full bg-page">
+                    <div
+                      className="h-full rounded-full bg-primary"
+                      style={{
+                        width: `${Math.min((row.booked_hours / row.total_hours) * 100, 100)}%`,
+                      }}
+                    />
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <CreateLeadModal
+        open={createLeadOpen}
+        applicationTypes={applicationTypes}
+        onClose={() => setCreateLeadOpen(false)}
+        onCreated={() => {
+          setCreateLeadOpen(false);
+          void loadDashboard();
+        }}
+      />
+
+      {reviewLead && (
+        <LeadReviewModal
+          open
+          lead={reviewLead}
+          onClose={() => setReviewLead(null)}
+          onAccepted={() => {
+            setReviewLead(null);
+            void loadDashboard();
+          }}
+          onRejected={() => {
+            setReviewLead(null);
+            void loadDashboard();
+          }}
+        />
+      )}
+    </div>
+  );
+}

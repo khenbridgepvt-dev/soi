@@ -43,6 +43,18 @@ The MVP is **operational as a free-tier pilot**: all ten MVP modules (M1–M10) 
 - **0016 checklist + custom tasks:** migration 00026 tasks RLS + column trigger + custom limit; EP-11b; S-06 checklist UI — [Task checklist and custom tasks](./0016-task-checklist-and-custom-tasks.md)
 - **0017 task status machine:** migrations 00028–00029 prerequisites/completion RPCs; EP-12/16; S-06 status + notes on checklist — [Task status state machine](./0017-task-status-state-machine.md)
 - **0018 Task 8 senior review:** migrations 00030–00031 `submit_senior_review` RPC + trigger bypasses; EP-17; S-06 approve/revisions UI + revision count on detail; ADR-0006 unlimited revisions with admin alert at threshold — [Task 8 senior review gate](./0018-task8-senior-review-gate.md)
+- **0019 staff management:** EP-18–20 create/list/update staff, EP-55/56 passwords, §10.4 layer-2 auth ban on deactivate, S-12 team overview + S-16 staff settings — [Staff management](./0019-staff-management.md)
+- **0020 staff timetables:** EP-22/23 timetable API, `staff_timetables` RLS (ADR-0010), S-16 7-day editor, validation in `dates.ts` — [Staff timetables](./0020-staff-timetables.md)
+- **0021 scheduling grid (spike, R3):** EP-24/25 server-side availability, `task_assignments` RLS, `availability.ts` seam, S-04 TLS day grid — [Scheduling grid](./0021-scheduling-grid.md)
+- **0022 assign modal (spike, R3):** EP-13/58/59 assign/release/reassign, conflict detection + exclusion constraint, S-09 modal wired from S-04 and case detail, assignment notifications — [Assign task modal](./0022-assign-task-modal.md)
+- **0023 block/unblock + pool:** EP-14/15, `release_assignment_on_block`, S-17 blocked pool, case-detail block action — [Block, unblock, and the blocked-task pool](./0023-block-unblock-and-pool.md)
+- **0024 task board:** S-03 staff-column board + filters, S-02 dashboard fill, EP-42, `card-token`/`board-filters` seams, TC-045–050 — [Task board (Excel replacement)](./0024-task-board.md)
+- **0025 staff dashboard:** EP-43 priority list + `priority.ts` seam, S-10 Next Action/summary strip, EP-21 online status toggle, TC-053/054/066–068/077a — [Staff dashboard and priority list](./0025-staff-dashboard.md)
+- **0026 staff day calendar:** S-11 single-column day view, `calendar-layout.ts` time-to-pixel seam, EP-25 self schedule, NOW marker + next-action ring, ADR-0010 harness, TC-069/070 — [Staff day calendar](./0026-staff-day-calendar.md)
+- **0027 notifications centre:** notifications RLS + realtime publication, EP-32–34b, S-14 drawer + bell badge, `use-realtime.ts`, consolidated `notifications.ts` fanout, TC-071–073/075/076 — [Notification centre with realtime delivery](./0027-notifications-centre-realtime.md)
+- **0028 scheduled jobs:** `detect-overdue` + `du-alerts` edge functions, `working-days.ts` / `du-escalation.ts` seams, dedupe fanout via `payload.dedupe_key`, migration 00037, TC-074 + DU ladder integration, manual deploy in [scheduled-jobs.md](../../docs/scheduled-jobs.md) — [Scheduled jobs — overdue and DU alerts](./0028-scheduled-jobs-overdue-du.md)
+- **0029 global search:** migration 00038 `search_cases` RPC (pg_trgm), EP-38 `/api/search`, `GlobalSearch` shell component (300ms debounce, keyboard nav), S-05 column sorting, TC-089–091 — [Global search](./0029-global-search.md)
+- **0030 archive + auto-save polish:** migration 00039 soft-delete/restore/purge RPCs, EP-08/39–41, S-18 archive page, `DeleteCaseButton`, `AutoSaveStatusProvider` + retry/rollback, TC-092–094 + auto-save unit tests — [Soft-delete, archive, purge, and auto-save polish](./0030-archive-purge-autosave.md)
 
 ## Not yet specified
 

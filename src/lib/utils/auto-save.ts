@@ -2,12 +2,15 @@ export type AutoSaveStatus = 'idle' | 'pending' | 'saving' | 'saved' | 'error';
 
 export const AUTO_SAVE_DEFAULT_DEBOUNCE_MS = 1000;
 export const AUTO_SAVE_SAVED_DISPLAY_MS = 2000;
+export const AUTO_SAVE_MAX_RETRIES = 3;
+export const AUTO_SAVE_RETRY_BASE_MS = 1000;
 
 type CreateAutoSaveControllerOptions<T> = {
   onSave: (value: T) => Promise<void>;
   debounceMs?: number;
   disabled?: boolean;
   onStatusChange?: (status: AutoSaveStatus) => void;
+  onError?: (value: T, lastSavedValue: T | undefined) => void;
 };
 
 type AutoSaveController<T> = {
@@ -16,6 +19,12 @@ type AutoSaveController<T> = {
   getStatus: () => AutoSaveStatus;
   reset: (lastSavedValue?: T) => void;
 };
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
 
 export function createAutoSaveController<T>(
   options: CreateAutoSaveControllerOptions<T>,
@@ -32,7 +41,7 @@ export function createAutoSaveController<T>(
     options.onStatusChange?.(next);
   }
 
-  async function runSave(value: T): Promise<void> {
+  async function runSave(value: T, attempt = 0): Promise<void> {
     if (options.disabled) {
       return;
     }
@@ -49,7 +58,14 @@ export function createAutoSaveController<T>(
       lastSavedValue = value;
       setStatus('saved');
     } catch {
+      if (attempt < AUTO_SAVE_MAX_RETRIES) {
+        const delay = AUTO_SAVE_RETRY_BASE_MS * 2 ** attempt;
+        await sleep(delay);
+        return runSave(value, attempt + 1);
+      }
+
       setStatus('error');
+      options.onError?.(value, lastSavedValue);
     }
   }
 
@@ -107,4 +123,30 @@ export function createAutoSaveController<T>(
   }
 
   return { schedule, flush, getStatus, reset };
+}
+
+export function aggregateAutoSaveStatus(statuses: AutoSaveStatus[]): AutoSaveStatus {
+  if (statuses.includes('error')) {
+    return 'error';
+  }
+  if (statuses.includes('saving') || statuses.includes('pending')) {
+    return 'saving';
+  }
+  if (statuses.includes('saved')) {
+    return 'saved';
+  }
+  return 'idle';
+}
+
+export function autoSaveFooterLabel(status: AutoSaveStatus): string {
+  if (status === 'pending' || status === 'saving') {
+    return 'Saving…';
+  }
+  if (status === 'saved') {
+    return 'Saved ✓';
+  }
+  if (status === 'error') {
+    return '⚠ Not saved';
+  }
+  return 'Saved';
 }

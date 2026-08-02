@@ -1,5 +1,6 @@
 import { requireAdminApiAuth } from '@/lib/api/auth';
 import { apiError } from '@/lib/api/response';
+import { fanoutLeadRejectedNotifications } from '@/lib/notifications';
 import { createServiceClient } from '@/lib/supabase/service';
 import { validateRejectReason } from '@/lib/utils/lead-form';
 
@@ -85,16 +86,14 @@ export async function POST(request: Request, context: RouteContext) {
   if (otherAdmins && otherAdmins.length > 0) {
     try {
       const service = createServiceClient();
-      const notifications = otherAdmins.map((admin) => ({
-        user_id: admin.id,
-        type: 'urgent_case' as const,
-        title: 'Lead Rejected',
-        body: `Case ${clientName} was rejected by ${adminName}. Reason: ${reasonText}`,
-        is_urgent: false,
-        case_id: id,
-      }));
-
-      await service.from('notifications').insert(notifications);
+      await fanoutLeadRejectedNotifications({
+        adminIds: otherAdmins.map((admin) => admin.id),
+        caseId: id,
+        clientName,
+        adminName,
+        reasonText,
+        service,
+      });
     } catch {
       // Reject already committed; notification delivery is best-effort.
     }

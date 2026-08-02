@@ -84,3 +84,167 @@ export function buildSeniorRevisionAdminAlertRows(input: {
     case_id: input.caseId,
   }));
 }
+
+export function buildNewTaskAssignmentNotificationRows(input: {
+  userId: string;
+  taskId: string;
+  caseId: string;
+  taskName: string;
+  caseReference: string;
+  startTime: string;
+  endTime: string;
+  durationMinutes: number;
+  isUrgent?: boolean;
+}): NotificationRow[] {
+  return [
+    {
+      user_id: input.userId,
+      type: 'new_task',
+      title: 'New task assigned',
+      body: `${input.taskName} · ${input.caseReference} · ${input.startTime}–${input.endTime} (${input.durationMinutes} min)`,
+      is_urgent: input.isUrgent ?? false,
+      case_id: input.caseId,
+      task_id: input.taskId,
+    },
+  ];
+}
+
+export function buildTaskBlockedAdminNotificationRows(input: {
+  adminIds: string[];
+  taskId: string;
+  caseId: string;
+  taskName: string;
+  caseReference: string;
+  blockedReason: string;
+  releasedSlots: Array<{
+    staff_name: string;
+    date: string;
+    start_time: string;
+    end_time: string;
+  }>;
+}): NotificationRow[] {
+  const slotSummary =
+    input.releasedSlots.length === 0
+      ? 'No future time slots were scheduled.'
+      : input.releasedSlots
+          .map(
+            (slot) =>
+              `${slot.staff_name} · ${slot.date} · ${slot.start_time}–${slot.end_time}`,
+          )
+          .join('; ');
+
+  return input.adminIds.map((userId) => ({
+    user_id: userId,
+    type: 'task_blocked',
+    title: 'Task blocked — time slot freed',
+    body: `${input.taskName} · ${input.caseReference} — ${slotSummary}. Reason: ${input.blockedReason}`,
+    is_urgent: false,
+    case_id: input.caseId,
+    task_id: input.taskId,
+  }));
+}
+
+export function buildTaskReassignedNotificationRows(input: {
+  userId: string;
+  taskId: string;
+  caseId: string;
+  taskName: string;
+  caseReference: string;
+}): NotificationRow[] {
+  return [
+    {
+      user_id: input.userId,
+      type: 'new_task',
+      title: 'Task reassigned',
+      body: `${input.taskName} · ${input.caseReference} has been reassigned to another staff member.`,
+      is_urgent: false,
+      case_id: input.caseId,
+      task_id: input.taskId,
+    },
+  ];
+}
+
+export function buildLeadRejectedNotificationRows(input: {
+  adminIds: string[];
+  caseId: string;
+  clientName: string;
+  adminName: string;
+  reasonText: string;
+}): NotificationRow[] {
+  return input.adminIds.map((userId) => ({
+    user_id: userId,
+    type: 'urgent_case',
+    title: 'Lead Rejected',
+    body: `Case ${input.clientName} was rejected by ${input.adminName}. Reason: ${input.reasonText}`,
+    is_urgent: false,
+    case_id: input.caseId,
+  }));
+}
+
+export function notificationDedupeKey(
+  userId: string,
+  kind: string,
+  parts: string[],
+): string {
+  return `${userId}:${kind}:${parts.join(':')}`;
+}
+
+export function buildTaskOverdueNotificationRows(input: {
+  userId: string;
+  taskId: string;
+  caseId: string;
+  taskName: string;
+  caseReference: string;
+  endTime: string;
+}): NotificationRow[] {
+  const dedupeKey = notificationDedupeKey(input.userId, 'task_overdue', [input.taskId]);
+
+  return [
+    {
+      user_id: input.userId,
+      type: 'task_overdue',
+      title: 'Task overdue',
+      body: `${input.taskName} · ${input.caseReference} was due at ${input.endTime}`,
+      is_urgent: true,
+      case_id: input.caseId,
+      task_id: input.taskId,
+      payload: { dedupe_key: dedupeKey },
+    },
+  ];
+}
+
+export function buildDuAlertNotificationRows(input: {
+  userId: string;
+  taskId: string;
+  caseId: string;
+  taskName: string;
+  caseReference: string;
+  appointmentDate: string;
+  severity: 'warning' | 'critical';
+  alertDate: string;
+  workingDaysRemaining: number;
+}): NotificationRow[] {
+  const dedupeKey = notificationDedupeKey(input.userId, 'du_alert', [
+    input.taskId,
+    input.alertDate,
+  ]);
+  const isCritical = input.severity === 'critical';
+
+  return [
+    {
+      user_id: input.userId,
+      type: 'du_alert',
+      title: isCritical ? 'Document upload critical' : 'Document upload approaching',
+      body: `${input.taskName} · ${input.caseReference} — appointment ${input.appointmentDate} (${input.workingDaysRemaining} working day(s) remaining)`,
+      is_urgent: isCritical,
+      case_id: input.caseId,
+      task_id: input.taskId,
+      payload: {
+        dedupe_key: dedupeKey,
+        severity: input.severity,
+        working_days_remaining: input.workingDaysRemaining,
+        appointment_date: input.appointmentDate,
+      },
+    },
+  ];
+}

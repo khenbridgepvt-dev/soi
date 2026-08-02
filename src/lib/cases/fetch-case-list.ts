@@ -167,7 +167,7 @@ export async function fetchCaseList(
     ? CASE_LIST_INNER_TASK_SELECT
     : CASE_LIST_BASE_SELECT;
 
-  let request = supabase.from('cases').select(selectClause, { count: 'exact' });
+  let request = supabase.from('cases').select(selectClause, { count: 'exact' }).eq('is_deleted', false);
 
   if (query.status) {
     request = request.eq('status', query.status);

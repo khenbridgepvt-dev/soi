@@ -2,8 +2,8 @@
 id: 30
 title: Soft-delete, archive, purge, and auto-save polish
 labels: [wayfinder:task, sprint-7-8]
-status: open
-assignee:
+status: closed
+assignee: composer
 parent: 1
 blocked-by: [15, 16]
 mode: AFK

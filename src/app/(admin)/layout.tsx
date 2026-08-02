@@ -15,6 +15,7 @@ export default async function AdminLayout({
       appName={appName}
       navItems={ADMIN_NAV}
       userEmail={user?.email}
+      userId={user?.id}
     >
       {children}
     </AdminAppShell>

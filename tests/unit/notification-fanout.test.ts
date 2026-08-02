@@ -1,9 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildDuAlertNotificationRows,
+  buildLeadRejectedNotificationRows,
+  buildNewTaskAssignmentNotificationRows,
   buildRevisionStaffNotificationRows,
   buildSeniorRevisionAdminAlertRows,
+  buildTaskBlockedAdminNotificationRows,
+  buildTaskOverdueNotificationRows,
+  buildTaskReassignedNotificationRows,
   buildUrgentCaseNotifications,
   collectAssignedStaffIds,
+  notificationDedupeKey,
 } from '@/lib/notifications/fanout';
 
 describe('collectAssignedStaffIds', () => {
@@ -95,5 +102,127 @@ describe('buildSeniorRevisionAdminAlertRows', () => {
     });
     expect(rows[1].user_id).toBe('admin-b');
     expect(rows[0].body).toContain('3 senior review revision cycles');
+  });
+});
+
+describe('buildNewTaskAssignmentNotificationRows', () => {
+  it('builds a new_task row with schedule details', () => {
+    const rows = buildNewTaskAssignmentNotificationRows({
+      userId: 'staff-a',
+      taskId: 'task-1',
+      caseId: 'case-1',
+      taskName: 'Client Consultation',
+      caseReference: '072601/SKW/VIS',
+      startTime: '11:00',
+      endTime: '13:00',
+      durationMinutes: 120,
+      isUrgent: true,
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      user_id: 'staff-a',
+      type: 'new_task',
+      is_urgent: true,
+      task_id: 'task-1',
+      case_id: 'case-1',
+    });
+    expect(rows[0].body).toContain('11:00–13:00');
+  });
+});
+
+describe('buildTaskReassignedNotificationRows', () => {
+  it('builds a reassignment notice for the previous assignee', () => {
+    const rows = buildTaskReassignedNotificationRows({
+      userId: 'staff-a',
+      taskId: 'task-1',
+      caseId: 'case-1',
+      taskName: 'CCL',
+      caseReference: '072601/SKW/VIS',
+    });
+
+    expect(rows[0].title).toBe('Task reassigned');
+    expect(rows[0].body).toContain('reassigned');
+  });
+});
+
+describe('buildTaskBlockedAdminNotificationRows', () => {
+  it('summarises released slots for each admin', () => {
+    const rows = buildTaskBlockedAdminNotificationRows({
+      adminIds: ['admin-a'],
+      taskId: 'task-1',
+      caseId: 'case-1',
+      taskName: 'CCL',
+      caseReference: '072601/SKW/VIS',
+      blockedReason: 'Client not responding',
+      releasedSlots: [
+        {
+          staff_name: 'Asha',
+          date: '2026-07-08',
+          start_time: '11:00',
+          end_time: '13:00',
+        },
+      ],
+    });
+
+    expect(rows[0].type).toBe('task_blocked');
+    expect(rows[0].body).toContain('Asha');
+    expect(rows[0].body).toContain('Client not responding');
+  });
+});
+
+describe('buildLeadRejectedNotificationRows', () => {
+  it('builds one row per admin when a lead is rejected', () => {
+    const rows = buildLeadRejectedNotificationRows({
+      adminIds: ['admin-a'],
+      caseId: 'case-1',
+      clientName: 'Kim Park',
+      adminName: 'Admin User',
+      reasonText: 'Duplicate lead',
+    });
+
+    expect(rows[0].title).toBe('Lead Rejected');
+    expect(rows[0].body).toContain('Duplicate lead');
+  });
+});
+
+describe('buildTaskOverdueNotificationRows', () => {
+  it('builds a deduped task_overdue row for the assignee', () => {
+    const rows = buildTaskOverdueNotificationRows({
+      userId: 'staff-a',
+      taskId: 'task-1',
+      caseId: 'case-1',
+      taskName: 'CCL',
+      caseReference: '072601/SKW/VIS',
+      endTime: '11:00',
+    });
+
+    expect(rows[0].type).toBe('task_overdue');
+    expect(rows[0].is_urgent).toBe(true);
+    expect((rows[0].payload as { dedupe_key: string }).dedupe_key).toBe(
+      notificationDedupeKey('staff-a', 'task_overdue', ['task-1']),
+    );
+  });
+});
+
+describe('buildDuAlertNotificationRows', () => {
+  it('builds a warning DU alert with a per-day dedupe key', () => {
+    const rows = buildDuAlertNotificationRows({
+      userId: 'staff-a',
+      taskId: 'task-12',
+      caseId: 'case-1',
+      taskName: 'DU',
+      caseReference: '072601/SKW/VIS',
+      appointmentDate: '2026-07-22',
+      severity: 'warning',
+      alertDate: '2026-07-17',
+      workingDaysRemaining: 3,
+    });
+
+    expect(rows[0].type).toBe('du_alert');
+    expect(rows[0].is_urgent).toBe(false);
+    expect((rows[0].payload as { dedupe_key: string }).dedupe_key).toBe(
+      notificationDedupeKey('staff-a', 'du_alert', ['task-12', '2026-07-17']),
+    );
   });
 });
