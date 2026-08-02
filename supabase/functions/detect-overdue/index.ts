@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
+import { createClient } from '@supabase/supabase-js';
 import { runDetectOverdue } from '../../../src/lib/scheduled/detect-overdue.ts';
 
 Deno.serve(async () => {

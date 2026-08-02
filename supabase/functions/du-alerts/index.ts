@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
+import { createClient } from '@supabase/supabase-js';
 import { runDuAlerts } from '../../../src/lib/scheduled/du-alerts.ts';
 import { todayISODate } from '../../../src/lib/utils/dates.ts';
 

@@ -55,6 +55,9 @@ enable_confirmations = false
 
 # Adds the `user_role` custom claim (profiles.role) to every access token.
 # api_specification §2.3 — see migration 00016.
-[auth.hook.custom_access_token]
-enabled = true
-uri = "pg-functions://postgres/public/custom_access_token_hook"
+[functions.detect-overdue]
+verify_jwt = false
+
+[functions.du-alerts]
+verify_jwt = false
+

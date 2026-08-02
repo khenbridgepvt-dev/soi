@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/database';
-import { fanoutTaskOverdueNotification } from '@/lib/notifications';
-import { buildTaskOverdueNotificationRows } from '@/lib/notifications/fanout';
+import type { Database } from '../../types/database.ts';
+import { fanoutTaskOverdueNotification } from '../notifications.ts';
+import { buildTaskOverdueNotificationRows } from '../notifications/fanout.ts';
 
 export type OverdueCandidate = {
   taskId: string;
