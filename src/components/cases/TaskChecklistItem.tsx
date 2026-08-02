@@ -55,12 +55,14 @@ function statusIcon(status: TaskStatus): string {
 
 function statusOptions(current: TaskStatus): TaskStatus[] {
   const options: TaskStatus[] = [current];
-  if (canTransitionTaskStatus(current, 'in_progress')) {
-    options.push('in_progress');
+  const transitions: TaskStatus[] = ['in_progress', 'completed'];
+
+  for (const status of transitions) {
+    if (status !== current && canTransitionTaskStatus(current, status)) {
+      options.push(status);
+    }
   }
-  if (canTransitionTaskStatus(current, 'completed')) {
-    options.push('completed');
-  }
+
   return options;
 }
 

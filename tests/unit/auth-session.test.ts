@@ -3,6 +3,7 @@ import {
   decodeJwtPayload,
   getUserRoleFromAccessToken,
 } from '@/lib/auth/jwt';
+import { isStaleSessionError } from '@/lib/auth/errors';
 import { getUserRoleFromSession } from '@/lib/auth/session';
 import type { Session } from '@supabase/supabase-js';
 
@@ -79,5 +80,35 @@ describe('getUserRoleFromSession', () => {
     const session = fakeSession(token);
 
     expect(getUserRoleFromSession(session)).toBe('staff');
+  });
+});
+
+describe('isStaleSessionError', () => {
+  it.each([
+    'refresh_token_not_found',
+    'invalid_refresh_token',
+    'session_not_found',
+  ])('returns true for %s', (code) => {
+    expect(
+      isStaleSessionError({
+        __isAuthError: true,
+        code,
+        status: 400,
+      }),
+    ).toBe(true);
+  });
+
+  it('returns false for unrelated auth errors', () => {
+    expect(
+      isStaleSessionError({
+        __isAuthError: true,
+        code: 'invalid_credentials',
+        status: 400,
+      }),
+    ).toBe(false);
+  });
+
+  it('returns false for non-auth errors', () => {
+    expect(isStaleSessionError(new Error('network'))).toBe(false);
   });
 });

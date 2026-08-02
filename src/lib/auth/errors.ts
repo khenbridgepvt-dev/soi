@@ -31,3 +31,21 @@ export function mapLoginError(error: { message: string; status?: number }): {
 
 export const DEACTIVATED_MESSAGE =
   'Your account has been deactivated. Contact your administrator.';
+
+/** True when Supabase auth cookies are present but no longer valid server-side. */
+export function isStaleSessionError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const authError = error as { code?: string; __isAuthError?: boolean };
+  if (!authError.__isAuthError) {
+    return false;
+  }
+
+  return (
+    authError.code === 'refresh_token_not_found' ||
+    authError.code === 'invalid_refresh_token' ||
+    authError.code === 'session_not_found'
+  );
+}

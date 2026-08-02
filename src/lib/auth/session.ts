@@ -1,29 +1,65 @@
 import type { Session } from '@supabase/supabase-js';
+import { isStaleSessionError } from '@/lib/auth/errors';
 import { createClient } from '@/lib/supabase/server';
 import { getUserRoleFromAccessToken, type AppRole } from '@/lib/auth/jwt';
+
+async function clearStaleSession() {
+  try {
+    const supabase = await createClient();
+    await supabase.auth.signOut();
+  } catch {
+    // Cookie writes may fail in Server Components; middleware clears on the next request.
+  }
+}
 
 /** Returns the current cookie-backed session, or null when signed out. */
 export async function getSession(): Promise<Session | null> {
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.getSession();
 
-  if (error) {
+  try {
+    const { data, error } = await supabase.auth.getSession();
+
+    if (error) {
+      if (isStaleSessionError(error)) {
+        await clearStaleSession();
+        return null;
+      }
+      throw error;
+    }
+
+    return data.session;
+  } catch (error) {
+    if (isStaleSessionError(error)) {
+      await clearStaleSession();
+      return null;
+    }
     throw error;
   }
-
-  return data.session;
 }
 
 /** Returns the verified user from the session cookie, or null when signed out. */
 export async function getUser() {
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.getUser();
 
-  if (error) {
+  try {
+    const { data, error } = await supabase.auth.getUser();
+
+    if (error) {
+      if (isStaleSessionError(error)) {
+        await clearStaleSession();
+        return null;
+      }
+      throw error;
+    }
+
+    return data.user;
+  } catch (error) {
+    if (isStaleSessionError(error)) {
+      await clearStaleSession();
+      return null;
+    }
     throw error;
   }
-
-  return data.user;
 }
 
 /** Reads `user_role` from the session JWT — never the reserved `role` claim (ADR-0015). */

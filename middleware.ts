@@ -1,3 +1,4 @@
+import { isStaleSessionError } from '@/lib/auth/errors';
 import { getUserRoleFromAccessToken } from '@/lib/auth/jwt';
 import { getRouteDecision } from '@/lib/auth/routes';
 import { createMiddlewareClient } from '@/lib/supabase/middleware';
@@ -12,7 +13,12 @@ export async function middleware(request: NextRequest) {
 
   const {
     data: { user },
+    error: userError,
   } = await supabase.auth.getUser();
+
+  if (userError && isStaleSessionError(userError)) {
+    await supabase.auth.signOut();
+  }
 
   let isAuthenticated = false;
   let role: ReturnType<typeof getUserRoleFromAccessToken> = null;
