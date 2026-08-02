@@ -1,4 +1,4 @@
-import type { Database } from '../../types/database.ts';
+import type { Database } from '@/types/database';
 
 export type UrgentNotificationInsert = {
   user_id: string;

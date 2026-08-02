@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '../types/database.ts';
-import { createServiceClient } from './supabase/service.ts';
+import type { Database } from '@/types/database';
+import { createServiceClient } from '@/lib/supabase/service';
 import {
   buildDuAlertNotificationRows,
   buildRevisionStaffNotificationRows,
@@ -13,7 +13,7 @@ import {
   buildUrgentCaseNotificationRows,
   collectAssignedStaffIds,
   type NotificationRow,
-} from './notifications/fanout.ts';
+} from '@/lib/notifications/fanout';
 
 /**
  * Server-only notification inserts (plan §A.2.2). Uses the service-role client

@@ -1,4 +1,4 @@
-import { addDays, isValidISODate } from './dates.ts';
+import { addDays, isValidISODate } from '@/lib/utils/dates';
 
 const UTC_DAY = (date: string) => new Date(`${date}T00:00:00Z`).getUTCDay();
 

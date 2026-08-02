@@ -1,4 +1,4 @@
-import { workingDaysUntil } from '../utils/working-days.ts';
+import { workingDaysUntil } from '@/lib/utils/working-days';
 
 export type DuBoardToken = 'approaching' | 'urgent' | 'overdue' | null;
 

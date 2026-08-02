@@ -1,12 +1,12 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '../../types/database.ts';
-import { fanoutDuAlertNotifications } from '../notifications.ts';
-import { buildDuAlertNotificationRows } from '../notifications/fanout.ts';
+import type { Database } from '@/types/database';
+import { fanoutDuAlertNotifications } from '@/lib/notifications';
+import { buildDuAlertNotificationRows } from '@/lib/notifications/fanout';
 import {
   DU_TASK_SEQUENCES,
   duAlertSeverity,
-} from './du-escalation.ts';
-import { workingDaysUntil } from '../utils/working-days.ts';
+} from '@/lib/scheduled/du-escalation';
+import { workingDaysUntil } from '@/lib/utils/working-days';
 
 type DuTaskRow = {
   id: string;
