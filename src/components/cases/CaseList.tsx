@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import CreateLeadModal from '@/components/cases/CreateLeadModal';
 import DeleteCaseButton from '@/components/cases/DeleteCaseButton';
 import LeadReviewModal, { type LeadReviewTarget } from '@/components/cases/LeadReviewModal';
@@ -10,6 +11,8 @@ import {
   CASE_LIST_SORT_FIELDS,
   type CaseListSortField,
 } from '@/lib/cases/list-query';
+import { queryKeys } from '@/lib/query/keys';
+import { useInvalidateAfterMutation } from '@/lib/query/useInvalidateAfterMutation';
 
 type CaseListRow = {
   id: string;
@@ -49,8 +52,8 @@ type Pagination = {
 };
 
 type CaseListProps = {
-  applicationTypes: ApplicationTypeOption[];
-  staffMembers: StaffOption[];
+  applicationTypes?: ApplicationTypeOption[];
+  staffMembers?: StaffOption[];
 };
 
 type ApiError = {
@@ -78,12 +81,12 @@ const STATUS_BADGE_CLASS: Record<CaseListRow['status'], string> = {
   completed: 'bg-[#E8F5EC] text-[#1B7F4B]',
 };
 
-export default function CaseList({ applicationTypes, staffMembers }: CaseListProps) {
+export default function CaseList({
+  applicationTypes: applicationTypesProp,
+  staffMembers: staffMembersProp,
+}: CaseListProps) {
   const router = useRouter();
-  const [cases, setCases] = useState<CaseListRow[]>([]);
-  const [pagination, setPagination] = useState<Pagination | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [bannerError, setBannerError] = useState<string | null>(null);
+  const invalidate = useInvalidateAfterMutation();
 
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
@@ -126,11 +129,61 @@ export default function CaseList({ applicationTypes, staffMembers }: CaseListPro
     return params.toString();
   }, [page, search, status, typeId, staffId, urgency, sortBy, sortOrder]);
 
-  const loadCases = useCallback(async () => {
-    setLoading(true);
-    setBannerError(null);
+  const listFilters = useMemo(() => ({ queryString }), [queryString]);
 
-    try {
+  const {
+    data: applicationTypesQuery,
+    isLoading: applicationTypesLoading,
+  } = useQuery({
+    queryKey: queryKeys.applicationTypes(),
+    queryFn: async () => {
+      const response = await fetch('/api/application-types?is_active=true');
+      const json = (await response.json()) as { data?: ApplicationTypeOption[] } & ApiError;
+
+      if (!response.ok) {
+        throw new Error(json.error?.message ?? 'Failed to load application types.');
+      }
+
+      return json.data ?? [];
+    },
+    enabled: !applicationTypesProp,
+  });
+
+  const {
+    data: staffMembersQuery,
+    isLoading: staffMembersLoading,
+  } = useQuery({
+    queryKey: queryKeys.staff.filterOptions(),
+    queryFn: async () => {
+      const response = await fetch('/api/staff');
+      const json = (await response.json()) as {
+        data?: Array<{ id: string; full_name: string }>;
+      } & ApiError;
+
+      if (!response.ok) {
+        throw new Error(json.error?.message ?? 'Failed to load staff members.');
+      }
+
+      return (json.data ?? []).map((member) => ({
+        id: member.id,
+        full_name: member.full_name,
+      }));
+    },
+    enabled: !staffMembersProp,
+  });
+
+  const applicationTypes = applicationTypesProp ?? applicationTypesQuery ?? [];
+  const staffMembers = staffMembersProp ?? staffMembersQuery ?? [];
+
+  const {
+    data: casesData,
+    isLoading: casesLoading,
+    isError: casesError,
+    error: casesQueryError,
+    refetch: refetchCases,
+  } = useQuery({
+    queryKey: queryKeys.cases.list(listFilters),
+    queryFn: async () => {
       const response = await fetch(`/api/cases?${queryString}`);
       const json = (await response.json()) as {
         data?: CaseListRow[];
@@ -138,22 +191,28 @@ export default function CaseList({ applicationTypes, staffMembers }: CaseListPro
       } & ApiError;
 
       if (!response.ok) {
-        setBannerError(json.error?.message ?? 'Failed to load cases.');
-        return;
+        throw new Error(json.error?.message ?? 'Failed to load cases.');
       }
 
-      setCases(json.data ?? []);
-      setPagination(json.pagination ?? null);
-    } catch {
-      setBannerError('Unable to connect. Check your internet connection.');
-    } finally {
-      setLoading(false);
-    }
-  }, [queryString]);
+      return {
+        cases: json.data ?? [],
+        pagination: json.pagination ?? null,
+      };
+    },
+  });
 
-  useEffect(() => {
-    loadCases();
-  }, [loadCases]);
+  const cases = casesData?.cases ?? [];
+  const pagination = casesData?.pagination ?? null;
+  const loading =
+    casesLoading || applicationTypesLoading || staffMembersLoading;
+  const listErrorMessage =
+    casesError && casesQueryError instanceof Error
+      ? casesQueryError.message
+      : casesError
+        ? 'Unable to connect. Check your internet connection.'
+        : null;
+
+  const displayError = listErrorMessage;
 
   function clearFilters() {
     setSearch('');
@@ -236,9 +295,9 @@ export default function CaseList({ applicationTypes, staffMembers }: CaseListPro
         </div>
       )}
 
-      {bannerError && (
+      {displayError && (
         <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-          {bannerError}
+          {displayError}
         </div>
       )}
 
@@ -530,7 +589,8 @@ export default function CaseList({ applicationTypes, staffMembers }: CaseListPro
         onClose={() => setCreateOpen(false)}
         onCreated={(message) => {
           setSuccessMessage(message);
-          loadCases();
+          void invalidate('createLead');
+          void refetchCases();
         }}
       />
 
@@ -541,7 +601,8 @@ export default function CaseList({ applicationTypes, staffMembers }: CaseListPro
         onRejected={(message) => {
           setSuccessMessage(message);
           setReviewLead(null);
-          loadCases();
+          void invalidate('rejectLead');
+          void refetchCases();
         }}
         onAccepted={(_message, accepted) => {
           setReviewLead(null);

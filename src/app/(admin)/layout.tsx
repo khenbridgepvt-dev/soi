@@ -1,4 +1,5 @@
 import AdminAppShell from '@/components/layout/AdminAppShell';
+import QueryProvider from '@/components/providers/QueryProvider';
 import { ADMIN_NAV } from '@/lib/nav/admin';
 import { getUser } from '@/lib/auth/session';
 
@@ -11,6 +12,7 @@ export default async function AdminLayout({
   const appName = process.env.NEXT_PUBLIC_APP_NAME ?? 'Task Manager';
 
   return (
+    <QueryProvider>
     <AdminAppShell
       appName={appName}
       navItems={ADMIN_NAV}
@@ -19,5 +21,6 @@ export default async function AdminLayout({
     >
       {children}
     </AdminAppShell>
+    </QueryProvider>
   );
 }

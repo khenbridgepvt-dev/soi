@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import type { StaffDashboardPayload, StaffDashboardTask } from '@/lib/dashboard/fetch-staff-dashboard';
+import { queryKeys } from '@/lib/query/keys';
 
 type ApiError = {
   error?: { message?: string };
@@ -142,36 +143,32 @@ function PriorityRow({
 }
 
 export default function StaffDashboardView() {
-  const [data, setData] = useState<StaffDashboardPayload | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadDashboard = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: queryKeys.dashboard.staff('today'),
+    queryFn: async () => {
       const response = await fetch('/api/dashboard/staff?view=today');
       const json = (await response.json()) as { data?: StaffDashboardPayload } & ApiError;
 
       if (!response.ok) {
-        setError(json.error?.message ?? 'Failed to load dashboard.');
-        setData(null);
-        return;
+        throw new Error(json.error?.message ?? 'Failed to load dashboard.');
       }
 
-      setData(json.data ?? null);
-    } catch {
-      setError('Unable to connect. Check your internet connection.');
-      setData(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return json.data ?? {
+        today_task_count: 0,
+        overdue_count: 0,
+        blocked_count: 0,
+        due_this_week_count: 0,
+        priority_list: [],
+      };
+    },
+  });
 
-  useEffect(() => {
-    void loadDashboard();
-  }, [loadDashboard]);
+  const errorMessage =
+    isError && error instanceof Error
+      ? error.message
+      : isError
+        ? 'Unable to connect. Check your internet connection.'
+        : null;
 
   const metrics = data ?? {
     today_task_count: 0,
@@ -185,28 +182,28 @@ export default function StaffDashboardView() {
 
   return (
     <div className="space-y-6">
-      {error && (
+      {errorMessage && (
         <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-          {error}
+          {errorMessage}
         </div>
       )}
 
       <section className="overflow-hidden rounded-lg border border-border bg-surface">
         <div className="grid grid-cols-2 divide-x divide-border md:grid-cols-4">
-          <SummaryMetric label="Today" value={loading ? 0 : metrics.today_task_count} />
+          <SummaryMetric label="Today" value={isLoading ? 0 : metrics.today_task_count} />
           <SummaryMetric
             label="Overdue"
-            value={loading ? 0 : metrics.overdue_count}
+            value={isLoading ? 0 : metrics.overdue_count}
             tone={metrics.overdue_count > 0 ? 'danger' : 'default'}
           />
           <SummaryMetric
             label="Blocked"
-            value={loading ? 0 : metrics.blocked_count}
+            value={isLoading ? 0 : metrics.blocked_count}
             tone={metrics.blocked_count > 0 ? 'warning' : 'default'}
           />
           <SummaryMetric
             label="This week"
-            value={loading ? 0 : metrics.due_this_week_count}
+            value={isLoading ? 0 : metrics.due_this_week_count}
           />
         </div>
       </section>
@@ -217,20 +214,20 @@ export default function StaffDashboardView() {
         </div>
 
         <div className="p-4">
-          {loading && (
+          {isLoading && (
             <div className="space-y-3">
               <div className="h-24 animate-pulse rounded-md bg-page" />
               <div className="h-12 animate-pulse rounded-md bg-page" />
             </div>
           )}
 
-          {!loading && metrics.priority_list.length === 0 && (
+          {!isLoading && metrics.priority_list.length === 0 && (
             <p className="py-8 text-center text-sm text-text-secondary">
               You have no assigned tasks. Your administrator will assign tasks to you.
             </p>
           )}
 
-          {!loading && nextAction && (
+          {!isLoading && nextAction && (
             <div className="space-y-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">
                 Next action
@@ -239,7 +236,7 @@ export default function StaffDashboardView() {
             </div>
           )}
 
-          {!loading && rest.length > 0 && (
+          {!isLoading && rest.length > 0 && (
             <div className="mt-6">
               {rest.map((task, index) => (
                 <PriorityRow key={task.id} task={task} rank={index + 2} />

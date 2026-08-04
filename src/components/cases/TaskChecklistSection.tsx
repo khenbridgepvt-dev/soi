@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useInvalidateAfterMutation } from '@/lib/query/useInvalidateAfterMutation';
 import type { CaseDetailTask } from '@/lib/cases/fetch-case-detail';
 import TaskChecklistItem from '@/components/cases/TaskChecklistItem';
 import { DEFAULT_TASK_COUNT } from '@/lib/cases/default-tasks';
@@ -41,6 +42,7 @@ export default function TaskChecklistSection({
   onChanged,
   onError,
 }: TaskChecklistSectionProps) {
+  const invalidate = useInvalidateAfterMutation();
   const [addOpen, setAddOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
@@ -127,6 +129,7 @@ export default function TaskChecklistSection({
       }
 
       setAddOpen(false);
+      void invalidate('customTask', { caseId });
       onChanged();
     } catch {
       onError('Failed to add custom task.');

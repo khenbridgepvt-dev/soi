@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { NotificationRecord } from '@/lib/notifications/fetch-notifications';
 import { useRealtime } from '@/lib/hooks/use-realtime';
+import {
+  registerNotificationRefetch,
+  unregisterNotificationRefetch,
+} from '@/lib/query/notification-refetch';
 
 type NotificationTab = 'all' | 'unread';
 
@@ -126,6 +130,15 @@ export function useNotifications(userId?: string) {
     }
 
     void loadNotifications(tab);
+  }, [userId, tab, loadNotifications]);
+
+  useEffect(() => {
+    if (!userId) {
+      return;
+    }
+
+    registerNotificationRefetch(() => loadNotifications(tab));
+    return () => unregisterNotificationRefetch();
   }, [userId, tab, loadNotifications]);
 
   const handleInsert = useCallback(

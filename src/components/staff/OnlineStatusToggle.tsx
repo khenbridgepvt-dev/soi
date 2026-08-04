@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useInvalidateAfterMutation } from '@/lib/query/useInvalidateAfterMutation';
 import type { Database } from '@/types/database';
 
 type OnlineStatus = Database['public']['Enums']['online_status'];
@@ -32,6 +33,7 @@ export default function OnlineStatusToggle({
   userId,
   initialStatus,
 }: OnlineStatusToggleProps) {
+  const invalidate = useInvalidateAfterMutation();
   const [status, setStatus] = useState<OnlineStatus>(initialStatus);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -68,6 +70,7 @@ export default function OnlineStatusToggle({
 
       setStatus(next);
       setOpen(false);
+      void invalidate('staffStatus');
     } catch {
       setError('Failed to update status.');
     } finally {

@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import CreateLeadModal from '@/components/cases/CreateLeadModal';
 import TaskBoardCard from '@/components/task-board/TaskBoardCard';
 import type { TaskBoardCard as TaskBoardCardData } from '@/lib/task-board/fetch-task-board';
@@ -10,6 +11,8 @@ import {
   parseBoardFilter,
   type BoardFilter,
 } from '@/lib/task-board/board-filters';
+import { REFETCH_INTERVAL_MS, queryKeys } from '@/lib/query/keys';
+import { useInvalidateAfterMutation } from '@/lib/query/useInvalidateAfterMutation';
 
 type TaskBoardPayload = {
   columns: TaskBoardStaffColumn[];
@@ -34,13 +37,22 @@ type TaskBoardViewProps = {
   applicationTypes: ApplicationTypeOption[];
 };
 
+async function fetchTaskBoard(): Promise<TaskBoardPayload> {
+  const response = await fetch('/api/task-board');
+  const json = (await response.json()) as { data?: TaskBoardPayload } & ApiError;
+
+  if (!response.ok || !json.data) {
+    throw new Error(json.error?.message ?? 'Failed to load task board.');
+  }
+
+  return json.data;
+}
+
 export default function TaskBoardView({
   initialFilter,
   applicationTypes,
 }: TaskBoardViewProps) {
-  const [payload, setPayload] = useState<TaskBoardPayload | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const invalidate = useInvalidateAfterMutation();
   const [filterMode, setFilterMode] = useState(
     initialFilter === 'urgent' || initialFilter === 'blocked' ? initialFilter : 'all',
   );
@@ -49,32 +61,24 @@ export default function TaskBoardView({
   const [activeStaffTab, setActiveStaffTab] = useState<string | null>(null);
   const [createLeadOpen, setCreateLeadOpen] = useState(false);
 
-  const loadBoard = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const {
+    data: payload,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: queryKeys.taskBoard(),
+    queryFn: fetchTaskBoard,
+    refetchInterval: REFETCH_INTERVAL_MS,
+  });
 
-    try {
-      const response = await fetch('/api/task-board');
-      const json = (await response.json()) as { data?: TaskBoardPayload } & ApiError;
-
-      if (!response.ok) {
-        setError(json.error?.message ?? 'Failed to load task board.');
-        setPayload(null);
-        return;
-      }
-
-      setPayload(json.data ?? null);
-    } catch {
-      setError('Unable to connect. Check your internet connection.');
-      setPayload(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadBoard();
-  }, [loadBoard]);
+  const errorMessage =
+    isError && error instanceof Error
+      ? error.message
+      : isError
+        ? 'Unable to connect. Check your internet connection.'
+        : null;
 
   const filter: BoardFilter = useMemo(
     () => parseBoardFilter(filterMode, typeCode || null),
@@ -99,10 +103,13 @@ export default function TaskBoardView({
   const tasksByColumn = useMemo(() => {
     const map = new Map<string, TaskBoardCardData[]>();
 
-    for (const column of payload?.columns ?? []) {
-      map.set(column.id, []);
+    if (!payload) {
+      return map;
     }
 
+    for (const column of payload.columns) {
+      map.set(column.id, []);
+    }
     map.set(UNASSIGNED_COLUMN_ID, []);
 
     for (const task of filteredTasks) {
@@ -113,162 +120,110 @@ export default function TaskBoardView({
     }
 
     return map;
-  }, [filteredTasks, payload?.columns]);
+  }, [payload, filteredTasks]);
 
-  useEffect(() => {
-    if (!payload || activeStaffTab) {
-      return;
-    }
+  const typeOptions = payload?.application_types ?? [];
 
-    if (payload.columns.length > 0) {
-      setActiveStaffTab(payload.columns[0].id);
-    } else {
-      setActiveStaffTab(UNASSIGNED_COLUMN_ID);
-    }
-  }, [payload, activeStaffTab]);
+  const staffColumns = payload?.columns ?? [];
+  const mobileColumnId =
+    activeStaffTab ?? staffColumns[0]?.id ?? UNASSIGNED_COLUMN_ID;
 
-  const visibleColumnIds = useMemo(() => {
-    const ids = (payload?.columns ?? []).map((column) => column.id);
-    ids.push(UNASSIGNED_COLUMN_ID);
-    return ids;
-  }, [payload?.columns]);
-
-  const isEmptyBoard = !loading && filteredTasks.length === 0;
-
-  function renderColumn(columnId: string, title: string, count: number) {
-    const tasks = tasksByColumn.get(columnId) ?? [];
-
-    return (
-      <section
-        key={columnId}
-        className="flex min-w-[240px] flex-1 flex-col rounded-lg border border-border bg-page"
-        data-testid={`task-board-column-${columnId}`}
-      >
-        <header className="sticky top-0 z-10 border-b border-border bg-surface px-3 py-2">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-text">
-            {title}
-            <span className="ml-1 text-text-muted">({count})</span>
-          </h2>
-        </header>
-        <div className="flex flex-1 flex-col gap-2 p-2">
-          {loading &&
-            Array.from({ length: 2 }).map((_, index) => (
-              <div
-                key={index}
-                className="h-20 animate-pulse rounded-md bg-border/60"
-              />
-            ))}
-          {!loading && tasks.length === 0 && (
-            <p className="px-1 py-4 text-center text-sm text-text-muted">No active tasks</p>
-          )}
-          {!loading &&
-            tasks.map((task) => <TaskBoardCard key={task.id} task={task} />)}
-        </div>
-      </section>
-    );
+  function handleLeadCreated() {
+    void invalidate('createLead');
   }
 
   return (
-    <div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold text-text">Task Board</h1>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex flex-wrap gap-1 rounded-md border border-border bg-surface p-1">
-            {(['all', 'urgent', 'blocked'] as const).map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                onClick={() => {
-                  setFilterMode(mode);
-                  setTypeMenuOpen(false);
-                }}
-                className={`rounded px-3 py-1 text-xs font-medium capitalize ${
-                  filterMode === mode
-                    ? 'bg-primary text-white'
-                    : 'text-text-secondary hover:bg-page'
-                }`}
+    <div className="space-y-4">
+      {errorMessage && (
+        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+          {errorMessage}
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap gap-1">
+          {(['all', 'urgent', 'blocked'] as const).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => setFilterMode(mode)}
+              className={`rounded-full px-3 py-1 text-xs font-medium ${
+                filterMode === mode
+                  ? 'bg-primary text-white'
+                  : 'bg-page text-text-secondary hover:bg-border'
+              }`}
+            >
+              {mode === 'all' ? 'All' : mode === 'urgent' ? 'Urgent' : 'Blocked'}
+            </button>
+          ))}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setTypeMenuOpen((open) => !open)}
+              className={`rounded-full px-3 py-1 text-xs font-medium ${
+                filterMode === 'type'
+                  ? 'bg-primary text-white'
+                  : 'bg-page text-text-secondary hover:bg-border'
+              }`}
+            >
+              By type{typeCode ? `: ${typeCode}` : ''}
+            </button>
+            {typeMenuOpen && (
+              <ul
+                className="absolute left-0 top-full z-20 mt-1 min-w-[160px] rounded-md border border-border bg-surface py-1 shadow-lg"
               >
-                {mode === 'all' ? 'All' : mode}
-              </button>
-            ))}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setTypeMenuOpen((open) => !open)}
-                className={`rounded px-3 py-1 text-xs font-medium ${
-                  filterMode === 'by_type'
-                    ? 'bg-primary text-white'
-                    : 'text-text-secondary hover:bg-page'
-                }`}
-              >
-                By type ▾
-              </button>
-              {typeMenuOpen && (
-                <div className="absolute right-0 z-20 mt-1 min-w-[160px] rounded-md border border-border bg-surface py-1 shadow-sm">
-                  {(payload?.application_types ?? []).map((type) => (
+                {typeOptions.map((type) => (
+                  <li key={type.code}>
                     <button
-                      key={type.code}
                       type="button"
+                      className="block w-full px-3 py-2 text-left text-sm hover:bg-page"
                       onClick={() => {
-                        setFilterMode('by_type');
+                        setFilterMode('type');
                         setTypeCode(type.code);
                         setTypeMenuOpen(false);
                       }}
-                      className="block w-full px-3 py-1.5 text-left text-xs text-text hover:bg-page"
                     >
                       {type.name}
                     </button>
-                  ))}
-                  {(payload?.application_types ?? []).length === 0 && (
-                    <p className="px-3 py-1.5 text-xs text-text-muted">No types</p>
-                  )}
-                </div>
-              )}
-            </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-          <button
-            type="button"
-            onClick={() => setCreateLeadOpen(true)}
-            className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-hover"
-          >
-            + Create Lead
-          </button>
         </div>
+
+        <div className="flex-1" />
+
+        <button
+          type="button"
+          onClick={() => setCreateLeadOpen(true)}
+          className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-white"
+        >
+          + Create Lead
+        </button>
+        <button
+          type="button"
+          onClick={() => void refetch()}
+          className="rounded-md border border-border px-3 py-1.5 text-sm text-text-secondary hover:bg-page"
+        >
+          Refresh
+        </button>
       </div>
 
-      {error && (
-        <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-          {error}
-        </div>
-      )}
+      {isLoading && <p className="text-sm text-text-muted">Loading task board…</p>}
 
-      {isEmptyBoard && filter.mode === 'all' && (
-        <div className="rounded-lg border border-dashed border-border bg-surface px-6 py-16 text-center">
-          <p className="text-sm text-text-secondary">
-            No active tasks. Create a case to get started.
-          </p>
-          <button
-            type="button"
-            onClick={() => setCreateLeadOpen(true)}
-            className="mt-4 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white"
-          >
-            + Create Lead
-          </button>
-        </div>
-      )}
-
-      {!(isEmptyBoard && filter.mode === 'all') && (
-        <>
-          <div className="mb-3 flex gap-1 overflow-x-auto md:hidden">
-            {(payload?.columns ?? []).map((column) => (
+      {!isLoading && staffColumns.length > 0 && (
+        <div className="md:hidden">
+          <div className="flex gap-1 overflow-x-auto pb-2">
+            {staffColumns.map((column) => (
               <button
                 key={column.id}
                 type="button"
                 onClick={() => setActiveStaffTab(column.id)}
                 className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${
-                  activeStaffTab === column.id
+                  mobileColumnId === column.id
                     ? 'bg-primary text-white'
-                    : 'border border-border bg-surface text-text-secondary'
+                    : 'bg-page text-text-secondary'
                 }`}
               >
                 {column.full_name}
@@ -278,55 +233,89 @@ export default function TaskBoardView({
               type="button"
               onClick={() => setActiveStaffTab(UNASSIGNED_COLUMN_ID)}
               className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${
-                activeStaffTab === UNASSIGNED_COLUMN_ID
+                mobileColumnId === UNASSIGNED_COLUMN_ID
                   ? 'bg-primary text-white'
-                  : 'border border-border bg-surface text-text-secondary'
+                  : 'bg-page text-text-secondary'
               }`}
             >
               Unassigned
             </button>
           </div>
-
-          <div className="hidden gap-3 overflow-x-auto md:flex">
-            {(payload?.columns ?? []).map((column) =>
-              renderColumn(column.id, column.full_name, column.active_task_count),
-            )}
-            {renderColumn(
-              UNASSIGNED_COLUMN_ID,
-              'Unassigned',
-              payload?.unassigned_count ?? 0,
-            )}
-          </div>
-
-          <div className="md:hidden">
-            {activeStaffTab &&
-              visibleColumnIds.includes(activeStaffTab) &&
-              renderColumn(
-                activeStaffTab,
-                activeStaffTab === UNASSIGNED_COLUMN_ID
-                  ? 'Unassigned'
-                  : payload?.columns.find((column) => column.id === activeStaffTab)
-                      ?.full_name ?? 'Staff',
-                activeStaffTab === UNASSIGNED_COLUMN_ID
-                  ? payload?.unassigned_count ?? 0
-                  : payload?.columns.find((column) => column.id === activeStaffTab)
-                      ?.active_task_count ?? 0,
-              )}
-          </div>
-        </>
+        </div>
       )}
 
-      <p className="mt-4 text-xs text-text-muted">
-        Manual refresh —{' '}
-        <button
-          type="button"
-          onClick={() => void loadBoard()}
-          className="text-primary underline"
-        >
-          reload board
-        </button>
-        . Real-time updates arrive in Phase 2.
-      </p>
+      {!isLoading && payload && (
+        <div className="hidden gap-4 md:grid md:grid-cols-[repeat(auto-fit,minmax(200px,1fr))]">
+          {staffColumns.map((column) => (
+            <section key={column.id} className="min-w-0">
+              <header className="sticky top-0 z-10 border-b border-border bg-page px-2 py-2">
+                <h2 className="text-sm font-semibold text-text">{column.full_name}</h2>
+                <p className="text-xs text-text-muted">
+                  {(tasksByColumn.get(column.id) ?? []).length} tasks
+                </p>
+              </header>
+              <ul className="space-y-2 p-2">
+                {(tasksByColumn.get(column.id) ?? []).map((task) => (
+                  <li key={task.id}>
+                    <TaskBoardCard task={task} />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+          <section className="min-w-0">
+            <header className="sticky top-0 z-10 border-b border-border bg-page px-2 py-2">
+              <h2 className="text-sm font-semibold text-text">Unassigned</h2>
+              <p className="text-xs text-text-muted">
+                {(tasksByColumn.get(UNASSIGNED_COLUMN_ID) ?? []).length} tasks
+              </p>
+            </header>
+            <ul className="space-y-2 p-2">
+              {(tasksByColumn.get(UNASSIGNED_COLUMN_ID) ?? []).map((task) => (
+                <li key={task.id}>
+                  <TaskBoardCard task={task} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        </div>
+      )}
+
+      {!isLoading && payload && (
+        <div className="md:hidden">
+          {mobileColumnId === UNASSIGNED_COLUMN_ID ? (
+            <section>
+              <header className="border-b border-border px-2 py-2">
+                <h2 className="text-sm font-semibold">Unassigned</h2>
+              </header>
+              <ul className="space-y-2 p-2">
+                {(tasksByColumn.get(UNASSIGNED_COLUMN_ID) ?? []).map((task) => (
+                  <li key={task.id}>
+                    <TaskBoardCard task={task} />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : (
+            staffColumns
+              .filter((col) => col.id === mobileColumnId)
+              .map((column) => (
+                <section key={column.id}>
+                  <header className="border-b border-border px-2 py-2">
+                    <h2 className="text-sm font-semibold">{column.full_name}</h2>
+                  </header>
+                  <ul className="space-y-2 p-2">
+                    {(tasksByColumn.get(column.id) ?? []).map((task) => (
+                      <li key={task.id}>
+                        <TaskBoardCard task={task} />
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))
+          )}
+        </div>
+      )}
 
       <CreateLeadModal
         open={createLeadOpen}
@@ -334,7 +323,7 @@ export default function TaskBoardView({
         onClose={() => setCreateLeadOpen(false)}
         onCreated={() => {
           setCreateLeadOpen(false);
-          void loadBoard();
+          handleLeadCreated();
         }}
       />
     </div>

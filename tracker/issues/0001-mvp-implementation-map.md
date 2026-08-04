@@ -55,6 +55,7 @@ The MVP is **operational as a free-tier pilot**: all ten MVP modules (M1–M10) 
 - **0028 scheduled jobs:** `detect-overdue` + `du-alerts` edge functions, `working-days.ts` / `du-escalation.ts` seams, dedupe fanout via `payload.dedupe_key`, migration 00037, TC-074 + DU ladder integration, manual deploy in [scheduled-jobs.md](../../docs/scheduled-jobs.md) — [Scheduled jobs — overdue and DU alerts](./0028-scheduled-jobs-overdue-du.md)
 - **0029 global search:** migration 00038 `search_cases` RPC (pg_trgm), EP-38 `/api/search`, `GlobalSearch` shell component (300ms debounce, keyboard nav), S-05 column sorting, TC-089–091 — [Global search](./0029-global-search.md)
 - **0030 archive + auto-save polish:** migration 00039 soft-delete/restore/purge RPCs, EP-08/39–41, S-18 archive page, `DeleteCaseButton`, `AutoSaveStatusProvider` + retry/rollback, TC-092–094 + auto-save unit tests — [Soft-delete, archive, purge, and auto-save polish](./0030-archive-purge-autosave.md)
+- **0032 reactive data layer:** TanStack Query + mutation invalidation across client views; ADR-0016 invalidate-on-mutation; 60s polling on board/schedule/admin dashboard; notifications Realtime unchanged — [Reactive data layer — TanStack Query and mutation invalidation](./0032-reactive-data-layer.md)
 
 ## Not yet specified
 

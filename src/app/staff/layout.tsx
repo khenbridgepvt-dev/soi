@@ -1,4 +1,5 @@
 import AppShell from '@/components/layout/AppShell';
+import QueryProvider from '@/components/providers/QueryProvider';
 import { getSessionWithRole } from '@/lib/auth/session';
 import { createClient } from '@/lib/supabase/server';
 
@@ -31,6 +32,7 @@ export default async function StaffLayout({
   }
 
   return (
+    <QueryProvider>
     <AppShell
       appName={appName}
       dashboardHref="/staff/dashboard"
@@ -43,5 +45,6 @@ export default async function StaffLayout({
     >
       {children}
     </AppShell>
+    </QueryProvider>
   );
 }

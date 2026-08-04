@@ -1,11 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import CreateLeadModal from '@/components/cases/CreateLeadModal';
 import LeadReviewModal, { type LeadReviewTarget } from '@/components/cases/LeadReviewModal';
 import MetricCard from '@/components/layout/MetricCard';
 import type { AdminDashboardPayload } from '@/lib/dashboard/fetch-admin-dashboard';
+import { REFETCH_INTERVAL_MS, queryKeys } from '@/lib/query/keys';
+import { useInvalidateAfterMutation } from '@/lib/query/useInvalidateAfterMutation';
 
 type ApiError = {
   error?: { message?: string };
@@ -26,41 +29,42 @@ type AdminDashboardViewProps = {
   applicationTypes: ApplicationTypeOption[];
 };
 
+async function fetchAdminDashboard(): Promise<AdminDashboardPayload> {
+  const response = await fetch('/api/dashboard/admin');
+  const json = (await response.json()) as { data?: AdminDashboardPayload } & ApiError;
+
+  if (!response.ok || !json.data) {
+    throw new Error(json.error?.message ?? 'Failed to load dashboard.');
+  }
+
+  return json.data;
+}
+
 export default function AdminDashboardView({
   applicationTypes,
 }: AdminDashboardViewProps) {
-  const [data, setData] = useState<AdminDashboardPayload | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const invalidate = useInvalidateAfterMutation();
   const [createLeadOpen, setCreateLeadOpen] = useState(false);
   const [reviewLead, setReviewLead] = useState<LeadReviewTarget | null>(null);
 
-  const loadDashboard = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: queryKeys.dashboard.admin(),
+    queryFn: fetchAdminDashboard,
+    refetchInterval: REFETCH_INTERVAL_MS,
+  });
 
-    try {
-      const response = await fetch('/api/dashboard/admin');
-      const json = (await response.json()) as { data?: AdminDashboardPayload } & ApiError;
-
-      if (!response.ok) {
-        setError(json.error?.message ?? 'Failed to load dashboard.');
-        setData(null);
-        return;
-      }
-
-      setData(json.data ?? null);
-    } catch {
-      setError('Unable to connect. Check your internet connection.');
-      setData(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadDashboard();
-  }, [loadDashboard]);
+  const errorMessage =
+    isError && error instanceof Error
+      ? error.message
+      : isError
+        ? 'Unable to connect. Check your internet connection.'
+        : null;
 
   const metrics = data ?? {
     active_cases: 0,
@@ -72,11 +76,16 @@ export default function AdminDashboardView({
     schedule_summary: [],
   };
 
+  function refreshDashboard() {
+    void invalidate('acceptLead');
+    void refetch();
+  }
+
   return (
     <div className="space-y-6">
-      {error && (
+      {errorMessage && (
         <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-          {error}
+          {errorMessage}
         </div>
       )}
 
@@ -84,25 +93,25 @@ export default function AdminDashboardView({
         <Link href="/cases?status=active">
           <MetricCard
             label="Active Cases"
-            value={loading ? '—' : String(metrics.active_cases)}
+            value={isLoading ? '—' : String(metrics.active_cases)}
           />
         </Link>
         <Link href="/cases?status=active&urgent=true">
           <MetricCard
             label="Urgent Cases"
-            value={loading ? '—' : String(metrics.urgent_cases)}
+            value={isLoading ? '—' : String(metrics.urgent_cases)}
           />
         </Link>
         <Link href="/task-board?filter=blocked">
           <MetricCard
             label="Blocked Tasks"
-            value={loading ? '—' : String(metrics.blocked_tasks)}
+            value={isLoading ? '—' : String(metrics.blocked_tasks)}
           />
         </Link>
         <Link href="/task-board?filter=urgent">
           <MetricCard
             label="Overdue Tasks"
-            value={loading ? '—' : String(metrics.overdue_tasks)}
+            value={isLoading ? '—' : String(metrics.overdue_tasks)}
           />
         </Link>
       </div>
@@ -115,8 +124,8 @@ export default function AdminDashboardView({
               View all →
             </Link>
           </div>
-          {loading && <p className="text-sm text-text-muted">Loading…</p>}
-          {!loading && metrics.pending_leads.length === 0 && (
+          {isLoading && <p className="text-sm text-text-muted">Loading…</p>}
+          {!isLoading && metrics.pending_leads.length === 0 && (
             <div className="py-6 text-center">
               <p className="text-sm text-text-secondary">No pending leads</p>
               <button
@@ -128,7 +137,7 @@ export default function AdminDashboardView({
               </button>
             </div>
           )}
-          {!loading && metrics.pending_leads.length > 0 && (
+          {!isLoading && metrics.pending_leads.length > 0 && (
             <ul className="divide-y divide-border">
               {metrics.pending_leads.map((lead) => (
                 <li
@@ -161,8 +170,8 @@ export default function AdminDashboardView({
 
         <section className="rounded-lg border border-border bg-surface p-4">
           <h2 className="mb-3 text-base font-semibold text-text">Team status</h2>
-          {loading && <p className="text-sm text-text-muted">Loading…</p>}
-          {!loading && (
+          {isLoading && <p className="text-sm text-text-muted">Loading…</p>}
+          {!isLoading && (
             <ul className="divide-y divide-border">
               {metrics.team_status.map((member) => (
                 <li
@@ -176,7 +185,7 @@ export default function AdminDashboardView({
                     />
                     <span className="text-sm text-text">{member.full_name}</span>
                   </div>
-                  <span className="text-xs text-text-secondary tabular-nums">
+                  <span className="text-xs text-text-secondary">
                     {member.active_task_count} active
                   </span>
                 </li>
@@ -187,42 +196,35 @@ export default function AdminDashboardView({
       </div>
 
       <section className="rounded-lg border border-border bg-surface p-4">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-base font-semibold text-text">Today&apos;s schedule summary</h2>
-          <Link href="/schedule" className="text-xs text-primary">
-            Open grid →
-          </Link>
-        </div>
-        {loading && <p className="text-sm text-text-muted">Loading…</p>}
-        {!loading && (
-          <ul className="space-y-3">
+        <h2 className="mb-3 text-base font-semibold text-text">Today&apos;s schedule</h2>
+        {isLoading && <p className="text-sm text-text-muted">Loading…</p>}
+        {!isLoading && metrics.schedule_summary.length === 0 && (
+          <p className="text-sm text-text-secondary">No staff timetables configured.</p>
+        )}
+        {!isLoading && metrics.schedule_summary.length > 0 && (
+          <div className="space-y-3">
             {metrics.schedule_summary.map((row) => (
-              <li key={row.staff_id}>
-                <div className="mb-1 flex items-center justify-between text-sm">
-                  <span className="font-medium text-text">{row.staff_name}</span>
-                  {row.is_on_leave ? (
-                    <span className="text-xs text-text-secondary">On Leave</span>
-                  ) : row.total_hours === 0 ? (
-                    <span className="text-xs text-text-secondary">Off</span>
-                  ) : (
-                    <span className="text-xs text-text-secondary tabular-nums">
-                      {row.booked_hours}/{row.total_hours} hrs booked
-                    </span>
-                  )}
+              <div key={row.staff_id} className="flex items-center gap-3">
+                <span className="w-28 shrink-0 text-sm text-text">{row.staff_name}</span>
+                <div className="h-2 flex-1 rounded-full bg-page">
+                  <div
+                    className="h-2 rounded-full bg-primary"
+                    style={{
+                      width:
+                        row.total_hours > 0
+                          ? `${Math.min(100, (row.booked_hours / row.total_hours) * 100)}%`
+                          : row.booked_hours > 0
+                            ? '100%'
+                            : '0%',
+                    }}
+                  />
                 </div>
-                {!row.is_on_leave && row.total_hours > 0 && (
-                  <div className="h-2 overflow-hidden rounded-full bg-page">
-                    <div
-                      className="h-full rounded-full bg-primary"
-                      style={{
-                        width: `${Math.min((row.booked_hours / row.total_hours) * 100, 100)}%`,
-                      }}
-                    />
-                  </div>
-                )}
-              </li>
+                <span className="text-xs tabular-nums text-text-secondary">
+                  {row.booked_hours}h / {row.total_hours}h
+                </span>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
       </section>
 
@@ -232,25 +234,23 @@ export default function AdminDashboardView({
         onClose={() => setCreateLeadOpen(false)}
         onCreated={() => {
           setCreateLeadOpen(false);
-          void loadDashboard();
+          void invalidate('createLead');
         }}
       />
 
-      {reviewLead && (
-        <LeadReviewModal
-          open
-          lead={reviewLead}
-          onClose={() => setReviewLead(null)}
-          onAccepted={() => {
-            setReviewLead(null);
-            void loadDashboard();
-          }}
-          onRejected={() => {
-            setReviewLead(null);
-            void loadDashboard();
-          }}
-        />
-      )}
+      <LeadReviewModal
+        open={reviewLead !== null}
+        lead={reviewLead}
+        onClose={() => setReviewLead(null)}
+        onRejected={(message) => {
+          setReviewLead(null);
+          refreshDashboard();
+        }}
+        onAccepted={(message, accepted) => {
+          setReviewLead(null);
+          refreshDashboard();
+        }}
+      />
     </div>
   );
 }

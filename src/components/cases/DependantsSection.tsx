@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useInvalidateAfterMutation } from '@/lib/query/useInvalidateAfterMutation';
 import {
   validateDependantName,
   validateDependantRelationship,
@@ -31,6 +32,7 @@ export default function DependantsSection({
   onChanged,
   onError,
 }: DependantsSectionProps) {
+  const invalidate = useInvalidateAfterMutation();
   const [addOpen, setAddOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<DependantRow | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DependantRow | null>(null);
@@ -93,6 +95,7 @@ export default function DependantsSection({
       }
 
       setAddOpen(false);
+      void invalidate('dependant', { caseId });
       onChanged();
     } catch {
       onError('Failed to add dependant.');
@@ -141,6 +144,7 @@ export default function DependantsSection({
       }
 
       setEditTarget(null);
+      void invalidate('dependant', { caseId });
       onChanged();
     } catch {
       onError('Failed to update dependant.');
@@ -169,6 +173,7 @@ export default function DependantsSection({
       }
 
       setDeleteTarget(null);
+      void invalidate('dependant', { caseId });
       onChanged();
     } catch {
       onError('Failed to remove dependant.');

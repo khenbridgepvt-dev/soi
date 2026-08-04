@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useInvalidateAfterMutation } from '@/lib/query/useInvalidateAfterMutation';
 import { LEAD_REJECT_REASON_MAX, validateRejectReason } from '@/lib/utils/lead-form';
 import { DEFAULT_TASK_COUNT } from '@/lib/cases/default-tasks';
 import { formatCaseReferencePreview } from '@/lib/utils/reference';
@@ -38,6 +39,7 @@ export default function LeadReviewModal({
   onRejected,
   onAccepted,
 }: LeadReviewModalProps) {
+  const invalidate = useInvalidateAfterMutation();
   const [reason, setReason] = useState('');
   const [reasonError, setReasonError] = useState<string | null>(null);
   const [bannerError, setBannerError] = useState<string | null>(null);
@@ -87,6 +89,7 @@ export default function LeadReviewModal({
       }
 
       onRejected(`Lead rejected: ${lead.client_first_name} ${lead.client_last_name}`);
+      void invalidate('rejectLead', { caseId: lead.id });
       onClose();
     } catch {
       setBannerError('Failed to process. Please try again.');
@@ -119,6 +122,7 @@ export default function LeadReviewModal({
         `Case ${json.data.reference} created with ${json.data.tasks_created} tasks.`,
         { id: json.data.id, reference: json.data.reference },
       );
+      void invalidate('acceptLead', { caseId: lead.id });
       onClose();
     } catch {
       setBannerError('Failed to process. Please try again.');

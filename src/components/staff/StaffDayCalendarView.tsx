@@ -1,8 +1,10 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import SlotBlock, { type SlotBlockState } from '@/components/schedule/SlotBlock';
+import { REFETCH_INTERVAL_MS, queryKeys } from '@/lib/query/keys';
 import {
   CALENDAR_ROW_HEIGHT,
   currentTimeLabel,
@@ -120,58 +122,66 @@ function statusDotClass(assignment: ScheduleAssignment): string {
 export default function StaffDayCalendarView({ staffId }: StaffDayCalendarViewProps) {
   const router = useRouter();
   const [date, setDate] = useState(() => todayISODate());
-  const [payload, setPayload] = useState<SchedulePayload | null>(null);
-  const [nextActionTaskId, setNextActionTaskId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
   const [bannerError, setBannerError] = useState<string | null>(null);
   const [nowTime, setNowTime] = useState(() => currentTimeLabel());
 
-  const loadSchedule = useCallback(
-    async (targetDate: string) => {
-      setLoading(true);
-      setBannerError(null);
+  const isToday = date === todayISODate();
 
-      try {
-        const [scheduleResponse, dashboardResponse] = await Promise.all([
-          fetch(`/api/schedule/${staffId}?date=${targetDate}`),
-          targetDate === todayISODate()
-            ? fetch('/api/dashboard/staff?view=today')
-            : Promise.resolve(null),
-        ]);
+  const {
+    data: payload,
+    isLoading: scheduleLoading,
+    isError: scheduleError,
+    error: scheduleQueryError,
+  } = useQuery({
+    queryKey: queryKeys.schedule.staff(staffId, date),
+    queryFn: async () => {
+      const response = await fetch(`/api/schedule/${staffId}?date=${date}`);
+      const json = (await response.json()) as {
+        data?: SchedulePayload;
+      } & ApiError;
 
-        const scheduleJson = (await scheduleResponse.json()) as {
-          data?: SchedulePayload;
-        } & ApiError;
-
-        if (!scheduleResponse.ok || !scheduleJson.data) {
-          setBannerError(scheduleJson.error?.message ?? 'Failed to load your calendar.');
-          setPayload(null);
-          return;
-        }
-
-        setPayload(scheduleJson.data);
-
-        if (dashboardResponse) {
-          const dashboardJson = (await dashboardResponse.json()) as {
-            data?: { priority_list: Array<{ id: string }> };
-          };
-          setNextActionTaskId(dashboardJson.data?.priority_list[0]?.id ?? null);
-        } else {
-          setNextActionTaskId(null);
-        }
-      } catch {
-        setBannerError('Unable to connect. Check your internet connection.');
-        setPayload(null);
-      } finally {
-        setLoading(false);
+      if (!response.ok || !json.data) {
+        throw new Error(json.error?.message ?? 'Failed to load your calendar.');
       }
+
+      return json.data;
     },
-    [staffId],
-  );
+    refetchInterval: REFETCH_INTERVAL_MS,
+  });
+
+  const { data: dashboardData } = useQuery({
+    queryKey: queryKeys.dashboard.staff('today'),
+    queryFn: async () => {
+      const response = await fetch('/api/dashboard/staff?view=today');
+      const json = (await response.json()) as {
+        data?: { priority_list: Array<{ id: string }> };
+      } & ApiError;
+
+      if (!response.ok) {
+        throw new Error(json.error?.message ?? 'Failed to load dashboard.');
+      }
+
+      return json.data;
+    },
+    enabled: isToday,
+  });
+
+  const nextActionTaskId =
+    isToday ? dashboardData?.priority_list[0]?.id ?? null : null;
+
+  const loading = scheduleLoading;
+  const scheduleErrorMessage =
+    scheduleError && scheduleQueryError instanceof Error
+      ? scheduleQueryError.message
+      : scheduleError
+        ? 'Unable to connect. Check your internet connection.'
+        : null;
 
   useEffect(() => {
-    void loadSchedule(date);
-  }, [date, loadSchedule]);
+    if (scheduleErrorMessage) {
+      setBannerError(scheduleErrorMessage);
+    }
+  }, [scheduleErrorMessage]);
 
   useEffect(() => {
     if (date !== todayISODate()) {
@@ -189,7 +199,6 @@ export default function StaffDayCalendarView({ staffId }: StaffDayCalendarViewPr
   const timeline = payload?.grid.times ?? [];
   const gridStart = payload?.grid.start_time;
   const gridEnd = payload?.grid.end_time;
-  const isToday = date === todayISODate();
   const showNowMarker = Boolean(
     isToday && gridStart && gridEnd && isTimeWithinGrid(nowTime, gridStart, gridEnd),
   );

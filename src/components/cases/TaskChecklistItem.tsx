@@ -13,6 +13,7 @@ import {
   canTransitionTaskStatus,
   type TaskStatus,
 } from '@/lib/utils/task-status';
+import { useInvalidateAfterMutation } from '@/lib/query/useInvalidateAfterMutation';
 
 type TaskChecklistItemProps = {
   task: CaseDetailTask;
@@ -80,6 +81,7 @@ export default function TaskChecklistItem({
   onStatusChanged,
   onError,
 }: TaskChecklistItemProps) {
+  const invalidate = useInvalidateAfterMutation();
   const [statusSaving, setStatusSaving] = useState(false);
   const [reviewSaving, setReviewSaving] = useState(false);
   const [revisionModalOpen, setRevisionModalOpen] = useState(false);
@@ -171,6 +173,7 @@ export default function TaskChecklistItem({
       }
 
       onStatusChanged();
+      void invalidate('taskStatus', { caseId });
     } catch {
       onError('Failed to update status.');
     } finally {
@@ -201,8 +204,7 @@ export default function TaskChecklistItem({
       setRevisionModalOpen(false);
       setRevisionNotes('');
       onStatusChanged();
-    } catch {
-      onError('Failed to submit senior review.');
+      void invalidate('seniorReview', { caseId });
     } finally {
       setReviewSaving(false);
     }
@@ -256,8 +258,7 @@ export default function TaskChecklistItem({
       setBlockReason('');
       setToastMessage('Task blocked. The time slot has been released.');
       onStatusChanged();
-    } catch {
-      onError('Failed to block task.');
+      void invalidate('block', { caseId });
     } finally {
       setBlockSaving(false);
     }
@@ -280,8 +281,7 @@ export default function TaskChecklistItem({
 
       setToastMessage('Task unblocked. Reassign a time slot in the scheduling grid.');
       onStatusChanged();
-    } catch {
-      onError('Failed to unblock task.');
+      void invalidate('unblock', { caseId });
     } finally {
       setUnblockSaving(false);
     }

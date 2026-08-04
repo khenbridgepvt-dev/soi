@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import AssignTaskModal, {
   type AssignTaskModalPrefill,
@@ -8,6 +9,8 @@ import AssignTaskModal, {
 import ScheduleLegend from '@/components/schedule/ScheduleLegend';
 import SlotBlock, { type SlotBlockState } from '@/components/schedule/SlotBlock';
 import Toast from '@/components/ui/Toast';
+import { REFETCH_INTERVAL_MS, queryKeys } from '@/lib/query/keys';
+import { useInvalidateAfterMutation } from '@/lib/query/useInvalidateAfterMutation';
 import { addDays, formatLongDate, todayISODate } from '@/lib/utils/dates';
 
 /** 36px pill (DS-1) + 4px vertical gap between pills (design_system §6). */
@@ -101,43 +104,47 @@ function formatDuration(minutes: number): string {
   return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
 }
 
+async function fetchScheduleDay(date: string): Promise<SchedulePayload> {
+  const response = await fetch(`/api/schedule?date=${date}`);
+  const json = (await response.json()) as { data?: SchedulePayload } & ApiError;
+
+  if (!response.ok || !json.data) {
+    throw new Error(json.error?.message ?? 'Failed to load the schedule.');
+  }
+
+  return json.data;
+}
+
 export default function ScheduleGridView() {
   const router = useRouter();
+  const invalidate = useInvalidateAfterMutation();
   const [date, setDate] = useState(() => todayISODate());
-  const [payload, setPayload] = useState<SchedulePayload | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [bannerError, setBannerError] = useState<string | null>(null);
   const [selected, setSelected] = useState<SelectedSlot | null>(null);
   const [modal, setModal] = useState<ModalState>({ open: false, prefill: null });
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const loadSchedule = useCallback(async (targetDate: string) => {
-    setLoading(true);
-    setBannerError(null);
+  const {
+    data: payload,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: queryKeys.schedule.day(date),
+    queryFn: () => fetchScheduleDay(date),
+    refetchInterval: REFETCH_INTERVAL_MS,
+  });
 
-    try {
-      const response = await fetch(`/api/schedule?date=${targetDate}`);
-      const json = (await response.json()) as { data?: SchedulePayload } & ApiError;
-
-      if (!response.ok || !json.data) {
-        setBannerError(json.error?.message ?? 'Failed to load the schedule.');
-        setPayload(null);
-        return;
-      }
-
-      setPayload(json.data);
-    } catch {
-      setBannerError('Unable to connect. Check your internet connection.');
-      setPayload(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const bannerError =
+    isError && error instanceof Error
+      ? error.message
+      : isError
+        ? 'Unable to connect. Check your internet connection.'
+        : null;
 
   useEffect(() => {
     setSelected(null);
-    loadSchedule(date);
-  }, [date, loadSchedule]);
+  }, [date]);
 
   const timeline = payload?.grid.times ?? [];
   const staff = useMemo(() => payload?.staff ?? [], [payload]);
@@ -327,7 +334,7 @@ export default function ScheduleGridView() {
         </div>
       )}
 
-      {loading ? (
+      {isLoading ? (
         <div className="space-y-1 rounded-lg border border-border bg-surface p-4">
           {Array.from({ length: 8 }).map((_, index) => (
             <div key={index} className="h-9 animate-pulse rounded-md bg-page" />
@@ -410,7 +417,9 @@ export default function ScheduleGridView() {
           setToastMessage(message);
           setModal({ open: false, prefill: null });
           setSelected(null);
-          void loadSchedule(date);
+          const caseId = modal.prefill?.caseId;
+          void invalidate('assign', { caseId });
+          void refetch();
         }}
       />
 

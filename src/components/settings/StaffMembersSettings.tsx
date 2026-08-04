@@ -1,7 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import TimetableEditor, { type TimetableEditorState } from '@/components/settings/TimetableEditor';
+import { queryKeys } from '@/lib/query/keys';
+import { useInvalidateAfterMutation } from '@/lib/query/useInvalidateAfterMutation';
 import {
   validateStaffEmail,
   validateStaffFullName,
@@ -39,8 +42,7 @@ function roleLabel(role: StaffMember['role']): string {
 }
 
 export default function StaffMembersSettings() {
-  const [staff, setStaff] = useState<StaffMember[]>([]);
-  const [loading, setLoading] = useState(true);
+  const invalidate = useInvalidateAfterMutation();
   const [bannerError, setBannerError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
@@ -65,30 +67,33 @@ export default function StaffMembersSettings() {
   const [timetableErrors, setTimetableErrors] = useState<Record<string, string>>({});
   const [timetableSuccess, setTimetableSuccess] = useState<string | null>(null);
 
-  const loadStaff = useCallback(async () => {
-    setLoading(true);
-    setBannerError(null);
-
-    try {
+  const {
+    data: staff = [],
+    isLoading: loading,
+    isError,
+    error: queryError,
+    refetch: refetchStaff,
+  } = useQuery({
+    queryKey: queryKeys.staff.list('all'),
+    queryFn: async () => {
       const response = await fetch('/api/staff?is_active=all');
       const json = (await response.json()) as { data?: StaffMember[] } & ApiError;
 
       if (!response.ok) {
-        setBannerError(json.error?.message ?? 'Failed to load staff members.');
-        return;
+        throw new Error(json.error?.message ?? 'Failed to load staff members.');
       }
 
-      setStaff(json.data ?? []);
-    } catch {
-      setBannerError('Unable to connect. Check your internet connection.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return json.data ?? [];
+    },
+  });
 
-  useEffect(() => {
-    loadStaff();
-  }, [loadStaff]);
+  const loadError =
+    isError && queryError instanceof Error
+      ? queryError.message
+      : isError
+        ? 'Unable to connect. Check your internet connection.'
+        : null;
+  const displayError = bannerError ?? loadError;
 
   function openAdd() {
     setFullName('');
@@ -193,7 +198,8 @@ export default function StaffMembersSettings() {
       }
 
       setAddOpen(false);
-      await loadStaff();
+      await invalidate('staffSettings');
+      void refetchStaff();
     } catch {
       setBannerError('Failed to create staff member.');
     } finally {
@@ -233,7 +239,8 @@ export default function StaffMembersSettings() {
       }
 
       setEditMember(null);
-      await loadStaff();
+      await invalidate('staffSettings');
+      void refetchStaff();
     } catch {
       setBannerError('Failed to update staff member.');
     } finally {
@@ -263,7 +270,8 @@ export default function StaffMembersSettings() {
         setEditMember(null);
       }
 
-      await loadStaff();
+      await invalidate('staffSettings');
+      void refetchStaff();
     } catch {
       setBannerError('Failed to update status.');
     } finally {
@@ -306,7 +314,8 @@ export default function StaffMembersSettings() {
       }
 
       setTimetableSuccess('Timetable saved.');
-      await loadStaff();
+      void invalidate('timetable');
+      void refetchStaff();
     } catch {
       setBannerError('Failed to save timetable.');
     } finally {
@@ -370,9 +379,9 @@ export default function StaffMembersSettings() {
         </button>
       </div>
 
-      {bannerError && (
+      {displayError && (
         <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {bannerError}
+          {displayError}
         </div>
       )}
       {successMessage && (

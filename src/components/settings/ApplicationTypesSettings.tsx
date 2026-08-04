@@ -1,6 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/query/keys';
+import { useInvalidateAfterMutation } from '@/lib/query/useInvalidateAfterMutation';
 import {
   APPLICATION_TYPE_CODE_FORMAT_ERROR,
   normalizeApplicationTypeCode,
@@ -26,8 +29,7 @@ type ApiError = {
 };
 
 export default function ApplicationTypesSettings() {
-  const [types, setTypes] = useState<ApplicationType[]>([]);
-  const [loading, setLoading] = useState(true);
+  const invalidate = useInvalidateAfterMutation();
   const [bannerError, setBannerError] = useState<string | null>(null);
   const [modalMode, setModalMode] = useState<ModalMode>(null);
   const [editingType, setEditingType] = useState<ApplicationType | null>(null);
@@ -37,30 +39,33 @@ export default function ApplicationTypesSettings() {
   const [codeError, setCodeError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const loadTypes = useCallback(async () => {
-    setLoading(true);
-    setBannerError(null);
-
-    try {
+  const {
+    data: types = [],
+    isLoading: loading,
+    isError,
+    error: queryError,
+    refetch: refetchTypes,
+  } = useQuery({
+    queryKey: queryKeys.applicationTypes(),
+    queryFn: async () => {
       const response = await fetch('/api/application-types');
       const json = (await response.json()) as { data?: ApplicationType[] } & ApiError;
 
       if (!response.ok) {
-        setBannerError(json.error?.message ?? 'Failed to load application types.');
-        return;
+        throw new Error(json.error?.message ?? 'Failed to load application types.');
       }
 
-      setTypes(json.data ?? []);
-    } catch {
-      setBannerError('Unable to connect. Check your internet connection.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return json.data ?? [];
+    },
+  });
 
-  useEffect(() => {
-    loadTypes();
-  }, [loadTypes]);
+  const loadError =
+    isError && queryError instanceof Error
+      ? queryError.message
+      : isError
+        ? 'Unable to connect. Check your internet connection.'
+        : null;
+  const displayError = bannerError ?? loadError;
 
   function openAddModal() {
     setModalMode('add');
@@ -127,7 +132,8 @@ export default function ApplicationTypesSettings() {
         }
 
         closeModal();
-        await loadTypes();
+        void invalidate('applicationTypes');
+        void refetchTypes();
       } catch {
         setBannerError('Unable to connect. Check your internet connection.');
       } finally {
@@ -161,7 +167,8 @@ export default function ApplicationTypesSettings() {
       }
 
       closeModal();
-      await loadTypes();
+      void invalidate('applicationTypes');
+      void refetchTypes();
     } catch {
       setBannerError('Unable to connect. Check your internet connection.');
     } finally {
@@ -185,7 +192,8 @@ export default function ApplicationTypesSettings() {
         return;
       }
 
-      await loadTypes();
+      void invalidate('applicationTypes');
+      void refetchTypes();
     } catch {
       setBannerError('Unable to connect. Check your internet connection.');
     }
@@ -209,12 +217,12 @@ export default function ApplicationTypesSettings() {
         </button>
       </div>
 
-      {bannerError && (
+      {displayError && (
         <div
           role="alert"
           className="rounded-md border border-error bg-error-bg px-3 py-2 text-sm text-error"
         >
-          {bannerError}
+          {displayError}
         </div>
       )}
 

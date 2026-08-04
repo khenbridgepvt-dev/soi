@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import LeadReviewModal, { type LeadReviewTarget } from '@/components/cases/LeadReviewModal';
 
 type LeadDetailActionsClientProps = {
@@ -9,7 +8,6 @@ type LeadDetailActionsClientProps = {
 };
 
 export default function LeadDetailActionsClient({ lead }: LeadDetailActionsClientProps) {
-  const router = useRouter();
   const [reviewOpen, setReviewOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -34,11 +32,9 @@ export default function LeadDetailActionsClient({ lead }: LeadDetailActionsClien
         onClose={() => setReviewOpen(false)}
         onRejected={(successMessage) => {
           setMessage(successMessage);
-          router.refresh();
         }}
         onAccepted={(successMessage) => {
           setMessage(successMessage);
-          router.refresh();
         }}
       />
     </>

@@ -14,6 +14,7 @@ import {
 } from '@/lib/utils/availability';
 import { formatLongDate, todayISODate } from '@/lib/utils/dates';
 import type { TimeInterval } from '@/lib/utils/availability';
+import { useInvalidateAfterMutation } from '@/lib/query/useInvalidateAfterMutation';
 
 export type AssignTaskModalPrefill = {
   taskId?: string;
@@ -79,6 +80,7 @@ export default function AssignTaskModal({
   onClose,
   onAssigned,
 }: AssignTaskModalProps) {
+  const invalidate = useInvalidateAfterMutation();
   const [staffOptions, setStaffOptions] = useState<StaffOption[]>([]);
   const [taskOptions, setTaskOptions] = useState<AssignableTaskOption[]>([]);
   const [taskId, setTaskId] = useState('');
@@ -300,6 +302,9 @@ export default function AssignTaskModal({
 
       const staffName = json.data?.staff_name ?? 'staff';
       const assignedTime = json.data?.start_time ?? startTime;
+      const resolvedCaseId =
+        prefill?.caseId ?? taskOptions.find((task) => task.id === taskId)?.case_id;
+      void invalidate('assign', { caseId: resolvedCaseId });
       onAssigned(`Task assigned to ${staffName} at ${assignedTime}.`);
       onClose();
     } catch {

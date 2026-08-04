@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import LeadDetailActionsClient from '@/components/cases/LeadDetailActionsClient';
 import DeleteCaseButton from '@/components/cases/DeleteCaseButton';
 import DependantsSection from '@/components/cases/DependantsSection';
@@ -12,6 +13,8 @@ import { AutoSaveIndicator } from '@/components/ui/AutoSaveIndicator';
 import { useAutoSave } from '@/lib/hooks/use-auto-save';
 import type { AppRole } from '@/lib/auth/jwt';
 import { DEFAULT_TASK_COUNT } from '@/lib/cases/default-tasks';
+import { queryKeys } from '@/lib/query/keys';
+import { useInvalidateAfterMutation } from '@/lib/query/useInvalidateAfterMutation';
 
 type ApplicationTypeOption = {
   id: string;
@@ -86,8 +89,7 @@ export default function CaseDetailView({
   focusTaskId,
   applicationTypes = [],
 }: CaseDetailViewProps) {
-  const [caseData, setCaseData] = useState<CaseDetailResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const invalidate = useInvalidateAfterMutation();
   const [bannerError, setBannerError] = useState<string | null>(null);
   const [bannerInfo, setBannerInfo] = useState<string | null>(null);
 
@@ -109,10 +111,31 @@ export default function CaseDetailView({
   const isAdmin = role === 'admin';
   const isSenior = role === 'senior';
   const canReviewSenior = isAdmin || isSenior;
-  const isReadOnly =
-    caseData?.status === 'rejected' || caseData?.status === 'completed';
 
   const [notes, setNotes] = useState('');
+
+  const {
+    data: caseData,
+    isLoading: loading,
+    isError,
+    error: queryError,
+    refetch: refetchCase,
+  } = useQuery({
+    queryKey: queryKeys.case(caseId),
+    queryFn: async () => {
+      const response = await fetch(`/api/cases/${caseId}`);
+      const json = (await response.json()) as { data?: CaseDetailResponse } & ApiError;
+
+      if (!response.ok || !json.data) {
+        throw new Error(json.error?.message ?? 'Failed to load case.');
+      }
+
+      return json.data;
+    },
+  });
+
+  const isReadOnly =
+    caseData?.status === 'rejected' || caseData?.status === 'completed';
 
   const notesAutoSave = useAutoSave<string | null>({
     disabled: isReadOnly,
@@ -139,42 +162,38 @@ export default function CaseDetailView({
 
   const resetNotesAutoSave = notesAutoSave.reset;
 
-  const loadCase = useCallback(async () => {
-    setLoading(true);
-    setBannerError(null);
-
-    try {
-      const response = await fetch(`/api/cases/${caseId}`);
-      const json = (await response.json()) as { data?: CaseDetailResponse } & ApiError;
-
-      if (!response.ok || !json.data) {
-        setBannerError(json.error?.message ?? 'Failed to load case.');
-        setCaseData(null);
-        return;
-      }
-
-      setCaseData(json.data);
-      setNotes(json.data.notes ?? '');
-      resetNotesAutoSave(json.data.notes);
-      setEditForm({
-        client_first_name: json.data.client_first_name,
-        client_last_name: json.data.client_last_name,
-        application_type_id: json.data.application_type.id,
-        last_date: json.data.last_date ?? '',
-        appointment_date: toDatetimeLocal(json.data.appointment_date),
-      });
-      setReferenceInput(json.data.reference ?? '');
-    } catch {
-      setBannerError('Failed to load case.');
-      setCaseData(null);
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (!isError) {
+      return;
     }
-  }, [caseId, resetNotesAutoSave]);
+
+    setBannerError(
+      queryError instanceof Error ? queryError.message : 'Failed to load case.',
+    );
+  }, [isError, queryError]);
 
   useEffect(() => {
-    loadCase();
-  }, [loadCase]);
+    if (!caseData) {
+      return;
+    }
+
+    setBannerError(null);
+    setNotes(caseData.notes ?? '');
+    resetNotesAutoSave(caseData.notes);
+    setEditForm({
+      client_first_name: caseData.client_first_name,
+      client_last_name: caseData.client_last_name,
+      application_type_id: caseData.application_type.id,
+      last_date: caseData.last_date ?? '',
+      appointment_date: toDatetimeLocal(caseData.appointment_date),
+    });
+    setReferenceInput(caseData.reference ?? '');
+  }, [caseData, resetNotesAutoSave]);
+
+  const reloadCase = useCallback(() => {
+    void invalidate('casePatch', { caseId });
+    void refetchCase();
+  }, [invalidate, caseId, refetchCase]);
 
   async function handleEditSave() {
     setEditSaving(true);
@@ -209,7 +228,7 @@ export default function CaseDetailView({
       }
 
       setEditOpen(false);
-      await loadCase();
+      await reloadCase();
     } catch {
       setBannerError('Failed to update case.');
     } finally {
@@ -239,7 +258,7 @@ export default function CaseDetailView({
         return;
       }
 
-      await loadCase();
+      await reloadCase();
     } catch {
       setBannerError('Failed to update urgency.');
     } finally {
@@ -275,7 +294,7 @@ export default function CaseDetailView({
       }
 
       setReferenceOpen(false);
-      await loadCase();
+      await reloadCase();
     } catch {
       setBannerError('Failed to update reference.');
     } finally {
@@ -414,7 +433,7 @@ export default function CaseDetailView({
                 caseId={caseId}
                 dependants={caseData.dependants}
                 readOnly={isReadOnly}
-                onChanged={loadCase}
+                onChanged={reloadCase}
                 onError={setBannerError}
               />
             </div>
@@ -507,7 +526,7 @@ export default function CaseDetailView({
         canReviewSenior={canReviewSenior}
         userId={userId}
         focusTaskId={focusTaskId}
-        onChanged={loadCase}
+        onChanged={reloadCase}
         onError={setBannerError}
       />
 

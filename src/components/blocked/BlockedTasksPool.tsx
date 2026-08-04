@@ -1,11 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import AssignTaskModal, {
   type AssignTaskModalPrefill,
 } from '@/components/schedule/AssignTaskModal';
 import Toast from '@/components/ui/Toast';
+import { queryKeys } from '@/lib/query/keys';
+import { useInvalidateAfterMutation } from '@/lib/query/useInvalidateAfterMutation';
 import { formatBlockedAge } from '@/lib/utils/blocked-age';
 
 type BlockedTaskRow = {
@@ -40,10 +43,8 @@ function clientLabel(row: BlockedTaskRow): string {
 }
 
 export default function BlockedTasksPool() {
-  const [rows, setRows] = useState<BlockedTaskRow[]>([]);
-  const [staffOptions, setStaffOptions] = useState<StaffOption[]>([]);
+  const invalidate = useInvalidateAfterMutation();
   const [staffFilter, setStaffFilter] = useState('');
-  const [loading, setLoading] = useState(true);
   const [bannerError, setBannerError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [actionTaskId, setActionTaskId] = useState<string | null>(null);
@@ -52,48 +53,43 @@ export default function BlockedTasksPool() {
     prefill: AssignTaskModalPrefill | null;
   }>({ open: false, prefill: null });
 
-  const loadRows = useCallback(async (staffId?: string) => {
-    setLoading(true);
-    setBannerError(null);
+  const { data: staffOptions = [] } = useQuery({
+    queryKey: queryKeys.staff.filterOptions(),
+    queryFn: async () => {
+      const response = await fetch('/api/staff?is_active=true');
+      const json = (await response.json()) as { data?: StaffOption[] };
+      return (json.data ?? []).filter((member) => member.id && member.full_name);
+    },
+  });
 
-    const query = staffId ? `?staff_id=${staffId}` : '';
-
-    try {
+  const {
+    data: rows = [],
+    isLoading: loading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: queryKeys.blocked.list(staffFilter || undefined),
+    queryFn: async () => {
+      const query = staffFilter ? `?staff_id=${staffFilter}` : '';
       const response = await fetch(`/api/tasks/blocked${query}`);
       const json = (await response.json()) as { data?: BlockedTaskRow[] } & ApiError;
 
       if (!response.ok) {
-        setBannerError(json.error?.message ?? 'Failed to load blocked tasks.');
-        setRows([]);
-        return;
+        throw new Error(json.error?.message ?? 'Failed to load blocked tasks.');
       }
 
-      setRows(json.data ?? []);
-    } catch {
-      setBannerError('Unable to connect. Check your internet connection.');
-      setRows([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return json.data ?? [];
+    },
+  });
 
-  useEffect(() => {
-    async function loadStaff() {
-      const response = await fetch('/api/staff?is_active=true');
-      const json = (await response.json()) as { data?: StaffOption[] };
-      setStaffOptions(
-        (json.data ?? []).filter(
-          (member) => member.id && member.full_name,
-        ),
-      );
-    }
-
-    void loadStaff();
-  }, []);
-
-  useEffect(() => {
-    void loadRows(staffFilter || undefined);
-  }, [loadRows, staffFilter]);
+  const loadError =
+    isError && error instanceof Error
+      ? error.message
+      : isError
+        ? 'Unable to connect. Check your internet connection.'
+        : null;
+  const displayError = bannerError ?? loadError;
 
   const sortedRows = useMemo(
     () =>
@@ -104,7 +100,7 @@ export default function BlockedTasksPool() {
     [rows],
   );
 
-  async function handleUnblock(taskId: string) {
+  async function handleUnblock(taskId: string, caseId: string) {
     setActionTaskId(taskId);
     setBannerError(null);
 
@@ -118,7 +114,8 @@ export default function BlockedTasksPool() {
       }
 
       setToastMessage('Task unblocked. Reassign a time slot in the scheduling grid.');
-      await loadRows(staffFilter || undefined);
+      void invalidate('unblock', { caseId });
+      void refetch();
     } catch {
       setBannerError('Failed to unblock task.');
     } finally {
@@ -156,9 +153,9 @@ export default function BlockedTasksPool() {
         </p>
       </div>
 
-      {bannerError && (
+      {displayError && (
         <div className="mb-4 rounded-md border border-error bg-error-bg px-3 py-2 text-sm text-error">
-          {bannerError}
+          {displayError}
         </div>
       )}
 
@@ -241,7 +238,7 @@ export default function BlockedTasksPool() {
                       <button
                         type="button"
                         disabled={actionTaskId === row.id}
-                        onClick={() => handleUnblock(row.id)}
+                        onClick={() => handleUnblock(row.id, row.case_id)}
                         className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium hover:bg-page disabled:opacity-50"
                       >
                         Unblock
@@ -269,7 +266,7 @@ export default function BlockedTasksPool() {
         onAssigned={(message) => {
           setToastMessage(message);
           setAssignModal({ open: false, prefill: null });
-          void loadRows(staffFilter || undefined);
+          void refetch();
         }}
       />
 

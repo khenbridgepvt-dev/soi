@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useInvalidateAfterMutation } from '@/lib/query/useInvalidateAfterMutation';
 
 type DeleteCaseButtonProps = {
   caseId: string;
@@ -17,6 +18,7 @@ export default function DeleteCaseButton({
   className,
 }: DeleteCaseButtonProps) {
   const router = useRouter();
+  const invalidate = useInvalidateAfterMutation();
   const [open, setOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,8 +37,8 @@ export default function DeleteCaseButton({
       }
 
       setOpen(false);
+      void invalidate('deleteCase');
       router.push(redirectTo);
-      router.refresh();
     } catch {
       setError('Unable to delete case right now.');
     } finally {

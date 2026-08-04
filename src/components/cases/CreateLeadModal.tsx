@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useInvalidateAfterMutation } from '@/lib/query/useInvalidateAfterMutation';
 import {
   hasUnsavedLeadFormData,
   isCreateLeadFormComplete,
@@ -35,6 +36,7 @@ export default function CreateLeadModal({
   onClose,
   onCreated,
 }: CreateLeadModalProps) {
+  const invalidate = useInvalidateAfterMutation();
   const [clientFirstName, setClientFirstName] = useState('');
   const [clientLastName, setClientLastName] = useState('');
   const [applicationTypeId, setApplicationTypeId] = useState('');
@@ -155,6 +157,7 @@ export default function CreateLeadModal({
         : 'Lead created.';
 
       onCreated(message);
+      void invalidate('createLead');
       onClose();
     } catch {
       setBannerError('Failed to create lead. Please try again.');
