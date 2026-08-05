@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import CreateLeadModal from '@/components/cases/CreateLeadModal';
+import CreateCaseIntake from '@/components/cases/CreateCaseIntake';
 import DeleteCaseButton from '@/components/cases/DeleteCaseButton';
 import LeadReviewModal, { type LeadReviewTarget } from '@/components/cases/LeadReviewModal';
 import {
@@ -97,7 +97,7 @@ export default function CaseList({
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [page, setPage] = useState(1);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [createOpen, setCreateOpen] = useState(false);
+  const [intakeOpen, setIntakeOpen] = useState(false);
   const [reviewLead, setReviewLead] = useState<LeadReviewTarget | null>(null);
 
   const queryString = useMemo(() => {
@@ -282,10 +282,10 @@ export default function CaseList({
         <h1 className="text-2xl font-semibold text-slate-900">Cases</h1>
         <button
           type="button"
-          onClick={() => setCreateOpen(true)}
+          onClick={() => setIntakeOpen(true)}
           className="rounded-md bg-[#0F2B5B] px-4 py-2 text-sm font-medium text-white"
         >
-          + Create Lead
+          + New case
         </button>
       </div>
 
@@ -583,11 +583,11 @@ export default function CaseList({
         </div>
       )}
 
-      <CreateLeadModal
-        open={createOpen}
+      <CreateCaseIntake
+        open={intakeOpen}
         applicationTypes={applicationTypes}
-        onClose={() => setCreateOpen(false)}
-        onCreated={(message) => {
+        onClose={() => setIntakeOpen(false)}
+        onLeadCreated={(message) => {
           setSuccessMessage(message);
           void invalidate('createLead');
           void refetchCases();

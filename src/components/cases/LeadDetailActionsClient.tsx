@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import LeadReviewModal, { type LeadReviewTarget } from '@/components/cases/LeadReviewModal';
 
 type LeadDetailActionsClientProps = {
@@ -8,6 +9,7 @@ type LeadDetailActionsClientProps = {
 };
 
 export default function LeadDetailActionsClient({ lead }: LeadDetailActionsClientProps) {
+  const router = useRouter();
   const [reviewOpen, setReviewOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -33,8 +35,9 @@ export default function LeadDetailActionsClient({ lead }: LeadDetailActionsClien
         onRejected={(successMessage) => {
           setMessage(successMessage);
         }}
-        onAccepted={(successMessage) => {
-          setMessage(successMessage);
+        onAccepted={(_successMessage, accepted) => {
+          setMessage(`Case ${accepted.reference} created with tasks.`);
+          router.push(`/cases/${accepted.id}?accepted=1`);
         }}
       />
     </>

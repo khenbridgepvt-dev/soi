@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import CreateLeadModal from '@/components/cases/CreateLeadModal';
+import CreateCaseIntake from '@/components/cases/CreateCaseIntake';
 import TaskBoardCard from '@/components/task-board/TaskBoardCard';
 import type { TaskBoardCard as TaskBoardCardData } from '@/lib/task-board/fetch-task-board';
 import type { TaskBoardStaffColumn } from '@/lib/task-board/fetch-task-board';
@@ -70,7 +70,7 @@ export default function TaskBoardView({
   const [typeCode, setTypeCode] = useState('');
   const [typeMenuOpen, setTypeMenuOpen] = useState(false);
   const [activeStaffTab, setActiveStaffTab] = useState<string | null>(null);
-  const [createLeadOpen, setCreateLeadOpen] = useState(false);
+  const [intakeOpen, setIntakeOpen] = useState(false);
 
   const {
     data: payload,
@@ -215,10 +215,10 @@ export default function TaskBoardView({
 
         <button
           type="button"
-          onClick={() => setCreateLeadOpen(true)}
+          onClick={() => setIntakeOpen(true)}
           className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-white"
         >
-          + Create Lead
+          + New case
         </button>
         <button
           type="button"
@@ -336,12 +336,11 @@ export default function TaskBoardView({
         </div>
       )}
 
-      <CreateLeadModal
-        open={createLeadOpen}
+      <CreateCaseIntake
+        open={intakeOpen}
         applicationTypes={applicationTypes}
-        onClose={() => setCreateLeadOpen(false)}
-        onCreated={() => {
-          setCreateLeadOpen(false);
+        onClose={() => setIntakeOpen(false)}
+        onLeadCreated={() => {
           handleLeadCreated();
         }}
       />

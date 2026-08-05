@@ -151,7 +151,7 @@ Red-coloured tasks (urgent or overdue) are treated as a **centralised priority q
 ### 3.5 Client & Dependant Management
 
 * Cases are associated with primary clients and their dependants.
-* The system must accommodate diverse application types, including but not limited to: Skilled Worker Visa (extending, switching, adding dependants, change of employment), Graduate Visa, Spouse Visa, Indefinite Leave to Remain, Naturalisation, Fee Waiver, Further Leave to Remain, and others. **Application types must be admin-configurable** — administrators can add, edit, and remove application types from the system settings.
+* The system must accommodate diverse application types, including but not limited to: Skilled Worker Visa, **Skilled Worker Dependant (SKD)** — a separate configurable type from SKW, Graduate Visa, Spouse Visa, Indefinite Leave to Remain, Naturalisation, Fee Waiver, Further Leave to Remain, and others. **Application types must be admin-configurable** — administrators can add, edit, and remove application types from the system settings.
 
 ### 3.6 Search & Filtering
 

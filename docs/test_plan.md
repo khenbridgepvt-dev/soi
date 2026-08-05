@@ -570,6 +570,8 @@ After any code change, re-run the full automated suite (unit + integration + E2E
 | 3 | Accept a second lead: "Sakura Tanaka", Graduate (GRD) | Reference: `072602/GRD/SAK` |
 | 4 | Verify sequence incremented | Second case is `02` |
 
+**Post-MVP (ticket 0036):** SKD (Skilled Worker Dependant) uses the same reference format — e.g. accept lead "Maria Santos", type SKD → `052604/SKD/MAR`.
+
 ---
 
 #### TC-018 · Reference Generation — Concurrent Acceptance

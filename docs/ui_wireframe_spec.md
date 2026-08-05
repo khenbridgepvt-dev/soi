@@ -474,7 +474,9 @@ Admin: Leave Management (S-13) → Pending tab → Review → Approve/Reject
 
 | Action | Behaviour |
 |--------|-----------|
-| Click available slot | Opens S-09 (Assign Task modal) pre-filled with the staff member and time |
+| Click available slot | Opens **slot action menu**: assign existing task (S-09) or add custom task & assign (ticket 0034) |
+| Assign existing (menu) | Opens S-09 pre-filled with staff member, date, and start time; case-first task picker (ticket 0033) |
+| Add custom task & assign (menu) | Wizard: pick active case → custom task form → creates task (EP-11b) and assigns slot (EP-13) |
 | Click task block | Navigate to Case Detail (S-06) for that task's case |
 | Hover task block | Tooltip: full task name, case reference, client name, remaining time |
 | Prev/Next/Today | Navigate days. Date picker for jumping to specific dates. |
@@ -486,7 +488,7 @@ Admin: Leave Management (S-13) → Pending tab → Review → Approve/Reject
 | Default | Current day shown |
 | No staff | "No staff members configured. Go to Settings → Staff Members." |
 | All staff on leave | All columns show LEAVE blocks. Message: "All staff are on leave today." |
-| Conflict detected | When assigning via modal (S-09), conflicting slot flashes red briefly |
+| Conflict detected | When assigning via modal (S-09) or custom-task wizard, conflicting slot flashes red briefly |
 | Loading | Skeleton blocks in each column |
 
 ---
@@ -668,8 +670,37 @@ Admin: Leave Management (S-13) → Pending tab → Review → Approve/Reject
 
 ### S-07 · Create Case (Lead) Modal
 
-**Scope:** MVP  
-**Purpose:** Quick form to create a new case/lead.
+**Scope:** MVP (fork extended ticket 0035)  
+**Purpose:** Quick form to create a new case/lead. Entry points open a **fork** first (see below).
+
+**Intake fork (ticket 0035):** Clicking **+ New case** on Case List, Task Board, or Dashboard opens a chooser before this modal:
+
+```
+┌────────────────────────────────────────┐
+│  New case                          [✕] │
+├────────────────────────────────────────┤
+│  Choose how you want to add this       │
+│  enquiry.                              │
+│                                        │
+│  [ Create lead for review          ]   │
+│    Saves as lead pending — accept      │
+│    or reject later (S-08)              │
+│                                        │
+│  [ Create & open case              ]   │
+│    Accepts immediately, generates      │
+│    reference and 13 tasks, opens       │
+│    case detail                         │
+│                                        │
+│                        [Cancel]        │
+└────────────────────────────────────────┘
+```
+
+| Path | Behaviour |
+|------|-----------|
+| Create lead for review | Opens S-07 modal below (unchanged) |
+| Create & open case | Same fields as S-07 → `POST /api/cases` then `POST /api/cases/:id/accept` → navigate to `/cases/:id?accepted=1` |
+
+**HITL:** Create & open case bypasses S-08 lead review — explicit admin choice when enough information is already known.
 
 ```
 ┌────────────────────────────────────────┐
@@ -709,6 +740,7 @@ Admin: Leave Management (S-13) → Pending tab → Review → Approve/Reject
 |--------|-----------|
 | Cancel | Close modal, discard input. If fields have content, show "Discard changes?" confirmation. |
 | Create Lead | Validate → create case with status `Lead — Pending Review` → close modal → show success toast → case appears in Case List |
+| Create & open case (fork) | Same validation → create + accept (EP-01 + EP-05) → navigate to case detail with `?accepted=1` |
 
 **States:**
 

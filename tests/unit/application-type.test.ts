@@ -10,6 +10,7 @@ import {
 describe('application type code validation (TC-015)', () => {
   it.each([
     ['SKW', true],
+    ['SKD', true],
     ['ANC', true],
     ['sk', false],
     ['SK1', false],

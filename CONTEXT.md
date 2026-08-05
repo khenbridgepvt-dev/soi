@@ -62,4 +62,7 @@ _Avoid_: Trash, deleted items
 
 ## Architecture
 
-Client reads use TanStack Query (`src/lib/query/`); mutations invalidate affected keys via `invalidateAfterMutation`. Board Realtime is deferred per [ADR-0003](docs/adr/0003-realtime-split-notifications-mvp-board-advanced.md) (see [ADR-0016](docs/adr/0016-reactive-cache-invalidation.md), [ticket 0032](tracker/issues/0032-reactive-data-layer.md)).
+- **Client state:** TanStack Query (`src/lib/query/`); mutations call `invalidateAfterMutation` — see [ADR-0016](docs/adr/0016-reactive-cache-invalidation.md), [ticket 0032](tracker/issues/0032-reactive-data-layer.md). Board Realtime deferred per [ADR-0003](docs/adr/0003-realtime-split-notifications-mvp-board-advanced.md).
+- **Application types:** SKD (Skilled Worker Dependant) is a **separate** type from SKW — [ticket 0036](tracker/issues/0036-skilled-worker-dependant-application-type.md).
+- **Post-MVP UX:** Assign picker (0033), slot custom task (0034), intake fork (0035) — index in [docs/SOURCE_OF_TRUTH.md](docs/SOURCE_OF_TRUTH.md).
+- **Agent docs:** Start at [docs/SOURCE_OF_TRUTH.md](docs/SOURCE_OF_TRUTH.md); delivery history in [tracker/issues/0001-mvp-implementation-map.md](tracker/issues/0001-mvp-implementation-map.md).

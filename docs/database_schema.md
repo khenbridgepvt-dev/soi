@@ -288,6 +288,7 @@ CREATE TYPE case_link_type AS ENUM ('follow_up', 'related', 'dependant_applicati
 | Naturalisation | NAT |
 | Fee Waiver | FWV |
 | Further Leave to Remain | FLR |
+| Skilled Worker Dependant | SKD |
 
 **Business Rules:**
 - Cannot hard-delete an application type if any case references it. Deactivate instead.

@@ -6,11 +6,14 @@ import { useRouter } from 'next/navigation';
 import AssignTaskModal, {
   type AssignTaskModalPrefill,
 } from '@/components/schedule/AssignTaskModal';
+import CustomTaskAssignModal, {
+  type CustomTaskAssignPrefill,
+} from '@/components/schedule/CustomTaskAssignModal';
+import SlotActionMenu from '@/components/schedule/SlotActionMenu';
 import ScheduleLegend from '@/components/schedule/ScheduleLegend';
 import SlotBlock, { type SlotBlockState } from '@/components/schedule/SlotBlock';
 import Toast from '@/components/ui/Toast';
 import { REFETCH_INTERVAL_MS, queryKeys } from '@/lib/query/keys';
-import { useInvalidateAfterMutation } from '@/lib/query/useInvalidateAfterMutation';
 import { addDays, formatLongDate, todayISODate } from '@/lib/utils/dates';
 
 /** 36px pill (DS-1) + 4px vertical gap between pills (design_system §6). */
@@ -88,6 +91,16 @@ type ModalState = {
   prefill: AssignTaskModalPrefill | null;
 };
 
+type SlotActionState = {
+  open: boolean;
+  slot: SelectedSlot | null;
+};
+
+type CustomTaskModalState = {
+  open: boolean;
+  prefill: CustomTaskAssignPrefill | null;
+};
+
 function formatHours(minutes: number): string {
   const hours = minutes / 60;
   return Number.isInteger(hours) ? `${hours}` : hours.toFixed(1);
@@ -117,10 +130,14 @@ async function fetchScheduleDay(date: string): Promise<SchedulePayload> {
 
 export default function ScheduleGridView() {
   const router = useRouter();
-  const invalidate = useInvalidateAfterMutation();
   const [date, setDate] = useState(() => todayISODate());
   const [selected, setSelected] = useState<SelectedSlot | null>(null);
+  const [slotAction, setSlotAction] = useState<SlotActionState>({ open: false, slot: null });
   const [modal, setModal] = useState<ModalState>({ open: false, prefill: null });
+  const [customTaskModal, setCustomTaskModal] = useState<CustomTaskModalState>({
+    open: false,
+    prefill: null,
+  });
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const {
@@ -249,14 +266,7 @@ export default function ScheduleGridView() {
                       end: slot.end,
                     };
                     setSelected(nextSelection);
-                    setModal({
-                      open: true,
-                      prefill: {
-                        staffId: member.id,
-                        date,
-                        startTime: slot.start,
-                      },
-                    });
+                    setSlotAction({ open: true, slot: nextSelection });
                   }
                 : undefined
             }
@@ -406,6 +416,50 @@ export default function ScheduleGridView() {
         </>
       )}
 
+      <SlotActionMenu
+        open={slotAction.open}
+        staffName={slotAction.slot?.staffName ?? ''}
+        startTime={slotAction.slot?.start ?? ''}
+        dateLabel={formatLongDate(date)}
+        onClose={() => {
+          setSlotAction({ open: false, slot: null });
+          setSelected(null);
+        }}
+        onAssignExisting={() => {
+          const slot = slotAction.slot;
+          if (!slot) {
+            return;
+          }
+
+          setSlotAction({ open: false, slot: null });
+          setModal({
+            open: true,
+            prefill: {
+              staffId: slot.staffId,
+              date,
+              startTime: slot.start,
+            },
+          });
+        }}
+        onAddCustomTask={() => {
+          const slot = slotAction.slot;
+          if (!slot) {
+            return;
+          }
+
+          setSlotAction({ open: false, slot: null });
+          setCustomTaskModal({
+            open: true,
+            prefill: {
+              staffId: slot.staffId,
+              staffName: slot.staffName,
+              date,
+              startTime: slot.start,
+            },
+          });
+        }}
+      />
+
       <AssignTaskModal
         open={modal.open}
         prefill={modal.prefill}
@@ -417,8 +471,21 @@ export default function ScheduleGridView() {
           setToastMessage(message);
           setModal({ open: false, prefill: null });
           setSelected(null);
-          const caseId = modal.prefill?.caseId;
-          void invalidate('assign', { caseId });
+          void refetch();
+        }}
+      />
+
+      <CustomTaskAssignModal
+        open={customTaskModal.open}
+        prefill={customTaskModal.prefill}
+        onClose={() => {
+          setCustomTaskModal({ open: false, prefill: null });
+          setSelected(null);
+        }}
+        onAssigned={(message) => {
+          setToastMessage(message);
+          setCustomTaskModal({ open: false, prefill: null });
+          setSelected(null);
           void refetch();
         }}
       />

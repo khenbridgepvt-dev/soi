@@ -143,6 +143,8 @@ Translate every functional requirement from the SRS into implementation-ready us
 - [ ] The case does not generate tasks and is not visible to staff until explicitly accepted.
 - [ ] A case reference is **not** generated until the case is accepted (see US-2.3).
 
+**Post-MVP (ticket 0035):** Admins may choose **Create & open case** at intake to auto-accept immediately (same EP-01 + EP-05 sequence) and land on case detail — bypasses S-08 review when the admin already has enough information.
+
 **Edge Cases:**
 - Submitting the form with a blank client name is blocked (mandatory field enforcement after acceptance — but client name should be required at creation too for usability).
 
@@ -164,7 +166,7 @@ Translate every functional requirement from the SRS into implementation-ready us
 - [ ] Admin can add a new type with: full name, abbreviation code (e.g., "SKW" for Skilled Worker), and active/inactive status.
 - [ ] Admin can edit an existing type's name or abbreviation.
 - [ ] Admin can deactivate (not hard-delete) a type; deactivated types no longer appear in the case creation dropdown but remain on existing cases.
-- [ ] Default types are pre-seeded: Skilled Worker Visa (extending, switching, adding dependants, change of employment), Graduate Visa, Spouse Visa, ILR, Naturalisation, Fee Waiver, Further Leave to Remain.
+- [ ] Default types are pre-seeded: Skilled Worker Visa (SKW), **Skilled Worker Dependant (SKD)** — separate type per firm workflow, Graduate Visa, Spouse Visa, ILR, Naturalisation, Fee Waiver, Further Leave to Remain.
 - [ ] The abbreviation code is used in automated reference generation (US-2.3).
 
 ---

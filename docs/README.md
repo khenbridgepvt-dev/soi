@@ -10,6 +10,8 @@ Specification package for the **Team Scheduling & Task Management System** — a
 
 ## Start here (implementation)
 
+**Agents:** read [SOURCE_OF_TRUTH.md](./SOURCE_OF_TRUTH.md) first.
+
 | Role | Read first | Then |
 |------|------------|------|
 | **Any developer** | [scope_matrix.md](./scope_matrix.md) §7 (Sprint 1) | [deployment_guide.md](./deployment_guide.md) |
@@ -49,7 +51,8 @@ Specification package for the **Team Scheduling & Task Management System** — a
 |----------|---------|
 | [test_plan.md](./test_plan.md) | Test cases |
 | [deployment_guide.md](./deployment_guide.md) | CI/CD, environments |
-| [adr/](./adr/) | Architecture decisions (11 ADRs) |
+| [SOURCE_OF_TRUTH.md](./SOURCE_OF_TRUTH.md) | Agent index — hierarchy, read map, post-MVP log |
+| [adr/](./adr/) | Architecture decisions (16 ADRs) |
 
 ---
 
@@ -68,19 +71,19 @@ Per [scope_matrix.md](./scope_matrix.md) §7:
 
 | Module | Status |
 |--------|--------|
-| M1 Auth & RLS | Not started |
-| M2 Case Management | Not started |
-| M3 Task Lifecycle | Not started |
-| M4 Task Board | Not started |
-| M5 Scheduling | Not started |
-| M6 Staff Dashboard | Not started |
-| M7 Notifications | Not started |
-| M8 Staff Management | Not started |
-| M9 Search | Not started |
-| M10 Data Integrity | Not started |
+| M1 Auth & RLS | Shipped (tickets 0002–0009) |
+| M2 Case Management | Shipped (0012–0016, 0030) |
+| M3 Task Lifecycle | Shipped (0013–0016, 0023) |
+| M4 Task Board | Shipped (0024) |
+| M5 Scheduling | Shipped (0020–0022) |
+| M6 Staff Dashboard | Shipped (0025–0026) |
+| M7 Notifications | Shipped (0027) |
+| M8 Staff Management | Shipped (0019–0020) |
+| M9 Search | Shipped (0029) |
+| M10 Data Integrity | Shipped (0030 archive, auto-save) |
 | M11–M15 Advanced | Phase 2 |
 
-**Post-MVP:** Reactive data layer ([0032](../tracker/issues/0032-reactive-data-layer.md)) — TanStack Query + mutation invalidation ([ADR-0016](./adr/0016-reactive-cache-invalidation.md)); closed 2026-08-04.
+**Post-MVP UX (0032–0036):** Reactive TanStack layer, case-first assign, slot custom task, intake fork, SKD type — see [SOURCE_OF_TRUTH.md](./SOURCE_OF_TRUTH.md) §3 and [implementation map](../tracker/issues/0001-mvp-implementation-map.md).
 
 ---
 

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import CreateLeadModal from '@/components/cases/CreateLeadModal';
+import CreateCaseIntake from '@/components/cases/CreateCaseIntake';
 import LeadReviewModal, { type LeadReviewTarget } from '@/components/cases/LeadReviewModal';
 import MetricCard from '@/components/layout/MetricCard';
 import type { AdminDashboardPayload } from '@/lib/dashboard/fetch-admin-dashboard';
@@ -55,7 +55,7 @@ export default function AdminDashboardView({
   applicationTypes: applicationTypesProp,
 }: AdminDashboardViewProps) {
   const invalidate = useInvalidateAfterMutation();
-  const [createLeadOpen, setCreateLeadOpen] = useState(false);
+  const [intakeOpen, setIntakeOpen] = useState(false);
   const [reviewLead, setReviewLead] = useState<LeadReviewTarget | null>(null);
 
   const {
@@ -151,10 +151,10 @@ export default function AdminDashboardView({
               <p className="text-sm text-text-secondary">No pending leads</p>
               <button
                 type="button"
-                onClick={() => setCreateLeadOpen(true)}
+                onClick={() => setIntakeOpen(true)}
                 className="mt-3 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-white"
               >
-                + Create Lead
+                + New case
               </button>
             </div>
           )}
@@ -249,12 +249,11 @@ export default function AdminDashboardView({
         )}
       </section>
 
-      <CreateLeadModal
-        open={createLeadOpen}
+      <CreateCaseIntake
+        open={intakeOpen}
         applicationTypes={applicationTypes}
-        onClose={() => setCreateLeadOpen(false)}
-        onCreated={() => {
-          setCreateLeadOpen(false);
+        onClose={() => setIntakeOpen(false)}
+        onLeadCreated={() => {
           void invalidate('createLead');
         }}
       />

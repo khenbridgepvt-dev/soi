@@ -57,6 +57,10 @@ The MVP is **operational as a free-tier pilot**: all ten MVP modules (M1–M10) 
 - **0030 archive + auto-save polish:** migration 00039 soft-delete/restore/purge RPCs, EP-08/39–41, S-18 archive page, `DeleteCaseButton`, `AutoSaveStatusProvider` + retry/rollback, TC-092–094 + auto-save unit tests — [Soft-delete, archive, purge, and auto-save polish](./0030-archive-purge-autosave.md)
 - **0032 reactive data layer:** TanStack Query + mutation invalidation across client views; ADR-0016 invalidate-on-mutation; 60s polling on board/schedule/admin dashboard; notifications Realtime unchanged — [Reactive data layer — TanStack Query and mutation invalidation](./0032-reactive-data-layer.md). Audit closure 2026-08-05: lead-detail case invalidation, client-side `applicationTypes` fetch, doc cross-links.
 - **0033 case-first assign picker:** EP-60 grouped assignable API; S-09 case search → task select in `AssignTaskModal`; prefill paths unchanged — [Case-first assign task picker (S-09 UX)](./0033-case-first-assign-picker.md)
+- **0034 slot menu + custom assign:** S-04 slot action menu; `CustomTaskAssignModal` wizard (EP-11b + EP-13); `createCustomTask` lib extraction — [Slot action menu and custom task assign from calendar](./0034-slot-menu-custom-task-assign.md)
+- **0035 intake fork:** `CreateCaseIntake` fork (lead vs create & open); `createLeadAndAccept` helper; + New case on list/board/dashboard — [Intake fork — create lead vs create and open case](./0035-intake-fork-create-lead-vs-open-case.md)
+- **0036 SKD application type:** Migration 00040 seeds Skilled Worker Dependant (`SKD`); separate from SKW per firm decision; ADR-0002 lifecycle unchanged — [Skilled Worker Dependant application type (SKD)](./0036-skilled-worker-dependant-application-type.md)
+- **0037 doc index:** `docs/SOURCE_OF_TRUTH.md` agent entry point; README implementation status fixed; CONTEXT architecture bullets — [Documentation index and status truth (SOURCE_OF_TRUTH)](./0037-source-of-truth-and-doc-index.md)
 
 ## Not yet specified
 

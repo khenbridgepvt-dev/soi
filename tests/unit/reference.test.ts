@@ -100,6 +100,25 @@ describe('formatCaseReferencePreview', () => {
       }),
     ).toBe('0127NN/GRD/LIX');
   });
+
+  it('supports SKD type code (ticket 0036)', () => {
+    expect(
+      formatCaseReference({
+        yearMonth: '0526',
+        sequence: 4,
+        typeCode: 'SKD',
+        clientFirstName: 'Maria',
+      }),
+    ).toBe('052604/SKD/MAR');
+
+    expect(
+      formatCaseReferencePreview({
+        typeCode: 'SKD',
+        clientFirstName: 'Maria',
+        at: new Date('2026-05-15T12:00:00Z'),
+      }),
+    ).toBe('0526NN/SKD/MAR');
+  });
 });
 
 describe('parseCaseReference', () => {
