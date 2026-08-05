@@ -608,7 +608,8 @@ Translate every functional requirement from the SRS into implementation-ready us
 **Story:** As an administrator, I want to add and remove staff members from the system so that the team roster is always current.
 
 **Acceptance Criteria:**
-- [ ] Admin can add a new staff member with: full name, email, role (staff/senior), and default working hours.
+- [ ] Admin can add a new staff member with: full name, **username** (display handle), email, role (staff/senior), and default working hours.
+- [ ] Usernames are unique (case-insensitive) and shown as `@username` in team and assign UIs; login remains email-based (ADR-0017).
 - [ ] Adding a staff member creates a Supabase Auth account and sends an invitation email.
 - [ ] Admin can deactivate a staff member — their account is disabled, tasks remain assigned but the staff member no longer appears in the scheduling grid as "available."
 - [ ] Deactivated staff members' data is retained (soft-remove, not hard-delete).

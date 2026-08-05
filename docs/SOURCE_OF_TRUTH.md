@@ -26,14 +26,16 @@ Quick index for agents and developers. **Read this first** instead of re-auditin
 |-------|------------|--------------|
 | **Auth, roles, middleware** | `docs/api_specification.md` §2, ADR-0015 | `src/lib/auth/`, `middleware.ts` |
 | **Cases, leads, accept/reject** | `docs/user_stories.md` US-2.x, EP-01–06 | `src/lib/cases/`, `src/app/api/cases/` |
+| **Deleted case tombstone** | Ticket [0040](../tracker/issues/0040-deleted-case-tombstone-and-calendar.md), EP-08 addendum | `fetch-case-tombstone.ts`, `CaseDeletedTombstone.tsx` |
 | **Intake fork (lead vs open)** | Ticket [0035](../tracker/issues/0035-intake-fork-create-lead-vs-open-case.md), S-07 wireframe | `CreateCaseIntake.tsx`, `create-lead-and-accept.ts` |
 | **Assign task (S-09)** | `ui_wireframe_spec.md` S-09, EP-13, EP-60 | `AssignTaskModal.tsx`, `fetch-assignable-tasks.ts` |
 | **Case-first assign picker** | Ticket [0033](../tracker/issues/0033-case-first-assign-picker.md) | `GET /api/tasks/assignable` grouped |
 | **Slot menu + custom assign** | Ticket [0034](../tracker/issues/0034-slot-menu-custom-task-assign.md), S-04 | `SlotActionMenu.tsx`, `CustomTaskAssignModal.tsx` |
 | **Task board** | `ui_wireframe_spec.md` S-03, EP-42 | `TaskBoardView.tsx`, `TaskBoardCard.tsx` (0038 direct assign) |
-| **Schedule grid** | `ui_wireframe_spec.md` S-04, EP-24/25 | `ScheduleGridView.tsx`, `src/lib/schedule/` |
+| **Schedule grid** | `ui_wireframe_spec.md` S-04, EP-24/25 | `ScheduleGridView.tsx`, `assignment-status.ts` (0039 status pills) |
 | **Notifications** | ADR-0003, ticket 0027 | `use-notifications.ts`, Realtime |
 | **Application types** | `database_schema.md` T2, EP-35–37, ticket [0036](../tracker/issues/0036-skilled-worker-dependant-application-type.md) | `ApplicationTypesSettings.tsx`, migration `00017` + `00040` (SKD) |
+| **Staff profiles / username** | ADR-0017, ticket [0041](../tracker/issues/0041-mandatory-profile-username.md) | `username.ts`, `UsernamePromptGate.tsx`, EP-18–20 |
 | **Client data / cache** | ADR-0016, ticket [0032](../tracker/issues/0032-reactive-data-layer.md) | `src/lib/query/` (`keys.ts`, `invalidate.ts`) |
 | **References** | ADR-0009, `src/lib/utils/reference.ts` | `accept_lead` RPC |
 | **Tests** | `docs/test_plan.md` | `tests/unit/`, `tests/integration/` |
@@ -43,7 +45,7 @@ Quick index for agents and developers. **Read this first** instead of re-auditin
 
 ---
 
-## 3. Post-MVP delivery log (0032–0038)
+## 3. Post-MVP delivery log (0032–0041)
 
 | Ticket | Date | Summary |
 |--------|------|---------|
@@ -53,6 +55,9 @@ Quick index for agents and developers. **Read this first** instead of re-auditin
 | [0035](../tracker/issues/0035-intake-fork-create-lead-vs-open-case.md) | 2026-08-05 | + New case fork: lead for review vs create & open (auto-accept) |
 | [0036](../tracker/issues/0036-skilled-worker-dependant-application-type.md) | 2026-08-05 | SKD application type seeded (separate from SKW); ADR-0002 lifecycle unchanged |
 | [0038](../tracker/issues/0038-task-board-direct-assign.md) | 2026-08-05 | Board card click opens Assign Task modal with task prefilled |
+| [0039](../tracker/issues/0039-schedule-calendar-status-parity.md) | 2026-08-05 | Schedule pills show COMPLETED/BLOCKED/URGENT; taskStatus invalidates schedule |
+| [0040](../tracker/issues/0040-deleted-case-tombstone-and-calendar.md) | 2026-08-05 | Deleted case tombstone; schedule DELETED pills; assignments stay booked |
+| [0041](../tracker/issues/0041-mandatory-profile-username.md) | 2026-08-05 | Mandatory profile username (display handle); team/assign UI; email admin-only |
 
 MVP modules (tickets 0002–0030) are implemented per the [implementation map](../tracker/issues/0001-mvp-implementation-map.md).
 

@@ -76,6 +76,8 @@ describe('task board (ticket 0024, S-03 / EP-42)', () => {
   it('TC-048 · urgent case highlights active tasks only', async () => {
     const { client } = await signInAsRole('admin');
 
+    // Clear overdue flags so urgent token is not preempted (scheduled-jobs tests may flag seed tasks).
+    await client.from('tasks').update({ is_overdue: false }).eq('case_id', VISHNU_CASE_ID);
     await client.from('cases').update({ is_urgent: true }).eq('id', VISHNU_CASE_ID);
 
     const urgentBoard = await fetchTaskBoard(client);

@@ -4,6 +4,11 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import SlotBlock, { type SlotBlockState } from '@/components/schedule/SlotBlock';
+import {
+  isScheduleAssignmentDeleted,
+  scheduleAssignmentStatusDotClass,
+  scheduleAssignmentStatusSuffix,
+} from '@/lib/schedule/assignment-status';
 import { REFETCH_INTERVAL_MS, queryKeys } from '@/lib/query/keys';
 import {
   CALENDAR_ROW_HEIGHT,
@@ -12,6 +17,7 @@ import {
   timeToPixelOffset,
 } from '@/lib/utils/calendar-layout';
 import { addDays, formatLongDate, todayISODate } from '@/lib/utils/dates';
+import { formatStaffUsername } from '@/lib/staff/username';
 
 const ROW_HEIGHT = CALENDAR_ROW_HEIGHT;
 const PILL_GAP = 4;
@@ -45,11 +51,14 @@ type ScheduleAssignment = {
   end_time: string;
   duration_minutes: number;
   is_urgent: boolean;
+  case_deleted: boolean;
+  task_deleted: boolean;
 };
 
 type ScheduleStaff = {
   id: string;
   full_name: string;
+  username: string;
   working_hours: TimeInterval | null;
   is_on_leave: boolean;
   assignments: ScheduleAssignment[];
@@ -85,38 +94,6 @@ function formatDuration(minutes: number): string {
   }
 
   return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
-}
-
-function statusLabel(assignment: ScheduleAssignment): string | null {
-  if (assignment.task_status === 'blocked') {
-    return 'BLOCKED';
-  }
-
-  if (assignment.is_urgent) {
-    return 'URGENT';
-  }
-
-  if (assignment.task_status === 'completed') {
-    return 'COMPLETED';
-  }
-
-  return null;
-}
-
-function statusDotClass(assignment: ScheduleAssignment): string {
-  if (assignment.task_status === 'blocked') {
-    return 'bg-status-blocked-border';
-  }
-
-  if (assignment.task_status === 'completed') {
-    return 'bg-text-muted';
-  }
-
-  if (assignment.is_urgent) {
-    return 'bg-error';
-  }
-
-  return 'bg-status-onTrack-border';
 }
 
 export default function StaffDayCalendarView({ staffId }: StaffDayCalendarViewProps) {
@@ -233,6 +210,7 @@ export default function StaffDayCalendarView({ staffId }: StaffDayCalendarViewPr
         const span = slot.span;
         const showDetail = span >= 2;
         const isNextAction = assignment?.task_id === nextActionTaskId;
+        const isDeleted = assignment ? isScheduleAssignmentDeleted(assignment) : false;
 
         cells.push(
           <div
@@ -253,13 +231,14 @@ export default function StaffDayCalendarView({ staffId }: StaffDayCalendarViewPr
             >
               <SlotBlock
                 state="booked"
+                className={isDeleted ? 'opacity-80' : undefined}
                 label={
                   assignment
                     ? `${assignment.task_abbreviation} · ${assignment.case_reference ?? 'No reference'} · ${assignment.client_name ?? 'Unknown client'}`
                     : undefined
                 }
                 onClick={
-                  assignment?.case_id
+                  assignment?.case_id && !isDeleted
                     ? () =>
                         router.push(
                           `/staff/cases/${assignment.case_id}?task=${assignment.task_id}`,
@@ -272,7 +251,7 @@ export default function StaffDayCalendarView({ staffId }: StaffDayCalendarViewPr
                   <span className="flex w-full flex-col items-start gap-0.5 text-left">
                     <span className="flex items-center gap-1 truncate">
                       <span
-                        className={`inline-block h-2 w-2 shrink-0 rounded-full ${statusDotClass(assignment)}`}
+                        className={`inline-block h-2 w-2 shrink-0 rounded-full ${scheduleAssignmentStatusDotClass(assignment)}`}
                         aria-hidden
                       />
                       <span className="truncate font-semibold">
@@ -283,7 +262,7 @@ export default function StaffDayCalendarView({ staffId }: StaffDayCalendarViewPr
                       <>
                         <span className="truncate text-xs font-normal text-text-secondary">
                           {assignment.case_reference ?? '—'}
-                          {statusLabel(assignment) ? ` · ${statusLabel(assignment)}` : ''}
+                          {scheduleAssignmentStatusSuffix(assignment)}
                         </span>
                         <span className="text-xs font-normal text-text-muted">
                           {formatDuration(assignment.duration_minutes)} allocated
@@ -383,8 +362,11 @@ export default function StaffDayCalendarView({ staffId }: StaffDayCalendarViewPr
                 Time
               </div>
               <div className="border-l border-slot-line bg-page px-3 py-2 text-sm font-semibold text-text">
-                {member.full_name}
-                {member.is_on_leave ? ' · On Leave' : ''}
+                <p>{member.full_name}</p>
+                <p className="text-xs font-normal text-text-muted">
+                  {formatStaffUsername(member.username)}
+                  {member.is_on_leave ? ' · On Leave' : ''}
+                </p>
               </div>
             </div>
 

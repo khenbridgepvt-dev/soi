@@ -13,8 +13,14 @@ import SlotActionMenu from '@/components/schedule/SlotActionMenu';
 import ScheduleLegend from '@/components/schedule/ScheduleLegend';
 import SlotBlock, { type SlotBlockState } from '@/components/schedule/SlotBlock';
 import Toast from '@/components/ui/Toast';
+import {
+  isScheduleAssignmentDeleted,
+  scheduleAssignmentStatusDotClass,
+  scheduleAssignmentStatusSuffix,
+} from '@/lib/schedule/assignment-status';
 import { REFETCH_INTERVAL_MS, queryKeys } from '@/lib/query/keys';
 import { addDays, formatLongDate, todayISODate } from '@/lib/utils/dates';
+import { formatStaffUsername } from '@/lib/staff/username';
 
 /** 36px pill (DS-1) + 4px vertical gap between pills (design_system §6). */
 const ROW_HEIGHT = 40;
@@ -49,11 +55,14 @@ type ScheduleAssignment = {
   end_time: string;
   duration_minutes: number;
   is_urgent: boolean;
+  case_deleted: boolean;
+  task_deleted: boolean;
 };
 
 type ScheduleStaff = {
   id: string;
   full_name: string;
+  username: string;
   online_status: 'online' | 'break' | 'offline';
   working_hours: TimeInterval | null;
   is_on_leave: boolean;
@@ -185,6 +194,7 @@ export default function ScheduleGridView() {
         const span = slot.span;
         const assignment = assignmentsById.get(slot.assignment_id);
         const showDetail = span >= 2;
+        const isDeleted = assignment ? isScheduleAssignmentDeleted(assignment) : false;
 
         cells.push(
           <div
@@ -194,6 +204,7 @@ export default function ScheduleGridView() {
           >
             <SlotBlock
               state="booked"
+              className={isDeleted ? 'opacity-80' : undefined}
               label={
                 assignment
                   ? `${assignment.task_name} · ${assignment.case_reference ?? 'No reference'} · ${assignment.client_name ?? 'Unknown client'} · ${assignment.start_time}–${assignment.end_time}`
@@ -208,10 +219,10 @@ export default function ScheduleGridView() {
             >
               <span className="flex h-full flex-col justify-center gap-0.5 overflow-hidden text-left">
                 <span className="flex items-center gap-1">
-                  {assignment?.is_urgent && (
+                  {assignment && (
                     <span
-                      aria-hidden="true"
-                      className="h-full min-h-[14px] w-1 shrink-0 rounded-sm bg-error"
+                      className={`inline-block h-2 w-2 shrink-0 rounded-full ${scheduleAssignmentStatusDotClass(assignment)}`}
+                      aria-hidden
                     />
                   )}
                   <span className="truncate text-sm font-semibold">
@@ -225,7 +236,7 @@ export default function ScheduleGridView() {
                     </span>
                     <span className="truncate text-xs font-normal text-text-muted">
                       {assignment ? formatDuration(assignment.duration_minutes) : ''}
-                      {assignment?.is_urgent ? ' · URGENT' : ''}
+                      {assignment ? scheduleAssignmentStatusSuffix(assignment) : ''}
                     </span>
                   </>
                 )}
@@ -367,6 +378,7 @@ export default function ScheduleGridView() {
                 className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs text-text-secondary"
               >
                 <span className="font-medium text-text">{member.full_name}</span>{' '}
+                <span className="text-text-muted">{formatStaffUsername(member.username)}</span>{' '}
                 {member.working_minutes === 0
                   ? member.booked_minutes === 0
                     ? 'Off'
@@ -393,9 +405,10 @@ export default function ScheduleGridView() {
                     {member.full_name}
                   </p>
                   <p className="truncate text-xs text-text-muted">
+                    {formatStaffUsername(member.username)}
                     {member.working_hours
-                      ? `${member.working_hours.start}–${member.working_hours.end}`
-                      : 'Off'}
+                      ? ` · ${member.working_hours.start}–${member.working_hours.end}`
+                      : ' · Off'}
                   </p>
                 </div>
               ))}

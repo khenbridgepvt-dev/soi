@@ -139,7 +139,7 @@ afterAll(async () => {
 
 describe('detect-overdue (ticket 0028, US-7.3)', () => {
   it('TC-074 · flags overdue tasks and notifies the assignee once', async () => {
-    const first = await runDetectOverdue(service, new Date(`${todayISODate()}T12:00:00.000Z`));
+    const first = await runDetectOverdue(service, new Date(`${todayISODate()}T18:00:00.000Z`));
     expect(first.flagged).toBeGreaterThanOrEqual(1);
     expect(first.notifications_sent).toBeGreaterThanOrEqual(1);
 
@@ -160,7 +160,7 @@ describe('detect-overdue (ticket 0028, US-7.3)', () => {
 
     expect(count).toBe(1);
 
-    const second = await runDetectOverdue(service, new Date(`${todayISODate()}T12:15:00.000Z`));
+    const second = await runDetectOverdue(service, new Date(`${todayISODate()}T18:15:00.000Z`));
     expect(second.flagged).toBe(0);
     expect(second.notifications_sent).toBe(0);
 

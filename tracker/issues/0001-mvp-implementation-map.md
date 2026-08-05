@@ -62,6 +62,9 @@ The MVP is **operational as a free-tier pilot**: all ten MVP modules (M1–M10) 
 - **0036 SKD application type:** Migration 00040 seeds Skilled Worker Dependant (`SKD`); separate from SKW per firm decision; ADR-0002 lifecycle unchanged — [Skilled Worker Dependant application type (SKD)](./0036-skilled-worker-dependant-application-type.md)
 - **0037 doc index:** `docs/SOURCE_OF_TRUTH.md` agent entry point; README implementation status fixed; CONTEXT architecture bullets — [Documentation index and status truth (SOURCE_OF_TRUTH)](./0037-source-of-truth-and-doc-index.md)
 - **0038 board direct assign:** Task board card click opens `AssignTaskModal` with task prefilled (no case navigation) — [Task board card opens Assign Task modal directly](./0038-task-board-direct-assign.md)
+- **0039 schedule status pills:** Admin/staff calendar pills show COMPLETED/BLOCKED/URGENT; `taskStatus` invalidates schedule — [Schedule calendar shows task status](./0039-schedule-calendar-status-parity.md)
+- **0040 deleted tombstone:** Admin tombstone + schedule DELETED pills; assignments stay booked on soft-delete — [Deleted case tombstone and calendar deleted pills](./0040-deleted-case-tombstone-and-calendar.md)
+- **0041 mandatory username:** `profiles.username` display handle; team/assign/schedule UI; `UsernamePromptGate`; ADR-0017 — [Mandatory profile username (display handle)](./0041-mandatory-profile-username.md)
 
 ## Not yet specified
 

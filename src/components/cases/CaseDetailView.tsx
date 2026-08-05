@@ -4,11 +4,13 @@ import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import LeadDetailActionsClient from '@/components/cases/LeadDetailActionsClient';
+import CaseDeletedTombstone from '@/components/cases/CaseDeletedTombstone';
 import DeleteCaseButton from '@/components/cases/DeleteCaseButton';
 import DependantsSection from '@/components/cases/DependantsSection';
 import TaskChecklistSection from '@/components/cases/TaskChecklistSection';
 import { useAutoSaveStatusReporter } from '@/components/layout/AutoSaveStatusProvider';
 import type { CaseDetailResponse } from '@/lib/cases/fetch-case-detail';
+import type { CaseTombstone } from '@/lib/cases/fetch-case-tombstone';
 import { AutoSaveIndicator } from '@/components/ui/AutoSaveIndicator';
 import { useAutoSave } from '@/lib/hooks/use-auto-save';
 import type { AppRole } from '@/lib/auth/jwt';
@@ -117,7 +119,7 @@ export default function CaseDetailView({
   const {
     data: caseData,
     isLoading: loading,
-    isError,
+    isError: caseNotFound,
     error: queryError,
     refetch: refetchCase,
   } = useQuery({
@@ -132,6 +134,21 @@ export default function CaseDetailView({
 
       return json.data;
     },
+  });
+
+  const { data: tombstone, isLoading: tombstoneLoading } = useQuery({
+    queryKey: queryKeys.caseTombstone(caseId),
+    queryFn: async () => {
+      const response = await fetch(`/api/cases/${caseId}/tombstone`);
+      const json = (await response.json()) as { data?: CaseTombstone } & ApiError;
+
+      if (!response.ok || !json.data) {
+        return null;
+      }
+
+      return json.data;
+    },
+    enabled: isAdmin && caseNotFound && !loading,
   });
 
   const isReadOnly =
@@ -163,14 +180,14 @@ export default function CaseDetailView({
   const resetNotesAutoSave = notesAutoSave.reset;
 
   useEffect(() => {
-    if (!isError) {
+    if (!caseNotFound) {
       return;
     }
 
     setBannerError(
       queryError instanceof Error ? queryError.message : 'Failed to load case.',
     );
-  }, [isError, queryError]);
+  }, [caseNotFound, queryError]);
 
   useEffect(() => {
     if (!caseData) {
@@ -302,14 +319,27 @@ export default function CaseDetailView({
     }
   }
 
-  if (loading) {
+  if (loading || (isAdmin && caseNotFound && tombstoneLoading)) {
     return <p className="text-sm text-slate-600">Loading case…</p>;
+  }
+
+  if (isAdmin && tombstone) {
+    return <CaseDeletedTombstone tombstone={tombstone} />;
   }
 
   if (!caseData) {
     return (
-      <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-        {bannerError ?? 'Case not found.'}
+      <div className="mx-auto max-w-lg rounded-lg border border-border bg-surface px-6 py-10 text-center">
+        <p className="text-sm font-medium text-text">Case not found</p>
+        <p className="mt-2 text-sm text-text-secondary">
+          This case may have been removed or you may not have access.
+        </p>
+        <Link
+          href={isAdmin ? '/cases' : '/staff'}
+          className="mt-6 inline-block text-sm font-medium text-primary hover:underline"
+        >
+          ← Back
+        </Link>
       </div>
     );
   }

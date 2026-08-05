@@ -34,11 +34,14 @@ export type ScheduleAssignment = {
   end_time: string;
   duration_minutes: number;
   is_urgent: boolean;
+  case_deleted: boolean;
+  task_deleted: boolean;
 };
 
 export type ScheduleStaff = {
   id: string;
   full_name: string;
+  username: string;
   online_status: Database['public']['Enums']['online_status'];
   working_hours: TimeInterval | null;
   /** Always false in MVP — leave management is Phase 2 (ADR-0001). */
@@ -66,6 +69,7 @@ export type SchedulePayload = {
 type ProfileRow = {
   id: string;
   full_name: string;
+  username: string;
   online_status: Database['public']['Enums']['online_status'];
 };
 
@@ -75,6 +79,7 @@ type CaseRelation = {
   client_first_name: string;
   client_last_name: string;
   is_urgent: boolean;
+  is_deleted: boolean;
 };
 
 type TaskRelation = {
@@ -83,6 +88,7 @@ type TaskRelation = {
   abbreviation: string;
   status: Database['public']['Enums']['task_status'];
   is_urgent: boolean;
+  is_deleted: boolean;
   cases: CaseRelation | CaseRelation[] | null;
 };
 
@@ -109,12 +115,14 @@ const ASSIGNMENT_SELECT = `
     abbreviation,
     status,
     is_urgent,
+    is_deleted,
     cases (
       id,
       reference,
       client_first_name,
       client_last_name,
-      is_urgent
+      is_urgent,
+      is_deleted
     )
   )
 `;
@@ -148,6 +156,7 @@ function timetableHours(
 function mapAssignment(row: AssignmentRow): ScheduleAssignment {
   const task = asSingleRelation(row.tasks);
   const caseRow = task ? asSingleRelation(task.cases) : null;
+  const taskMissing = !task && Boolean(row.task_id);
 
   return {
     id: row.id,
@@ -163,7 +172,11 @@ function mapAssignment(row: AssignmentRow): ScheduleAssignment {
     start_time: shortTime(row.start_time) ?? row.start_time,
     end_time: shortTime(row.end_time) ?? row.end_time,
     duration_minutes: row.duration_minutes,
-    is_urgent: task?.is_urgent === true || caseRow?.is_urgent === true,
+    is_urgent:
+      !taskMissing &&
+      (task?.is_urgent === true || caseRow?.is_urgent === true),
+    case_deleted: caseRow?.is_deleted === true || taskMissing,
+    task_deleted: task?.is_deleted === true || taskMissing,
   };
 }
 
@@ -186,7 +199,7 @@ export async function fetchSchedule(
 ): Promise<SchedulePayload> {
   let profileQuery = client
     .from('profiles')
-    .select('id, full_name, online_status')
+    .select('id, full_name, username, online_status')
     .eq('is_active', true)
     .order('full_name', { ascending: true });
 
@@ -276,6 +289,7 @@ export async function fetchSchedule(
     return {
       id: profile.id,
       full_name: profile.full_name,
+      username: profile.username,
       online_status: profile.online_status,
       working_hours: workingHours,
       is_on_leave: false,

@@ -29,6 +29,7 @@ type SlotBlockProps = {
   label?: string;
   onClick?: () => void;
   style?: React.CSSProperties;
+  className?: string;
 };
 
 export default function SlotBlock({
@@ -37,8 +38,9 @@ export default function SlotBlock({
   label,
   onClick,
   style,
+  className: extraClassName,
 }: SlotBlockProps) {
-  const className = `flex min-h-[36px] min-w-[72px] flex-col justify-center overflow-hidden rounded-md border-[1.5px] px-1.5 text-center text-sm font-semibold ${STATE_CLASSES[state]}`;
+  const className = `flex min-h-[36px] min-w-[72px] flex-col justify-center overflow-hidden rounded-md border-[1.5px] px-1.5 text-center text-sm font-semibold ${STATE_CLASSES[state]}${extraClassName ? ` ${extraClassName}` : ''}`;
 
   if (state === 'off_hours' || !onClick) {
     return (

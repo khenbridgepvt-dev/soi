@@ -465,7 +465,7 @@ Admin: Leave Management (S-13) → Pending tab → Review → Approve/Reject
 | **Date Selector** | Prev/Next day arrows + "Today" button. Clicking opens a date picker calendar. |
 | **Column per Staff** | One column per active staff member. Header shows: name, working hours. |
 | **Time Rows** | Hourly rows from earliest staff start time to latest staff end time. |
-| **Task Block** | Spans multiple rows proportional to duration. Shows: task type, client name, duration. Colour-coded border (urgent = red, on track = green). |
+| **Task Block** | Spans multiple rows proportional to duration. Shows: task type, client name, duration. Status dot + label when applicable: `URGENT`, `BLOCKED`, `COMPLETED`, `DELETED` (ticket 0039/0040). Deleted case slots stay booked; admin click opens tombstone (S-06). |
 | **Available Slot** | Clickable. Light green/tinted background. Cursor changes to "+" on hover. |
 | **Leave Block** | Full-column block in dark grey with "ON LEAVE" label. Non-interactive. |
 | **Off-Hours** | Dashed border, greyed out. Outside the staff member's configured timetable. |
@@ -665,6 +665,8 @@ Admin: Leave Management (S-13) → Pending tab → Review → Approve/Reject
 | No tasks assigned | Checklist shows all tasks as ○ Not Started, assigned = "—". Message above checklist: "No tasks have been assigned yet. Assign tasks from the scheduling grid." |
 | All tasks complete | Checklist fully ticked. Case status auto-changes to "Completed". A green banner: "All tasks completed. This case is now closed." |
 | Case rejected | Grey page overlay with "REJECTED" banner. Read-only. |
+| Case deleted (admin) | Tombstone empty state: deleted date, deleted by name (no email), reference/client label, links to Cases list and Archive. No checklist. |
+| Case deleted (staff) | Generic "Case not found" — no tombstone details. |
 
 ---
 
@@ -1014,7 +1016,7 @@ Admin: Leave Management (S-13) → Pending tab → Review → Approve/Reject
 |-----------|--------|
 | **Date Navigation** | Same as S-04: Prev, Today, Next, date picker |
 | **Current Time Marker** | Horizontal red line labelled "NOW" at the current time position |
-| **Task Blocks** | Colour-coded blocks spanning their allocated hours. Shows: colour dot, task name, client, case reference, urgency/status label, duration. |
+| **Task Blocks** | Colour-coded blocks spanning their allocated hours. Shows: colour dot, task name, client, case reference, status label (`URGENT` / `BLOCKED` / `COMPLETED` when applicable; ticket 0039), duration. |
 | **Available Slots** | Dotted/hatched background indicating unbooked time |
 | **Off-Hours** | Below the working hours end time, greyed out with label |
 

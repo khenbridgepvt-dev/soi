@@ -693,6 +693,8 @@ GET /api/cases?sort_by=created_at&sort_order=desc
 
 **Confirmation:** The frontend must show a confirmation dialog before calling this endpoint. The API does not enforce a confirmation token.
 
+**Addendum (ticket 0040):** Soft-delete does **not** release `task_assignments` — booked calendar slots remain until manually released. Admin may read a tombstone via `GET /api/cases/:id/tombstone` (`deleted_at`, `deleted_by_name`, `reference`, client name). Staff receive `404`. Schedule assignments expose `case_deleted` / `task_deleted` for pill styling.
+
 ---
 
 ### EP-09 · Add Dependant
@@ -1173,6 +1175,7 @@ Returns non-completed tasks on **active** cases, grouped by case for the S-09 ca
 {
   "full_name": "Asha Kumar",
   "email": "asha@firm.com",
+  "username": "asha.kumar",
   "role": "staff",
   "password": "temp-password-123",
   "timetable": {
@@ -1191,6 +1194,7 @@ Returns non-completed tasks on **active** cases, grouped by case for the S-09 ca
 |-------|------|----------|------------|
 | `full_name` | string | Yes | 1–100 chars |
 | `email` | string | Yes | Valid email, unique across auth.users |
+| `username` | string | Yes | 3–30 chars; `[a-z0-9._-]`; unique case-insensitively (ADR-0017) |
 | `role` | enum | Yes | `staff` or `senior` |
 | `password` | string | Yes | Min 8 chars |
 | `timetable` | object | No | If omitted, defaults to Mon–Fri 09:00–17:00 |
@@ -1207,6 +1211,7 @@ Returns non-completed tasks on **active** cases, grouped by case for the S-09 ca
   "data": {
     "id": "uuid",
     "full_name": "Asha Kumar",
+    "username": "asha.kumar",
     "email": "asha@firm.com",
     "role": "staff",
     "is_active": true
@@ -1218,7 +1223,7 @@ Returns non-completed tasks on **active** cases, grouped by case for the S-09 ca
 
 | Status | Code | Condition |
 |--------|------|-----------|
-| 409 | `CONFLICT` | Email already exists |
+| 409 | `CONFLICT` | Email already exists or username already taken |
 
 ---
 
@@ -1246,6 +1251,7 @@ Returns non-completed tasks on **active** cases, grouped by case for the S-09 ca
     {
       "id": "uuid",
       "full_name": "Asha Kumar",
+      "username": "asha.kumar",
       "email": "asha@firm.com",
       "role": "staff",
       "is_active": true,
@@ -1276,12 +1282,43 @@ Returns non-completed tasks on **active** cases, grouped by case for the S-09 ca
 ```json
 {
   "full_name": "Asha Kumar-Patel",
+  "username": "asha.kumar",
   "role": "senior",
   "is_active": false
 }
 ```
 
+| Field | Type | Required | Validation |
+|-------|------|----------|------------|
+| `full_name` | string | No | 1–100 chars |
+| `username` | string | No | Same rules as EP-18 |
+| `role` | enum | No | `staff` or `senior` (not `admin` via this endpoint) |
+| `is_active` | boolean | No | Deactivates auth on `false` |
+
 **Server-Side (on deactivation):** When `is_active` changes to `false`, the user's Supabase Auth account is disabled (they cannot log in).
+
+---
+
+### EP-20b · Update Own Profile Username
+
+| Field | Value |
+|-------|-------|
+| Method | `PATCH` |
+| Path | `/api/profile` |
+| Role | `admin`, `staff`, `senior` (self only) |
+| Scope | Post-MVP (0041) |
+
+**Request Body:**
+
+```json
+{
+  "username": "asha.kumar"
+}
+```
+
+**Response — `200 OK`:** Updated profile with `id`, `full_name`, `username`, `role`, `online_status`.
+
+**Errors:** `409 CONFLICT` if username taken; `400 VALIDATION_ERROR` for format.
 
 ---
 

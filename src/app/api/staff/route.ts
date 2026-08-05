@@ -8,6 +8,8 @@ import {
   validateStaffPassword,
   validateStaffRole,
 } from '@/lib/staff/validation';
+import { validateUsername } from '@/lib/staff/username';
+import { isUsernameAvailable } from '@/lib/staff/check-username-available';
 import { createServiceClient } from '@/lib/supabase/service';
 
 /** EP-19 · GET /api/staff */
@@ -59,6 +61,7 @@ export async function POST(request: Request) {
   const body = (await request.json()) as {
     full_name?: string;
     email?: string;
+    username?: string;
     role?: string;
     password?: string;
     timetable?: Record<string, string | null>;
@@ -75,6 +78,13 @@ export async function POST(request: Request) {
   if (!emailResult.ok) {
     return apiError(400, 'VALIDATION_ERROR', emailResult.message, [
       { field: 'email', message: emailResult.message },
+    ]);
+  }
+
+  const usernameResult = validateUsername(body.username);
+  if (!usernameResult.ok) {
+    return apiError(400, 'VALIDATION_ERROR', usernameResult.message, [
+      { field: 'username', message: usernameResult.message },
     ]);
   }
 
@@ -95,9 +105,17 @@ export async function POST(request: Request) {
   const service = createServiceClient();
 
   try {
+    const available = await isUsernameAvailable(service, usernameResult.value);
+    if (!available) {
+      return apiError(409, 'CONFLICT', 'Username is already taken.', [
+        { field: 'username', message: 'Username is already taken.' },
+      ]);
+    }
+
     const data = await createStaffMember(service, {
       full_name: nameResult.value,
       email: emailResult.value,
+      username: usernameResult.value,
       role: roleResult.value,
       password: passwordResult.value,
       timetable: body.timetable,

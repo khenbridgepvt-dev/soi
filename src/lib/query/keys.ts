@@ -22,6 +22,7 @@ export const queryKeys = {
     list: (filters: CasesListFilters) => ['cases', 'list', filters] as const,
   },
   case: (caseId: string) => ['case', caseId] as const,
+  caseTombstone: (caseId: string) => ['case', caseId, 'tombstone'] as const,
   blocked: {
     all: ['blocked'] as const,
     list: (staffFilter?: string) =>
@@ -38,5 +39,6 @@ export const queryKeys = {
     filterOptions: () => ['staff', 'filterOptions'] as const,
   },
   applicationTypes: () => ['applicationTypes'] as const,
+  profile: () => ['profile'] as const,
   notifications: () => ['notifications'] as const,
 };

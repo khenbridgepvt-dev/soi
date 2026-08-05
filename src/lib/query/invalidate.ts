@@ -91,6 +91,7 @@ export async function invalidateAfterMutation(
     case 'taskStatus':
       await Promise.all([
         invalidateTaskBoard(),
+        invalidateSchedule(),
         invalidateDashboardAdmin(),
         invalidateDashboardStaff(),
         invalidateCaseDetail(),
@@ -124,6 +125,7 @@ export async function invalidateAfterMutation(
         invalidateArchive(),
         invalidateDashboardAdmin(),
         invalidateTaskBoard(),
+        invalidateSchedule(),
       ]);
       break;
     case 'restoreCase':
@@ -173,7 +175,7 @@ export function invalidatedKeyPrefixesForMutation(
     case 'assign':
       return ['schedule', 'taskBoard', 'dashboard', 'case', 'notifications'];
     case 'taskStatus':
-      return ['taskBoard', 'dashboard', 'case'];
+      return ['taskBoard', 'schedule', 'dashboard', 'case'];
     case 'block':
     case 'unblock':
       return ['taskBoard', 'blocked', 'schedule', 'dashboard', 'case'];
@@ -185,7 +187,7 @@ export function invalidatedKeyPrefixesForMutation(
     case 'createLead':
       return ['cases', 'dashboard'];
     case 'deleteCase':
-      return ['cases', 'archive', 'dashboard', 'taskBoard'];
+      return ['cases', 'archive', 'dashboard', 'taskBoard', 'schedule'];
     case 'restoreCase':
     case 'purgeArchive':
       return ['archive', 'cases'];

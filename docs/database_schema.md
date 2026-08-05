@@ -246,12 +246,13 @@ CREATE TYPE case_link_type AS ENUM ('follow_up', 'related', 'dependant_applicati
 | 1 | `id` | `uuid` | NO | — | PK, FK → `auth.users(id)` ON DELETE CASCADE | Matches Supabase auth user ID |
 | 2 | `full_name` | `text` | NO | — | CHECK `length(full_name) >= 1` | Display name |
 | 3 | `email` | `text` | NO | — | UNIQUE | Login email (mirrors auth.users) |
-| 4 | `role` | `user_role` | NO | `'staff'` | — | Determines access level |
-| 5 | `is_active` | `boolean` | NO | `true` | — | `false` = deactivated, cannot log in |
-| 6 | `online_status` | `online_status` | NO | `'offline'` | — | Manually set by staff |
-| 7 | `timezone` | `text` | YES | `'Europe/London'` | — | IANA timezone identifier (Advanced: auto-detected) |
-| 8 | `created_at` | `timestamptz` | NO | `now()` | — | |
-| 9 | `updated_at` | `timestamptz` | NO | `now()` | — | Auto-updated by trigger |
+| 4 | `username` | `text` | NO | — | UNIQUE on `lower(username)`; CHECK 3–30 chars, `^[a-z0-9][a-z0-9._-]*$` | Display handle (`@username`); not used for login (ADR-0017) |
+| 5 | `role` | `user_role` | NO | `'staff'` | — | Determines access level |
+| 6 | `is_active` | `boolean` | NO | `true` | — | `false` = deactivated, cannot log in |
+| 7 | `online_status` | `online_status` | NO | `'offline'` | — | Manually set by staff |
+| 8 | `timezone` | `text` | YES | `'Europe/London'` | — | IANA timezone identifier (Advanced: auto-detected) |
+| 9 | `created_at` | `timestamptz` | NO | `now()` | — | |
+| 10 | `updated_at` | `timestamptz` | NO | `now()` | — | Auto-updated by trigger |
 
 **Relationships:**
 - `id` → `auth.users(id)` — 1:1, CASCADE delete
@@ -1156,7 +1157,7 @@ ALTER TABLE reference_counters ENABLE ROW LEVEL SECURITY;
 > **Staff profile view (C-07):** Staff must NOT see `email`, `is_active`, or `created_at` of other users. Create a restricted view:
 > ```sql
 > CREATE VIEW profiles_staff_view AS
-> SELECT id, full_name, role, online_status, timezone
+> SELECT id, full_name, username, role, online_status, timezone
 > FROM profiles
 > WHERE is_active = true;
 > ```

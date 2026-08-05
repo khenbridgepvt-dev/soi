@@ -5,6 +5,8 @@ import {
   validateProfileRoleUpdate,
   validateStaffFullName,
 } from '@/lib/staff/validation';
+import { validateUsername } from '@/lib/staff/username';
+import { isUsernameAvailable } from '@/lib/staff/check-username-available';
 import { createServiceClient } from '@/lib/supabase/service';
 import { isUuid } from '@/lib/utils/lead-form';
 
@@ -26,12 +28,14 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   const body = (await request.json()) as {
     full_name?: string;
+    username?: string;
     role?: string;
     is_active?: boolean;
   };
 
   const updates: {
     full_name?: string;
+    username?: string;
     role?: 'admin' | 'staff' | 'senior';
     is_active?: boolean;
   } = {};
@@ -44,6 +48,28 @@ export async function PATCH(request: Request, context: RouteContext) {
       ]);
     }
     updates.full_name = nameResult.value;
+  }
+
+  if (body.username !== undefined) {
+    const usernameResult = validateUsername(body.username);
+    if (!usernameResult.ok) {
+      return apiError(400, 'VALIDATION_ERROR', usernameResult.message, [
+        { field: 'username', message: usernameResult.message },
+      ]);
+    }
+
+    const available = await isUsernameAvailable(
+      auth.supabase,
+      usernameResult.value,
+      id,
+    );
+    if (!available) {
+      return apiError(409, 'CONFLICT', 'Username is already taken.', [
+        { field: 'username', message: 'Username is already taken.' },
+      ]);
+    }
+
+    updates.username = usernameResult.value;
   }
 
   if (body.role !== undefined) {
@@ -101,7 +127,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     .from('profiles')
     .update(updates)
     .eq('id', id)
-    .select('id, full_name, email, role, is_active, online_status')
+    .select('id, full_name, username, email, role, is_active, online_status')
     .single();
 
   if (error || !data) {

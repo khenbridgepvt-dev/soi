@@ -252,7 +252,10 @@ Tier legend: **cheap** = budget model is fine · **STRONG** = use Fable/frontier
 | 0036 SKD application type | cheap | database_schema T2 · ADR-0002 · test_plan TC-017 | 1 |
 | 0037 doc index | cheap | SOURCE_OF_TRUTH.md · README status | 1 |
 | 0038 board direct assign | cheap | ui_wireframe S-03 · AssignTaskModal prefill | 1 |
+| 0039 schedule status pills | cheap | ui_wireframe S-04/S-11 · assignment-status.ts | 1 |
+| 0040 deleted tombstone + calendar | cheap | EP-08 addendum · S-06 empty state | 1 |
+| 0041 mandatory username | cheap | ADR-0017 · EP-18–20 · database_schema T1 | 1 |
 
-Estimated total: **40–47 sessions**. Recommended first ticket for a cheap model: **0002 scaffold** (0003 can run in parallel in a second session).
+Estimated total: **42–49 sessions**. Recommended first ticket for a cheap model: **0002 scaffold** (0003 can run in parallel in a second session).
 
 **Post-MVP note (0032):** Task board, schedule, and admin dashboard use 60s `refetchInterval` polling because ADR-0003 defers Realtime board updates to Phase 2. Polling covers other users' mutations and cron-driven `is_overdue` changes without adding Realtime complexity.

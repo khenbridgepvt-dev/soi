@@ -172,7 +172,7 @@ describe('RLS: profiles — staff and senior row access (§10.2, C-07)', () => {
     expect(data?.length).toBeGreaterThanOrEqual(5);
   });
 
-  it('profiles_staff_view exposes only the five permitted columns (C-07)', async () => {
+  it('profiles_staff_view exposes only the six permitted columns (C-07, ticket 0041)', async () => {
     const { data } = await staff.client.from('profiles_staff_view').select('*');
 
     expect(Object.keys(data![0]).sort()).toEqual([
@@ -181,6 +181,7 @@ describe('RLS: profiles — staff and senior row access (§10.2, C-07)', () => {
       'online_status',
       'role',
       'timezone',
+      'username',
     ]);
   });
 
@@ -264,6 +265,7 @@ describe('RLS: profiles — column write restrictions (§10.3, C-01)', () => {
       id: crypto.randomUUID(),
       email: 'ghost@firm.com',
       full_name: 'Ghost',
+      username: 'ghost.user',
       role: 'admin',
     });
 

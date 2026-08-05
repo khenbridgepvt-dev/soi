@@ -15,6 +15,7 @@ import {
 import { formatLongDate, todayISODate } from '@/lib/utils/dates';
 import type { TimeInterval } from '@/lib/utils/availability';
 import { useInvalidateAfterMutation } from '@/lib/query/useInvalidateAfterMutation';
+import { formatStaffDisplayName } from '@/lib/staff/username';
 
 export type AssignTaskModalPrefill = {
   taskId?: string;
@@ -37,6 +38,7 @@ type AssignTaskModalProps = {
 type StaffOption = {
   id: string;
   full_name: string;
+  username: string;
   role: string;
 };
 
@@ -534,7 +536,7 @@ export default function AssignTaskModal({
                   <option value="">Select staff…</option>
                   {staffOptions.map((member) => (
                     <option key={member.id} value={member.id}>
-                      {member.full_name}
+                      {formatStaffDisplayName(member.full_name, member.username)}
                     </option>
                   ))}
                 </select>

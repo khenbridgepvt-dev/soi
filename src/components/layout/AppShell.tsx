@@ -2,6 +2,7 @@
 
 import Header from '@/components/layout/Header';
 import Sidebar from '@/components/layout/Sidebar';
+import UsernamePromptGate from '@/components/profile/UsernamePromptGate';
 import {
   AutoSaveStatusProvider,
   useAutoSaveFooterLabel,
@@ -99,6 +100,8 @@ function AppShellFrame({
         <span>{footerLabel}</span>
         <span>Online</span>
       </footer>
+
+      <UsernamePromptGate />
     </div>
   );
 }
