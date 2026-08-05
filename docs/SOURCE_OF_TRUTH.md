@@ -30,7 +30,7 @@ Quick index for agents and developers. **Read this first** instead of re-auditin
 | **Assign task (S-09)** | `ui_wireframe_spec.md` S-09, EP-13, EP-60 | `AssignTaskModal.tsx`, `fetch-assignable-tasks.ts` |
 | **Case-first assign picker** | Ticket [0033](../tracker/issues/0033-case-first-assign-picker.md) | `GET /api/tasks/assignable` grouped |
 | **Slot menu + custom assign** | Ticket [0034](../tracker/issues/0034-slot-menu-custom-task-assign.md), S-04 | `SlotActionMenu.tsx`, `CustomTaskAssignModal.tsx` |
-| **Task board** | `ui_wireframe_spec.md` S-03, EP-42 | `TaskBoardView.tsx`, `fetch-task-board.ts` |
+| **Task board** | `ui_wireframe_spec.md` S-03, EP-42 | `TaskBoardView.tsx`, `TaskBoardCard.tsx` (0038 direct assign) |
 | **Schedule grid** | `ui_wireframe_spec.md` S-04, EP-24/25 | `ScheduleGridView.tsx`, `src/lib/schedule/` |
 | **Notifications** | ADR-0003, ticket 0027 | `use-notifications.ts`, Realtime |
 | **Application types** | `database_schema.md` T2, EP-35–37, ticket [0036](../tracker/issues/0036-skilled-worker-dependant-application-type.md) | `ApplicationTypesSettings.tsx`, migration `00017` + `00040` (SKD) |
@@ -43,7 +43,7 @@ Quick index for agents and developers. **Read this first** instead of re-auditin
 
 ---
 
-## 3. Post-MVP delivery log (0032–0036)
+## 3. Post-MVP delivery log (0032–0038)
 
 | Ticket | Date | Summary |
 |--------|------|---------|
@@ -52,6 +52,7 @@ Quick index for agents and developers. **Read this first** instead of re-auditin
 | [0034](../tracker/issues/0034-slot-menu-custom-task-assign.md) | 2026-08-05 | Schedule slot action menu; custom task + assign wizard |
 | [0035](../tracker/issues/0035-intake-fork-create-lead-vs-open-case.md) | 2026-08-05 | + New case fork: lead for review vs create & open (auto-accept) |
 | [0036](../tracker/issues/0036-skilled-worker-dependant-application-type.md) | 2026-08-05 | SKD application type seeded (separate from SKW); ADR-0002 lifecycle unchanged |
+| [0038](../tracker/issues/0038-task-board-direct-assign.md) | 2026-08-05 | Board card click opens Assign Task modal with task prefilled |
 
 MVP modules (tickets 0002–0030) are implemented per the [implementation map](../tracker/issues/0001-mvp-implementation-map.md).
 

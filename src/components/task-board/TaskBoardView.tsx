@@ -3,7 +3,11 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import CreateCaseIntake from '@/components/cases/CreateCaseIntake';
+import AssignTaskModal, {
+  type AssignTaskModalPrefill,
+} from '@/components/schedule/AssignTaskModal';
 import TaskBoardCard from '@/components/task-board/TaskBoardCard';
+import Toast from '@/components/ui/Toast';
 import type { TaskBoardCard as TaskBoardCardData } from '@/lib/task-board/fetch-task-board';
 import type { TaskBoardStaffColumn } from '@/lib/task-board/fetch-task-board';
 import {
@@ -13,6 +17,7 @@ import {
 } from '@/lib/task-board/board-filters';
 import { REFETCH_INTERVAL_MS, queryKeys } from '@/lib/query/keys';
 import { useInvalidateAfterMutation } from '@/lib/query/useInvalidateAfterMutation';
+import { formatBoardClientName } from '@/lib/task-board/format-card';
 
 type TaskBoardPayload = {
   columns: TaskBoardStaffColumn[];
@@ -71,6 +76,11 @@ export default function TaskBoardView({
   const [typeMenuOpen, setTypeMenuOpen] = useState(false);
   const [activeStaffTab, setActiveStaffTab] = useState<string | null>(null);
   const [intakeOpen, setIntakeOpen] = useState(false);
+  const [assignModal, setAssignModal] = useState<{
+    open: boolean;
+    prefill: AssignTaskModalPrefill | null;
+  }>({ open: false, prefill: null });
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const {
     data: payload,
@@ -149,6 +159,30 @@ export default function TaskBoardView({
 
   function handleLeadCreated() {
     void invalidate('createLead');
+  }
+
+  function openAssignFromBoard(task: TaskBoardCardData) {
+    const clientName = formatBoardClientName(
+      task.client_first_name,
+      task.client_last_name,
+      task.dependant_count,
+    );
+
+    setAssignModal({
+      open: true,
+      prefill: {
+        taskId: task.id,
+        taskName: task.abbreviation,
+        caseId: task.case_id,
+        caseReference: task.case_reference ?? undefined,
+        caseLabel: task.case_reference
+          ? `${task.case_reference} — ${clientName}`
+          : clientName,
+        staffId: task.assigned_to ?? undefined,
+        date: task.assignment_date ?? undefined,
+        startTime: task.assignment_start_time ?? undefined,
+      },
+    });
   }
 
   return (
@@ -276,7 +310,7 @@ export default function TaskBoardView({
               <ul className="space-y-2 p-2">
                 {(tasksByColumn.get(column.id) ?? []).map((task) => (
                   <li key={task.id}>
-                    <TaskBoardCard task={task} />
+                    <TaskBoardCard task={task} onAssign={openAssignFromBoard} />
                   </li>
                 ))}
               </ul>
@@ -292,7 +326,7 @@ export default function TaskBoardView({
             <ul className="space-y-2 p-2">
               {(tasksByColumn.get(UNASSIGNED_COLUMN_ID) ?? []).map((task) => (
                 <li key={task.id}>
-                  <TaskBoardCard task={task} />
+                  <TaskBoardCard task={task} onAssign={openAssignFromBoard} />
                 </li>
               ))}
             </ul>
@@ -310,7 +344,7 @@ export default function TaskBoardView({
               <ul className="space-y-2 p-2">
                 {(tasksByColumn.get(UNASSIGNED_COLUMN_ID) ?? []).map((task) => (
                   <li key={task.id}>
-                    <TaskBoardCard task={task} />
+                    <TaskBoardCard task={task} onAssign={openAssignFromBoard} />
                   </li>
                 ))}
               </ul>
@@ -326,7 +360,7 @@ export default function TaskBoardView({
                   <ul className="space-y-2 p-2">
                     {(tasksByColumn.get(column.id) ?? []).map((task) => (
                       <li key={task.id}>
-                        <TaskBoardCard task={task} />
+                        <TaskBoardCard task={task} onAssign={openAssignFromBoard} />
                       </li>
                     ))}
                   </ul>
@@ -344,6 +378,18 @@ export default function TaskBoardView({
           handleLeadCreated();
         }}
       />
+
+      <AssignTaskModal
+        open={assignModal.open}
+        prefill={assignModal.prefill}
+        onClose={() => setAssignModal({ open: false, prefill: null })}
+        onAssigned={(message) => {
+          setToastMessage(message);
+          setAssignModal({ open: false, prefill: null });
+        }}
+      />
+
+      <Toast message={toastMessage} onDismiss={() => setToastMessage(null)} />
     </div>
   );
 }

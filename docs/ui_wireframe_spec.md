@@ -374,7 +374,7 @@ Admin: Leave Management (S-13) → Pending tab → Review → Approve/Reject
 ```
 ┌──────────────────────┐
 │🟢│ App                │  ← task type abbreviation, bold
-│  │ Vishnu partner +1  │  ← client name + dependants (clickable → S-06)
+│  │ Vishnu partner +1  │  ← client name + dependants
 │  │ appt 19 (3:30)     │  ← appointment date/time, if set
 │  │ last date 28 July  │  ← last date, if set
 │  │ CoS pending        │  ← inline notes, muted text
@@ -386,7 +386,7 @@ Admin: Leave Management (S-13) → Pending tab → Review → Approve/Reject
 
 | Action | Behaviour |
 |--------|-----------|
-| Click task card | Navigate to Case Detail (S-06), scrolled to the relevant task |
+| Click task card | Opens Assign Task modal (S-09) with that task prefilled — staff, date, and time when already assigned (ticket 0038). Case detail remains reachable from case list and notifications. |
 | Drag task card (Advanced) | Reorder within column or move between columns (reassign) |
 | Right-click task card | Context menu: View Case, Flag Urgent, Remove Urgent, Reassign (Admin only) |
 | Click column header | Navigate to staff member's schedule (S-04) |

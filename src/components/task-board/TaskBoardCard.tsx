@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import type { TaskBoardCard as TaskBoardCardData } from '@/lib/task-board/fetch-task-board';
 import {
   TASK_BOARD_TOKEN_LABELS,
@@ -12,6 +11,7 @@ import {
 
 type TaskBoardCardProps = {
   task: TaskBoardCardData;
+  onAssign: (task: TaskBoardCardData) => void;
 };
 
 const TOKEN_SURFACE: Record<TaskBoardStatusToken, string> = {
@@ -55,7 +55,7 @@ function StatusLabel({ token }: { token: TaskBoardStatusToken }) {
   );
 }
 
-export default function TaskBoardCard({ task }: TaskBoardCardProps) {
+export default function TaskBoardCard({ task, onAssign }: TaskBoardCardProps) {
   const clientName = formatBoardClientName(
     task.client_first_name,
     task.client_last_name,
@@ -65,9 +65,10 @@ export default function TaskBoardCard({ task }: TaskBoardCardProps) {
   const lastDate = formatBoardLastDate(task.last_date);
 
   return (
-    <Link
-      href={`/cases/${task.case_id}?task=${task.id}`}
-      className={`block rounded-md px-3 py-2 transition-shadow hover:shadow-sm ${TOKEN_SURFACE[task.token]}`}
+    <button
+      type="button"
+      onClick={() => onAssign(task)}
+      className={`block w-full rounded-md px-3 py-2 text-left transition-shadow hover:shadow-sm ${TOKEN_SURFACE[task.token]}`}
       data-testid={`task-board-card-${task.id}`}
       data-token={task.token}
     >
@@ -91,6 +92,6 @@ export default function TaskBoardCard({ task }: TaskBoardCardProps) {
         </p>
       )}
       <StatusLabel token={task.token} />
-    </Link>
+    </button>
   );
 }
