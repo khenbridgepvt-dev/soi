@@ -953,6 +953,63 @@ GET /api/cases?sort_by=created_at&sort_order=desc
 
 ---
 
+### EP-60 · List Assignable Tasks (Grouped)
+
+| Field | Value |
+|-------|-------|
+| Method | `GET` |
+| Path | `/api/tasks/assignable` |
+| Role | `admin` |
+| Scope | MVP (post-MVP UX, ticket 0033) |
+
+Returns non-completed tasks on **active** cases, grouped by case for the S-09 case-first task picker.
+
+**Query Parameters:**
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `case_id` | uuid | Optional. Limit to one case (used when modal opened from case detail). |
+| `q` | string | Optional. Filter cases by reference, client name, or application type (case-insensitive substring). |
+
+**Response — `200 OK`:**
+
+```json
+{
+  "data": [
+    {
+      "case_id": "uuid",
+      "reference": "072601/SKW/VIS",
+      "client_name": "Vishnu Patel",
+      "application_type_name": "Skilled Worker Visa",
+      "unassigned_task_count": 5,
+      "tasks": [
+        {
+          "id": "uuid",
+          "name": "Application Preparation",
+          "abbreviation": "AP",
+          "status": "not_started",
+          "assigned_to": null,
+          "case_id": "uuid"
+        }
+      ]
+    }
+  ]
+}
+```
+
+| Field | Notes |
+|-------|-------|
+| `unassigned_task_count` | Tasks in the group where `assigned_to IS NULL` |
+| `tasks` | Ordered by lifecycle `sequence`; includes already-assigned tasks (admin may reassign via EP-13) |
+
+**Errors:**
+
+| Status | Code | Condition |
+|--------|------|-----------|
+| 400 | `VALIDATION_ERROR` | Invalid `case_id` UUID |
+
+---
+
 ### EP-14 · Block Task
 
 | Field | Value |

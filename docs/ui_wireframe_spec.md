@@ -769,6 +769,14 @@ Admin: Leave Management (S-13) → Pending tab → Review → Approve/Reject
 **Scope:** MVP  
 **Purpose:** Assign a task to a staff member with explicit time allocation and time slot selection.
 
+**Entry paths:**
+
+| Entry | Case / task picker |
+|-------|-------------------|
+| Schedule grid (unscoped) | Case search → case select → task select |
+| Case detail / blocked pool / checklist (task known) | Read-only task + case header; picker hidden |
+| Case detail (case known, task not) | Task select only (`case_id` prefill) |
+
 ```
 ┌─────────────────────────────────────────────────────┐
 │  Assign Task                                    [✕] │
@@ -776,6 +784,15 @@ Admin: Leave Management (S-13) → Pending tab → Review → Approve/Reject
 │                                                     │
 │  Task: Application Preparation                      │
 │  Case: 072601/SKW/VIS — Vishnu Patel                │
+│                                                     │
+│  Find case                                          │
+│  [Search by reference or client name…            ]  │
+│                                                     │
+│  Case *                                             │
+│  [072601/SKW/VIS — Vishnu Patel · Skilled Worker ▾] │
+│                                                     │
+│  Task *                                             │
+│  [Application Preparation                       ▾]  │
 │                                                     │
 │  Assign to *                                        │
 │  [Asha                          ▾]                  │
@@ -807,6 +824,9 @@ Admin: Leave Management (S-13) → Pending tab → Review → Approve/Reject
 
 | Field | Type | Validation | Required |
 |-------|------|-----------|----------|
+| Find case | search input | Filters case dropdown by reference or client name | No (unscoped entry only) |
+| Case | select dropdown | Active cases with assignable tasks; shows reference, client, type, unassigned count | Yes (unscoped entry only) |
+| Task | select dropdown | Tasks for selected case; disabled until case chosen | Yes (unless task pre-filled) |
 | Assign to | select dropdown | Must be active staff member | Yes |
 | Time Allocation | number inputs (hours + minutes) | Min 15 min, max 8 hours | Yes |
 | Date | date picker | Must be today or future. Cannot be a leave day. | Yes |
@@ -817,6 +837,8 @@ Admin: Leave Management (S-13) → Pending tab → Review → Approve/Reject
 | Component | Detail |
 |-----------|--------|
 | **Task & Case Summary** | Read-only header showing the task being assigned and its parent case |
+| **Case Picker** | Search + dropdown of active cases (EP-60). Hidden when task or case is pre-filled. |
+| **Task Picker** | Dropdown of tasks for the selected case. Hidden when task is pre-filled. |
 | **Staff Selector** | Dropdown of active staff members. Changing selection refreshes the schedule preview below. |
 | **Schedule Preview** | Mini version of S-04 for the selected staff member on the selected date. Shows assigned (grey) and available (green) slots. Clicking an available slot selects it as the start time. |
 | **Calculated End Time** | Auto-calculated: Start Time + Time Allocation. Displayed read-only. |

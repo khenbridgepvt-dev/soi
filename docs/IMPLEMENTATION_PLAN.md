@@ -246,7 +246,8 @@ Tier legend: **cheap** = budget model is fine · **STRONG** = use Fable/frontier
 | 0030 archive + auto-save | cheap | ADR-0011 · api_spec EP-39–41 · ui_wireframe S-18 | 1 |
 | 0031 MVP exit | cheap (checklist) + human | test_plan §5.1/§7/§9 | 2 |
 | 0032 reactive data layer | cheap | ADR-0016 · ADR-0003 · ticket 0032 | 1 |
+| 0033 case-first assign picker | cheap | ui_wireframe S-09 · api_spec EP-60 · design_system §3.3 | 1 |
 
-Estimated total: **34–41 sessions**. Recommended first ticket for a cheap model: **0002 scaffold** (0003 can run in parallel in a second session).
+Estimated total: **35–42 sessions**. Recommended first ticket for a cheap model: **0002 scaffold** (0003 can run in parallel in a second session).
 
 **Post-MVP note (0032):** Task board, schedule, and admin dashboard use 60s `refetchInterval` polling because ADR-0003 defers Realtime board updates to Phase 2. Polling covers other users' mutations and cron-driven `is_overdue` changes without adding Realtime complexity.

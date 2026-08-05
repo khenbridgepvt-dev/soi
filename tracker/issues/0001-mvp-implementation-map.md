@@ -56,6 +56,7 @@ The MVP is **operational as a free-tier pilot**: all ten MVP modules (M1–M10) 
 - **0029 global search:** migration 00038 `search_cases` RPC (pg_trgm), EP-38 `/api/search`, `GlobalSearch` shell component (300ms debounce, keyboard nav), S-05 column sorting, TC-089–091 — [Global search](./0029-global-search.md)
 - **0030 archive + auto-save polish:** migration 00039 soft-delete/restore/purge RPCs, EP-08/39–41, S-18 archive page, `DeleteCaseButton`, `AutoSaveStatusProvider` + retry/rollback, TC-092–094 + auto-save unit tests — [Soft-delete, archive, purge, and auto-save polish](./0030-archive-purge-autosave.md)
 - **0032 reactive data layer:** TanStack Query + mutation invalidation across client views; ADR-0016 invalidate-on-mutation; 60s polling on board/schedule/admin dashboard; notifications Realtime unchanged — [Reactive data layer — TanStack Query and mutation invalidation](./0032-reactive-data-layer.md). Audit closure 2026-08-05: lead-detail case invalidation, client-side `applicationTypes` fetch, doc cross-links.
+- **0033 case-first assign picker:** EP-60 grouped assignable API; S-09 case search → task select in `AssignTaskModal`; prefill paths unchanged — [Case-first assign task picker (S-09 UX)](./0033-case-first-assign-picker.md)
 
 ## Not yet specified
 

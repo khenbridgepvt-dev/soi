@@ -40,6 +40,22 @@ type StaffOption = {
   role: string;
 };
 
+type AssignableCaseGroup = {
+  case_id: string;
+  reference: string | null;
+  client_name: string;
+  application_type_name: string;
+  unassigned_task_count: number;
+  tasks: Array<{
+    id: string;
+    name: string;
+    abbreviation: string;
+    status: string;
+    assigned_to: string | null;
+    case_id: string;
+  }>;
+};
+
 type AssignableTaskOption = {
   id: string;
   name: string;
@@ -82,7 +98,9 @@ export default function AssignTaskModal({
 }: AssignTaskModalProps) {
   const invalidate = useInvalidateAfterMutation();
   const [staffOptions, setStaffOptions] = useState<StaffOption[]>([]);
-  const [taskOptions, setTaskOptions] = useState<AssignableTaskOption[]>([]);
+  const [caseGroups, setCaseGroups] = useState<AssignableCaseGroup[]>([]);
+  const [caseSearch, setCaseSearch] = useState('');
+  const [selectedCaseId, setSelectedCaseId] = useState('');
   const [taskId, setTaskId] = useState('');
   const [taskName, setTaskName] = useState('');
   const [caseReference, setCaseReference] = useState('');
@@ -110,6 +128,8 @@ export default function AssignTaskModal({
   );
 
   const resetForm = useCallback((next?: AssignTaskModalPrefill | null) => {
+    setCaseSearch('');
+    setSelectedCaseId(next?.caseId ?? '');
     setTaskId(next?.taskId ?? '');
     setTaskName(next?.taskName ?? '');
     setCaseReference(next?.caseReference ?? '');
@@ -147,25 +167,62 @@ export default function AssignTaskModal({
       }
     }
 
-    async function loadTasks() {
+    async function loadCases() {
       if (prefill?.taskId) {
-        setTaskOptions([]);
+        setCaseGroups([]);
         return;
       }
 
       const query = prefill?.caseId ? `?case_id=${prefill.caseId}` : '';
+
       try {
         const response = await fetch(`/api/tasks/assignable${query}`);
-        const json = (await response.json()) as { data?: AssignableTaskOption[] };
-        setTaskOptions(json.data ?? []);
+        const json = (await response.json()) as { data?: AssignableCaseGroup[] };
+        const groups = json.data ?? [];
+        setCaseGroups(groups);
+
+        if (prefill?.caseId && groups.length === 1) {
+          setSelectedCaseId(groups[0].case_id);
+        }
       } catch {
-        setBannerError('Failed to load tasks.');
+        setBannerError('Failed to load cases.');
       }
     }
 
     void loadStaff();
-    void loadTasks();
+    void loadCases();
   }, [open, prefill, resetForm]);
+
+  const filteredCaseGroups = useMemo(() => {
+    const normalized = caseSearch.trim().toLowerCase();
+    if (!normalized) {
+      return caseGroups;
+    }
+
+    return caseGroups.filter((group) => {
+      const haystack = `${group.reference ?? ''} ${group.client_name} ${group.application_type_name}`.toLowerCase();
+      return haystack.includes(normalized);
+    });
+  }, [caseGroups, caseSearch]);
+
+  const selectedCase = useMemo(
+    () => caseGroups.find((group) => group.case_id === selectedCaseId) ?? null,
+    [caseGroups, selectedCaseId],
+  );
+
+  const taskOptions: AssignableTaskOption[] = useMemo(() => {
+    if (!selectedCase) {
+      return [];
+    }
+
+    return selectedCase.tasks.map((task) => ({
+      id: task.id,
+      name: task.name,
+      case_id: selectedCase.case_id,
+      case_reference: selectedCase.reference,
+      client_name: selectedCase.client_name,
+    }));
+  }, [selectedCase]);
 
   useEffect(() => {
     if (!open || !taskId || prefill?.taskId) {
@@ -185,6 +242,19 @@ export default function AssignTaskModal({
         : selected.client_name,
     );
   }, [open, taskId, taskOptions, prefill?.taskId]);
+
+  useEffect(() => {
+    if (!open || prefill?.taskId || !selectedCase) {
+      return;
+    }
+
+    setCaseReference(selectedCase.reference ?? '');
+    setCaseLabel(
+      selectedCase.reference
+        ? `${selectedCase.reference} — ${selectedCase.client_name}`
+        : selectedCase.client_name,
+    );
+  }, [open, prefill?.taskId, selectedCase]);
 
   const loadSchedule = useCallback(async (targetStaffId: string, targetDate: string) => {
     if (!targetStaffId || !targetDate) {
@@ -303,7 +373,7 @@ export default function AssignTaskModal({
       const staffName = json.data?.staff_name ?? 'staff';
       const assignedTime = json.data?.start_time ?? startTime;
       const resolvedCaseId =
-        prefill?.caseId ?? taskOptions.find((task) => task.id === taskId)?.case_id;
+        prefill?.caseId ?? selectedCaseId ?? taskOptions.find((task) => task.id === taskId)?.case_id;
       void invalidate('assign', { caseId: resolvedCaseId });
       onAssigned(`Task assigned to ${staffName} at ${assignedTime}.`);
       onClose();
@@ -364,24 +434,85 @@ export default function AssignTaskModal({
           <div className="grid gap-6 md:grid-cols-2">
             <div className="space-y-4">
               {!prefill?.taskId && (
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-text" htmlFor="assign-task">
-                    Task *
-                  </label>
-                  <select
-                    id="assign-task"
-                    value={taskId}
-                    onChange={(event) => setTaskId(event.target.value)}
-                    className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
-                  >
-                    <option value="">Select a task…</option>
-                    {taskOptions.map((task) => (
-                      <option key={task.id} value={task.id}>
-                        {task.name}
-                        {task.case_reference ? ` · ${task.case_reference}` : ''}
+                <div className="space-y-4">
+                  {!prefill?.caseId && (
+                    <div>
+                      <label
+                        className="mb-1 block text-sm font-medium text-text"
+                        htmlFor="assign-case-search"
+                      >
+                        Find case
+                      </label>
+                      <input
+                        id="assign-case-search"
+                        type="search"
+                        value={caseSearch}
+                        onChange={(event) => {
+                          setCaseSearch(event.target.value);
+                          setSelectedCaseId('');
+                          setTaskId('');
+                          setTaskName('');
+                        }}
+                        placeholder="Search by reference or client name…"
+                        className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
+                      />
+                    </div>
+                  )}
+
+                  {!prefill?.caseId && (
+                    <div>
+                      <label
+                        className="mb-1 block text-sm font-medium text-text"
+                        htmlFor="assign-case"
+                      >
+                        Case *
+                      </label>
+                      <select
+                        id="assign-case"
+                        value={selectedCaseId}
+                        onChange={(event) => {
+                          setSelectedCaseId(event.target.value);
+                          setTaskId('');
+                          setTaskName('');
+                        }}
+                        className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
+                      >
+                        <option value="">Select a case…</option>
+                        {filteredCaseGroups.map((group) => (
+                          <option key={group.case_id} value={group.case_id}>
+                            {group.reference ? `${group.reference} — ` : ''}
+                            {group.client_name}
+                            {` · ${group.application_type_name}`}
+                            {group.unassigned_task_count > 0
+                              ? ` · ${group.unassigned_task_count} unassigned`
+                              : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-text" htmlFor="assign-task">
+                      Task *
+                    </label>
+                    <select
+                      id="assign-task"
+                      value={taskId}
+                      disabled={!selectedCaseId}
+                      onChange={(event) => setTaskId(event.target.value)}
+                      className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm disabled:opacity-50"
+                    >
+                      <option value="">
+                        {selectedCaseId ? 'Select a task…' : 'Select a case first…'}
                       </option>
-                    ))}
-                  </select>
+                      {taskOptions.map((task) => (
+                        <option key={task.id} value={task.id}>
+                          {task.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               )}
 
