@@ -11,21 +11,13 @@ export const metadata: Metadata = {
 export default async function AdminDashboardPage() {
   const user = await getUser();
   const supabase = await createClient();
-  const [{ data: profile }, { data: applicationTypes }] = await Promise.all([
-    user
-      ? supabase
-          .from('profiles')
-          .select('full_name')
-          .eq('id', user.id)
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
-    supabase
-      .from('application_types')
-      .select('id, name')
-      .eq('is_active', true)
-      .order('sort_order', { ascending: true })
-      .order('name', { ascending: true }),
-  ]);
+  const { data: profile } = user
+    ? await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .maybeSingle()
+    : { data: null };
 
   let fullName = 'Admin';
   if (profile?.full_name) {
@@ -51,7 +43,7 @@ export default async function AdminDashboardPage() {
         <p className="text-sm text-text-secondary tabular-nums">{dateTime}</p>
       </div>
 
-      <AdminDashboardView applicationTypes={applicationTypes ?? []} />
+      <AdminDashboardView />
     </div>
   );
 }

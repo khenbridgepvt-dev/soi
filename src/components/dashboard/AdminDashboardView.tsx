@@ -26,8 +26,19 @@ type ApplicationTypeOption = {
 };
 
 type AdminDashboardViewProps = {
-  applicationTypes: ApplicationTypeOption[];
+  applicationTypes?: ApplicationTypeOption[];
 };
+
+async function fetchApplicationTypes(): Promise<ApplicationTypeOption[]> {
+  const response = await fetch('/api/application-types?is_active=true');
+  const json = (await response.json()) as { data?: ApplicationTypeOption[] } & ApiError;
+
+  if (!response.ok) {
+    throw new Error(json.error?.message ?? 'Failed to load application types.');
+  }
+
+  return json.data ?? [];
+}
 
 async function fetchAdminDashboard(): Promise<AdminDashboardPayload> {
   const response = await fetch('/api/dashboard/admin');
@@ -41,7 +52,7 @@ async function fetchAdminDashboard(): Promise<AdminDashboardPayload> {
 }
 
 export default function AdminDashboardView({
-  applicationTypes,
+  applicationTypes: applicationTypesProp,
 }: AdminDashboardViewProps) {
   const invalidate = useInvalidateAfterMutation();
   const [createLeadOpen, setCreateLeadOpen] = useState(false);
@@ -58,6 +69,16 @@ export default function AdminDashboardView({
     queryFn: fetchAdminDashboard,
     refetchInterval: REFETCH_INTERVAL_MS,
   });
+
+  const {
+    data: applicationTypesQuery,
+  } = useQuery({
+    queryKey: queryKeys.applicationTypes(),
+    queryFn: fetchApplicationTypes,
+    enabled: !applicationTypesProp,
+  });
+
+  const applicationTypes = applicationTypesProp ?? applicationTypesQuery ?? [];
 
   const errorMessage =
     isError && error instanceof Error
@@ -242,11 +263,11 @@ export default function AdminDashboardView({
         open={reviewLead !== null}
         lead={reviewLead}
         onClose={() => setReviewLead(null)}
-        onRejected={(message) => {
+        onRejected={() => {
           setReviewLead(null);
           refreshDashboard();
         }}
-        onAccepted={(message, accepted) => {
+        onAccepted={() => {
           setReviewLead(null);
           refreshDashboard();
         }}

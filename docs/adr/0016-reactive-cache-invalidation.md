@@ -1,61 +1,29 @@
-# Reactive cache invalidation (post-MVP UX)
+# Reactive cache invalidation
 
 **Status:** Accepted  
-**Date:** 2026-08-04  
-**Ticket:** 0032
-
-## Context
-
-During MVP pilot use, admins and staff reported stale UI: after assigning a task, completing a checklist item, or accepting a lead, views (task board, schedule grid, dashboards, case list) did not update until a full browser refresh (F5). The app already used ad-hoc `useEffect` + `fetch` per view, with no shared cache or coordinated refetch after mutations.
-
-ADR-0003 deliberately deferred **Supabase Realtime on the task board / tasks / cases** to Phase 2. That left a gap for **same-user** freshness after writes and **light multi-user** freshness when another admin assigns from the schedule grid.
+**Date:** 2026-08-04
 
 ## Decision
 
-Adopt **TanStack Query (React Query)** with a central **invalidate-on-mutation** map:
+MVP client views use **TanStack Query** with **invalidate-on-mutation**: after a successful API write, `invalidateAfterMutation` (`src/lib/query/invalidate.ts`) refetches affected query keys so the UI updates without a full page reload or `router.refresh()`.
 
-- Client views load server data via `useQuery` with canonical keys in `src/lib/query/keys.ts`.
-- After each successful API mutation, `invalidateAfterMutation()` invalidates affected keys so dependent views refetch.
-- **60s polling** (`refetchInterval`) on task board, schedule, and admin dashboard queries for other users’ changes and cron-driven fields (e.g. `is_overdue`).
-- **Notifications** remain on Supabase Realtime INSERT delivery (ticket 0027); assign mutations may trigger a backup notification refetch if Realtime is disconnected.
+## Why
 
-This is **not** Realtime on board/tasks/cases — invalidate + polling only.
+Users were seeing stale UI until manual browser refresh. Ad-hoc `useEffect` + `fetch` and `router.refresh()` do not clear the TanStack Query cache, so case detail and list views could show outdated state after mutations.
 
-## Before (2026-08-04)
+[ADR-0003](./0003-realtime-split-notifications-mvp-board-advanced.md) defers live Realtime updates on the task board to Phase 2. Invalidate-on-mutation covers the acting user's own writes immediately; optional 60s polling on board/schedule/admin dashboard covers other users and cron-driven changes (`is_overdue`).
 
-| Area | Pattern | Problem |
-|------|---------|---------|
-| Data views | `useEffect` + `fetch` + local `setState` | No cross-view updates after mutations |
-| Mutations | Parent `loadX()` callbacks or `router.refresh()` | Fragile, easy to miss a view |
-| Multi-user | No polling | Other users’ assigns invisible until F5 |
-| Notifications | Realtime (0027) | Correct — unchanged |
-
-## After (2026-08-04)
-
-| Area | Pattern |
-|------|---------|
-| Layouts | `QueryProvider` in admin + staff shells |
-| Views | `useQuery` for board, schedule, dashboards, cases, archive, team, settings |
-| Mutations | `invalidateAfterMutation(type, { caseId? })` in modals and action components |
-| Multi-user | 60s refetch on board, schedule, admin dashboard |
-| Notifications | Realtime primary; backup refetch on assign |
-
-Implementation: `src/lib/query/keys.ts`, `invalidate.ts`, `QueryProvider.tsx`, unit tests `tests/unit/query-invalidate.test.ts`.
-
-## Why we chose this
-
-1. **ADR-0003 boundary** — Realtime board is high effort; invalidate-on-mutation gives immediate feedback for the actor without new infra.
-2. **Excel-replacement UX** — Task board and schedule are the admin’s primary surfaces; stale cards undermine trust in the pilot.
-3. **Existing spec alignment** — `system_design.md` already named TanStack Query for server state; this implements that design.
-4. **Incremental** — Views migrate one at a time; notifications stay on Realtime.
+Notifications continue to use Realtime INSERT delivery (ticket 0027); assign invalidation may trigger a notification list refetch as backup.
 
 ## Consequences
 
-- New mutations must call `invalidateAfterMutation` with the correct type (see invalidation map in `invalidate.ts`).
-- Optional `caseId` in context scopes case-detail invalidation.
-- Phase 2 Realtime board (ADR-0003) can coexist or replace polling on those surfaces later.
+- **Positive:** Consistent reactive pattern across client views; no full-page reload needed after mutations.
+- **Polling:** `refetchInterval: 60_000` on `taskBoard`, `schedule.*`, and `dashboard.admin` for multi-user freshness and overdue cron updates.
+- **Notifications unchanged:** Realtime delivery remains the primary path (ticket 0027); query invalidation is a fallback on assign.
+- **Board Realtime deferred:** Live card moves and drag-and-drop remain Phase 2 per ADR-0003.
 
-## Related
+## Links
 
-- [ADR-0003](./0003-realtime-split-notifications-mvp-board-advanced.md) — Realtime board remains Advanced
-- Ticket [0032](../../tracker/issues/0032-reactive-data-layer.md)
+- [ADR-0003 — Realtime split](./0003-realtime-split-notifications-mvp-board-advanced.md)
+- [Ticket 0032 — Reactive data layer](../../tracker/issues/0032-reactive-data-layer.md)
+- Implementation: `src/lib/query/keys.ts`, `src/lib/query/invalidate.ts`, `src/lib/query/useInvalidateAfterMutation.ts`

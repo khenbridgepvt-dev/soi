@@ -163,7 +163,12 @@ export async function invalidateAfterMutation(
 }
 
 /** Returns query key prefixes invalidated per mutation type (for unit tests). */
-export function invalidatedKeyPrefixesForMutation(type: MutationInvalidateType): string[] {
+export function invalidatedKeyPrefixesForMutation(
+  type: MutationInvalidateType,
+  ctx: InvalidateContext = {},
+): string[] {
+  const { caseId } = ctx;
+
   switch (type) {
     case 'assign':
       return ['schedule', 'taskBoard', 'dashboard', 'case', 'notifications'];
@@ -174,7 +179,9 @@ export function invalidatedKeyPrefixesForMutation(type: MutationInvalidateType):
       return ['taskBoard', 'blocked', 'schedule', 'dashboard', 'case'];
     case 'acceptLead':
     case 'rejectLead':
-      return ['cases', 'dashboard', 'taskBoard', 'case'];
+      return caseId
+        ? ['cases', 'dashboard', 'taskBoard', 'case']
+        : ['cases', 'dashboard', 'taskBoard'];
     case 'createLead':
       return ['cases', 'dashboard'];
     case 'deleteCase':

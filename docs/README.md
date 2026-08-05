@@ -49,7 +49,7 @@ Specification package for the **Team Scheduling & Task Management System** — a
 |----------|---------|
 | [test_plan.md](./test_plan.md) | Test cases |
 | [deployment_guide.md](./deployment_guide.md) | CI/CD, environments |
-| [adr/](./adr/) | Architecture decisions (16 ADRs) |
+| [adr/](./adr/) | Architecture decisions (11 ADRs) |
 
 ---
 
@@ -80,6 +80,8 @@ Per [scope_matrix.md](./scope_matrix.md) §7:
 | M10 Data Integrity | Not started |
 | M11–M15 Advanced | Phase 2 |
 
+**Post-MVP:** Reactive data layer ([0032](../tracker/issues/0032-reactive-data-layer.md)) — TanStack Query + mutation invalidation ([ADR-0016](./adr/0016-reactive-cache-invalidation.md)); closed 2026-08-04.
+
 ---
 
 ## Locked decisions (quick reference)
@@ -89,11 +91,11 @@ Per [scope_matrix.md](./scope_matrix.md) §7:
 | Leave | Phase 2; MVP uses timetable for absences | [0001](./adr/0001-leave-management-deferred-to-phase-2.md) |
 | Task lifecycle | Fixed 13 tasks | [0002](./adr/0002-fixed-13-task-lifecycle-for-mvp.md) |
 | Realtime | Notifications MVP; live board Advanced | [0003](./adr/0003-realtime-split-notifications-mvp-board-advanced.md) |
-| Client data freshness | TanStack Query invalidate-on-mutation + 60s polling (not Realtime board) | [0016](./adr/0016-reactive-cache-invalidation.md) |
 | Scheduling slots | 30-minute rows, TLS slot pattern | [design_system.md](./design_system.md) §11 |
 | Urgent flag | Active tasks only turn red | [0008](./adr/0008-urgent-flag-active-tasks-only.md) |
 | References | Global monthly counter, editable | [0009](./adr/0009-global-reference-counter-with-edit-sync.md) |
 | Purge retention | 90 days default | [0011](./adr/0011-ninety-day-purge-retention.md) |
+| Client data layer | TanStack Query + invalidate-on-mutation | [0016](./adr/0016-reactive-cache-invalidation.md) |
 
 ---
 

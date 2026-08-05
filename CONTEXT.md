@@ -59,3 +59,7 @@ _Avoid_: PTO, holiday (use as leave type values, not as the concept name)
 **Archive**:
 Soft-deleted records recoverable by administrators within a configurable retention period.
 _Avoid_: Trash, deleted items
+
+## Architecture
+
+Client reads use TanStack Query (`src/lib/query/`); mutations invalidate affected keys via `invalidateAfterMutation`. Board Realtime is deferred per [ADR-0003](docs/adr/0003-realtime-split-notifications-mvp-board-advanced.md) (see [ADR-0016](docs/adr/0016-reactive-cache-invalidation.md), [ticket 0032](tracker/issues/0032-reactive-data-layer.md)).

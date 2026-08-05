@@ -34,8 +34,19 @@ type ApplicationTypeOption = {
 
 type TaskBoardViewProps = {
   initialFilter?: string;
-  applicationTypes: ApplicationTypeOption[];
+  applicationTypes?: ApplicationTypeOption[];
 };
+
+async function fetchApplicationTypes(): Promise<ApplicationTypeOption[]> {
+  const response = await fetch('/api/application-types?is_active=true');
+  const json = (await response.json()) as { data?: ApplicationTypeOption[] } & ApiError;
+
+  if (!response.ok) {
+    throw new Error(json.error?.message ?? 'Failed to load application types.');
+  }
+
+  return json.data ?? [];
+}
 
 async function fetchTaskBoard(): Promise<TaskBoardPayload> {
   const response = await fetch('/api/task-board');
@@ -50,7 +61,7 @@ async function fetchTaskBoard(): Promise<TaskBoardPayload> {
 
 export default function TaskBoardView({
   initialFilter,
-  applicationTypes,
+  applicationTypes: applicationTypesProp,
 }: TaskBoardViewProps) {
   const invalidate = useInvalidateAfterMutation();
   const [filterMode, setFilterMode] = useState(
@@ -72,6 +83,14 @@ export default function TaskBoardView({
     queryFn: fetchTaskBoard,
     refetchInterval: REFETCH_INTERVAL_MS,
   });
+
+  const { data: applicationTypesQuery } = useQuery({
+    queryKey: queryKeys.applicationTypes(),
+    queryFn: fetchApplicationTypes,
+    enabled: !applicationTypesProp,
+  });
+
+  const applicationTypes = applicationTypesProp ?? applicationTypesQuery ?? [];
 
   const errorMessage =
     isError && error instanceof Error

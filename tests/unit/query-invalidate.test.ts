@@ -1,38 +1,64 @@
-import { describe, expect, it } from 'vitest';
-import { invalidatedKeyPrefixesForMutation } from '@/lib/query/invalidate';
+import { describe, expect, it, vi } from 'vitest';
+import { QueryClient } from '@tanstack/react-query';
+import {
+  invalidateAfterMutation,
+  invalidatedKeyPrefixesForMutation,
+} from '@/lib/query/invalidate';
+import { queryKeys } from '@/lib/query/keys';
 
 describe('invalidateAfterMutation key map (ticket 0032)', () => {
-  it('maps assign to schedule, board, dashboard, case, notifications', () => {
-    const keys = invalidatedKeyPrefixesForMutation('assign');
-    expect(keys).toContain('schedule');
-    expect(keys).toContain('taskBoard');
-    expect(keys).toContain('dashboard');
-    expect(keys).toContain('case');
-    expect(keys).toContain('notifications');
-  });
+  const mutationCases: Array<{
+    type: Parameters<typeof invalidatedKeyPrefixesForMutation>[0];
+    expected: string[];
+    ctx?: { caseId?: string };
+  }> = [
+    { type: 'assign', expected: ['schedule', 'taskBoard', 'dashboard', 'case', 'notifications'] },
+    { type: 'taskStatus', expected: ['taskBoard', 'dashboard', 'case'] },
+    { type: 'block', expected: ['taskBoard', 'blocked', 'schedule', 'dashboard', 'case'] },
+    { type: 'unblock', expected: ['taskBoard', 'blocked', 'schedule', 'dashboard', 'case'] },
+    { type: 'acceptLead', expected: ['cases', 'dashboard', 'taskBoard'] },
+    {
+      type: 'acceptLead',
+      expected: ['cases', 'dashboard', 'taskBoard', 'case'],
+      ctx: { caseId: 'x' },
+    },
+    { type: 'rejectLead', expected: ['cases', 'dashboard', 'taskBoard'] },
+    {
+      type: 'rejectLead',
+      expected: ['cases', 'dashboard', 'taskBoard', 'case'],
+      ctx: { caseId: 'x' },
+    },
+    { type: 'createLead', expected: ['cases', 'dashboard'] },
+    { type: 'deleteCase', expected: ['cases', 'archive', 'dashboard', 'taskBoard'] },
+    { type: 'restoreCase', expected: ['archive', 'cases'] },
+    { type: 'purgeArchive', expected: ['archive', 'cases'] },
+    { type: 'casePatch', expected: ['case', 'taskBoard', 'cases'] },
+    { type: 'dependant', expected: ['case'] },
+    { type: 'customTask', expected: ['case'] },
+    { type: 'seniorReview', expected: ['case'] },
+    { type: 'staffStatus', expected: ['team', 'dashboard'] },
+    { type: 'timetable', expected: ['schedule', 'team', 'staff'] },
+    { type: 'staffSettings', expected: ['schedule', 'team', 'staff'] },
+    { type: 'applicationTypes', expected: ['applicationTypes'] },
+  ];
 
-  it('maps block to board, blocked, schedule, dashboard, case', () => {
-    const keys = invalidatedKeyPrefixesForMutation('block');
-    expect(keys).toEqual(
-      expect.arrayContaining(['taskBoard', 'blocked', 'schedule', 'dashboard', 'case']),
-    );
-  });
+  it.each(mutationCases)(
+    'maps $type to expected key prefixes',
+    ({ type, expected, ctx }) => {
+      const keys = invalidatedKeyPrefixesForMutation(type, ctx);
+      expect(keys).toEqual(expect.arrayContaining(expected));
+      expect(keys).toHaveLength(expected.length);
+    },
+  );
 
-  it('maps deleteCase to cases, archive, dashboard, taskBoard', () => {
-    const keys = invalidatedKeyPrefixesForMutation('deleteCase');
-    expect(keys).toEqual(
-      expect.arrayContaining(['cases', 'archive', 'dashboard', 'taskBoard']),
-    );
-  });
+  it('acceptLead with caseId includes case invalidation via invalidateAfterMutation', async () => {
+    const queryClient = new QueryClient();
+    const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries');
 
-  it('maps acceptLead to cases, dashboard, taskBoard, and case detail', () => {
-    const keys = invalidatedKeyPrefixesForMutation('acceptLead');
-    expect(keys).toEqual(
-      expect.arrayContaining(['cases', 'dashboard', 'taskBoard', 'case']),
-    );
-  });
+    await invalidateAfterMutation(queryClient, 'acceptLead', { caseId: 'case-123' });
 
-  it('maps applicationTypes settings to applicationTypes only', () => {
-    expect(invalidatedKeyPrefixesForMutation('applicationTypes')).toEqual(['applicationTypes']);
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: queryKeys.case('case-123'),
+    });
   });
 });

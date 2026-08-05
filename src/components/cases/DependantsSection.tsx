@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { useInvalidateAfterMutation } from '@/lib/query/useInvalidateAfterMutation';
 import {
   validateDependantName,
   validateDependantRelationship,
 } from '@/lib/utils/dependant';
+import { useInvalidateAfterMutation } from '@/lib/query/useInvalidateAfterMutation';
 
 export type DependantRow = {
   id: string;
