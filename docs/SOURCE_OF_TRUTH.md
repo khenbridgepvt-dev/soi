@@ -32,6 +32,7 @@ Quick index for agents and developers. **Read this first** instead of re-auditin
 | **Case-first assign picker** | Ticket [0033](../tracker/issues/0033-case-first-assign-picker.md) | `GET /api/tasks/assignable` grouped |
 | **Slot menu + custom assign** | Ticket [0034](../tracker/issues/0034-slot-menu-custom-task-assign.md), S-04 | `SlotActionMenu.tsx`, `CustomTaskAssignModal.tsx` |
 | **Ad-hoc schedule task** | Ticket [0044](../tracker/issues/0044-adhoc-custom-task-modal.md), EP-11b addendum | `POST /api/schedule/adhoc-task-assign`, `create-adhoc-task-assign.ts` |
+| **Schedule pill labels** | Ticket [0045](../tracker/issues/0045-calendar-adhoc-pill-display.md) | `assignment-label.ts`; name-first; internal omits ref/client |
 | **Task board** | `ui_wireframe_spec.md` S-03, EP-42 | `TaskBoardView.tsx`, `TaskBoardCard.tsx` (0038 direct assign) |
 | **Schedule grid** | `ui_wireframe_spec.md` S-04, EP-24/25 | `ScheduleGridView.tsx`, `assignment-status.ts` (0039 status pills) |
 | **Notifications** | ADR-0003, ticket 0027 | `use-notifications.ts`, Realtime |
@@ -47,7 +48,7 @@ Quick index for agents and developers. **Read this first** instead of re-auditin
 
 ---
 
-## 3. Post-MVP delivery log (0032–0044)
+## 3. Post-MVP delivery log (0032–0045)
 
 | Ticket | Date | Summary |
 |--------|------|---------|
@@ -63,6 +64,7 @@ Quick index for agents and developers. **Read this first** instead of re-auditin
 | [0042](../tracker/issues/0042-revert-profile-username.md) | 2026-08-06 | Revert username; `full_name` only display identity (ADR-0018) |
 | [0043](../tracker/issues/0043-internal-case-adhoc-model.md) | 2026-08-06 | Internal case model for ad-hoc schedule work; `is_internal` + `FIRM-GENERAL` seed (ADR-0019) |
 | [0044](../tracker/issues/0044-adhoc-custom-task-modal.md) | 2026-08-06 | Ad-hoc custom task from schedule slot; internal case + optional audit link (EP-11b addendum) |
+| [0045](../tracker/issues/0045-calendar-adhoc-pill-display.md) | 2026-08-06 | Calendar name-first pills; internal assignments omit ref/client (S-04/S-11) |
 
 MVP modules (tickets 0002–0030) are implemented per the [implementation map](../tracker/issues/0001-mvp-implementation-map.md).
 

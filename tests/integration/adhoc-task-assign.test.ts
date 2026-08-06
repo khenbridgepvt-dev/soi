@@ -1,5 +1,6 @@
 import { afterAll, describe, expect, it } from 'vitest';
 import { INTERNAL_CASE_ID } from '@/lib/cases/internal-case';
+import { formatScheduleAssignmentCompactLabel } from '@/lib/schedule/assignment-label';
 import { fetchSchedule } from '@/lib/schedule/fetch-schedule';
 import { createAdhocTaskAssign } from '@/lib/tasks/create-adhoc-task-assign';
 import { addDays, dayKeyForDate, todayISODate } from '@/lib/utils/dates';
@@ -77,6 +78,16 @@ describe('ad-hoc custom task from schedule (ticket 0044)', () => {
     expect(assignment).toBeTruthy();
     expect(assignment?.case_is_internal).toBe(true);
     expect(assignment?.task_name).toBe('Clear emails');
+    expect(
+      formatScheduleAssignmentCompactLabel({
+        task_name: assignment!.task_name,
+        start_time: assignment!.start_time,
+        end_time: assignment!.end_time,
+        case_is_internal: true,
+      }),
+    ).toBe(
+      `Clear emails · ${assignment!.start_time}–${assignment!.end_time}`,
+    );
 
     await admin.auth.signOut();
   });

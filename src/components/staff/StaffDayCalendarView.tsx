@@ -9,6 +9,13 @@ import {
   scheduleAssignmentStatusDotClass,
   scheduleAssignmentStatusSuffix,
 } from '@/lib/schedule/assignment-status';
+import {
+  formatScheduleAssignmentAriaLabel,
+  formatScheduleAssignmentCompactLabel,
+  formatScheduleAssignmentPrimaryLabel,
+  isScheduleAssignmentNavigable,
+  scheduleAssignmentPillClassName,
+} from '@/lib/schedule/assignment-label';
 import { REFETCH_INTERVAL_MS, queryKeys } from '@/lib/query/keys';
 import {
   CALENDAR_ROW_HEIGHT,
@@ -52,6 +59,7 @@ type ScheduleAssignment = {
   is_urgent: boolean;
   case_deleted: boolean;
   task_deleted: boolean;
+  case_is_internal: boolean;
 };
 
 type ScheduleStaff = {
@@ -209,6 +217,7 @@ export default function StaffDayCalendarView({ staffId }: StaffDayCalendarViewPr
         const showDetail = span >= 2;
         const isNextAction = assignment?.task_id === nextActionTaskId;
         const isDeleted = assignment ? isScheduleAssignmentDeleted(assignment) : false;
+        const isInternal = assignment?.case_is_internal === true;
 
         cells.push(
           <div
@@ -229,14 +238,21 @@ export default function StaffDayCalendarView({ staffId }: StaffDayCalendarViewPr
             >
               <SlotBlock
                 state="booked"
-                className={isDeleted ? 'opacity-80' : undefined}
+                className={
+                  assignment
+                    ? scheduleAssignmentPillClassName(
+                        assignment,
+                        isDeleted ? 'opacity-80' : undefined,
+                      )
+                    : undefined
+                }
                 label={
                   assignment
-                    ? `${assignment.task_abbreviation} · ${assignment.case_reference ?? 'No reference'} · ${assignment.client_name ?? 'Unknown client'}`
+                    ? formatScheduleAssignmentAriaLabel(assignment, 'staff')
                     : undefined
                 }
                 onClick={
-                  assignment?.case_id && !isDeleted
+                  assignment && isScheduleAssignmentNavigable(assignment)
                     ? () =>
                         router.push(
                           `/staff/cases/${assignment.case_id}?task=${assignment.task_id}`,
@@ -253,13 +269,17 @@ export default function StaffDayCalendarView({ staffId }: StaffDayCalendarViewPr
                         aria-hidden
                       />
                       <span className="truncate font-semibold">
-                        {assignment.task_abbreviation} · {assignment.client_name ?? '—'}
+                        {showDetail
+                          ? formatScheduleAssignmentPrimaryLabel(assignment)
+                          : formatScheduleAssignmentCompactLabel(assignment)}
                       </span>
                     </span>
                     {showDetail && (
                       <>
                         <span className="truncate text-xs font-normal text-text-secondary">
-                          {assignment.case_reference ?? '—'}
+                          {isInternal
+                            ? `${assignment.start_time}–${assignment.end_time}`
+                            : (assignment.case_reference ?? '—')}
                           {scheduleAssignmentStatusSuffix(assignment)}
                         </span>
                         <span className="text-xs font-normal text-text-muted">

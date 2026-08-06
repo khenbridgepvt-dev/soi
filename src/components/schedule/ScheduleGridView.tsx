@@ -18,6 +18,13 @@ import {
   scheduleAssignmentStatusDotClass,
   scheduleAssignmentStatusSuffix,
 } from '@/lib/schedule/assignment-status';
+import {
+  formatScheduleAssignmentAriaLabel,
+  formatScheduleAssignmentDetailLine,
+  formatScheduleAssignmentPrimaryLabel,
+  isScheduleAssignmentNavigable,
+  scheduleAssignmentPillClassName,
+} from '@/lib/schedule/assignment-label';
 import { REFETCH_INTERVAL_MS, queryKeys } from '@/lib/query/keys';
 import { addDays, formatLongDate, minutesBetween, todayISODate } from '@/lib/utils/dates';
 
@@ -56,6 +63,7 @@ type ScheduleAssignment = {
   is_urgent: boolean;
   case_deleted: boolean;
   task_deleted: boolean;
+  case_is_internal: boolean;
 };
 
 type ScheduleStaff = {
@@ -193,6 +201,7 @@ export default function ScheduleGridView() {
         const assignment = assignmentsById.get(slot.assignment_id);
         const showDetail = span >= 2;
         const isDeleted = assignment ? isScheduleAssignmentDeleted(assignment) : false;
+        const isInternal = assignment?.case_is_internal === true;
 
         cells.push(
           <div
@@ -202,14 +211,21 @@ export default function ScheduleGridView() {
           >
             <SlotBlock
               state="booked"
-              className={isDeleted ? 'opacity-80' : undefined}
+              className={
+                assignment
+                  ? scheduleAssignmentPillClassName(
+                      assignment,
+                      isDeleted ? 'opacity-80' : undefined,
+                    )
+                  : undefined
+              }
               label={
                 assignment
-                  ? `${assignment.task_name} · ${assignment.case_reference ?? 'No reference'} · ${assignment.client_name ?? 'Unknown client'} · ${assignment.start_time}–${assignment.end_time}`
+                  ? formatScheduleAssignmentAriaLabel(assignment, 'admin')
                   : undefined
               }
               onClick={
-                assignment?.case_id
+                assignment && isScheduleAssignmentNavigable(assignment)
                   ? () => router.push(`/cases/${assignment.case_id}`)
                   : undefined
               }
@@ -224,17 +240,22 @@ export default function ScheduleGridView() {
                     />
                   )}
                   <span className="truncate text-sm font-semibold">
-                    {assignment?.task_abbreviation ?? 'Booked'}
+                    {assignment
+                      ? formatScheduleAssignmentPrimaryLabel(assignment)
+                      : 'Booked'}
                   </span>
                 </span>
-                {showDetail && (
+                {showDetail && assignment && (
                   <>
                     <span className="truncate text-xs font-normal">
-                      {assignment?.client_name ?? '—'}
+                      {isInternal
+                        ? formatScheduleAssignmentDetailLine(assignment, 'admin')
+                        : (assignment.client_name ?? '—')}
                     </span>
                     <span className="truncate text-xs font-normal text-text-muted">
-                      {assignment ? formatDuration(assignment.duration_minutes) : ''}
-                      {assignment ? scheduleAssignmentStatusSuffix(assignment) : ''}
+                      {isInternal
+                        ? scheduleAssignmentStatusSuffix(assignment)
+                        : `${formatDuration(assignment.duration_minutes)}${scheduleAssignmentStatusSuffix(assignment)}`}
                     </span>
                   </>
                 )}

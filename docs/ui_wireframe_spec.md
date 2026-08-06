@@ -465,7 +465,7 @@ Admin: Leave Management (S-13) → Pending tab → Review → Approve/Reject
 | **Date Selector** | Prev/Next day arrows + "Today" button. Clicking opens a date picker calendar. |
 | **Column per Staff** | One column per active staff member. Header shows: name, working hours. |
 | **Time Rows** | Hourly rows from earliest staff start time to latest staff end time. |
-| **Task Block** | Spans multiple rows proportional to duration. Shows: task type, client name, duration. Status dot + label when applicable: `URGENT`, `BLOCKED`, `COMPLETED`, `DELETED` (ticket 0039/0040). Deleted case slots stay booked; admin click opens tombstone (S-06). |
+| **Task Block** | Spans multiple rows proportional to duration. Shows: **task name** (primary), client or time range, duration. Internal/ad-hoc (`case_is_internal`): **task name · start–end** only — no case ref/client (ticket 0045). Status dot + label when applicable: `URGENT`, `BLOCKED`, `COMPLETED`, `DELETED` (ticket 0039/0040). Deleted case slots stay booked; admin click opens tombstone (S-06). Internal slots are non-clickable. |
 | **Available Slot** | Clickable. Light green/tinted background. Cursor changes to "+" on hover. |
 | **Leave Block** | Full-column block in dark grey with "ON LEAVE" label. Non-interactive. |
 | **Off-Hours** | Dashed border, greyed out. Outside the staff member's configured timetable. |
@@ -476,7 +476,7 @@ Admin: Leave Management (S-13) → Pending tab → Review → Approve/Reject
 |--------|-----------|
 | Click available slot | Opens **slot action menu**: assign existing task (S-09) or add custom task & assign (ticket 0034) |
 | Assign existing (menu) | Opens S-09 pre-filled with staff member, date, and start time; case-first task picker (ticket 0033) |
-| Add custom task & assign (menu) | Single-screen modal (ticket 0044): task name, optional description, duration (prefilled from slot); optional collapsed **Record on case task** for audit note. Creates ad-hoc task on internal case (EP-11b addendum) and assigns slot (EP-13). Abbreviation auto-generated server-side. |
+| Add custom task & assign (menu) | Single-screen modal (ticket 0044): task name, optional description, duration (prefilled from slot); optional collapsed **Record on case task** for audit note. Creates ad-hoc task on internal case (EP-11b addendum) and assigns slot (EP-13). Pills show **task name**; internal slots omit ref/client (ticket 0045). |
 | Click task block | Navigate to Case Detail (S-06) for that task's case |
 | Hover task block | Tooltip: full task name, case reference, client name, remaining time |
 | Prev/Next/Today | Navigate days. Date picker for jumping to specific dates. |

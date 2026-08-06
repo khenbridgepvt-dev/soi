@@ -1,6 +1,13 @@
 'use client';
 
 import SlotBlock, { type SlotBlockState } from '@/components/schedule/SlotBlock';
+import {
+  formatScheduleAssignmentAriaLabel,
+  formatScheduleAssignmentDetailLine,
+  formatScheduleAssignmentPrimaryLabel,
+  isScheduleAssignmentNavigable,
+  scheduleAssignmentPillClassName,
+} from '@/lib/schedule/assignment-label';
 import type { ComputedSlot, TimeInterval } from '@/lib/utils/availability';
 
 const ROW_HEIGHT = 40;
@@ -18,6 +25,7 @@ export type SchedulePreviewAssignment = {
   duration_minutes: number;
   is_urgent: boolean;
   case_id: string | null;
+  case_is_internal?: boolean;
 };
 
 export type SchedulePreviewStaff = {
@@ -71,6 +79,7 @@ export default function SchedulePreviewColumn({
       const span = slot.span;
       const assignment = assignmentsById.get(slot.assignment_id);
       const showDetail = span >= 2;
+      const isInternal = assignment?.case_is_internal === true;
 
       cells.push(
         <div
@@ -80,13 +89,16 @@ export default function SchedulePreviewColumn({
         >
           <SlotBlock
             state="booked"
+            className={
+              assignment ? scheduleAssignmentPillClassName(assignment) : undefined
+            }
             label={
               assignment
-                ? `${assignment.task_name} · ${assignment.case_reference ?? 'No reference'}`
+                ? formatScheduleAssignmentAriaLabel(assignment, 'preview')
                 : undefined
             }
             onClick={
-              assignment?.case_id && onOpenCase
+              assignment && isScheduleAssignmentNavigable(assignment) && onOpenCase
                 ? () => onOpenCase(assignment.case_id!)
                 : undefined
             }
@@ -94,11 +106,15 @@ export default function SchedulePreviewColumn({
           >
             <span className="flex h-full flex-col justify-center gap-0.5 overflow-hidden text-left">
               <span className="truncate text-sm font-semibold">
-                {assignment?.task_abbreviation ?? 'Booked'}
+                {assignment
+                  ? formatScheduleAssignmentPrimaryLabel(assignment)
+                  : 'Booked'}
               </span>
               {showDetail && assignment && (
                 <span className="truncate text-xs font-normal text-text-muted">
-                  {assignment.client_name ?? '—'} · {formatDuration(assignment.duration_minutes)}
+                  {isInternal
+                    ? `${assignment.start_time}–${assignment.end_time}`
+                    : `${formatScheduleAssignmentDetailLine(assignment, 'preview')} · ${formatDuration(assignment.duration_minutes)}`}
                 </span>
               )}
             </span>
