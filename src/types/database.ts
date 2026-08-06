@@ -79,6 +79,7 @@ export type Database = {
           fee_agreement: string | null
           id: string
           is_deleted: boolean
+          is_internal: boolean
           is_urgent: boolean
           last_date: string | null
           notes: string | null
@@ -101,6 +102,7 @@ export type Database = {
           fee_agreement?: string | null
           id?: string
           is_deleted?: boolean
+          is_internal?: boolean
           is_urgent?: boolean
           last_date?: string | null
           notes?: string | null
@@ -123,6 +125,7 @@ export type Database = {
           fee_agreement?: string | null
           id?: string
           is_deleted?: boolean
+          is_internal?: boolean
           is_urgent?: boolean
           last_date?: string | null
           notes?: string | null

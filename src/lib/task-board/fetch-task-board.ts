@@ -130,6 +130,7 @@ export async function fetchTaskBoard(
         .in('status', ['not_started', 'in_progress', 'blocked'])
         .eq('cases.status', 'active')
         .eq('cases.is_deleted', false)
+        .eq('cases.is_internal', false)
         .order('sequence', { ascending: true }),
     ]);
 

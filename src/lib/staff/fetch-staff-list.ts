@@ -77,7 +77,8 @@ export async function fetchStaffList(
     .from('cases')
     .select('id')
     .eq('status', 'active')
-    .eq('is_deleted', false);
+    .eq('is_deleted', false)
+    .eq('is_internal', false);
 
   const activeCaseIds = new Set((activeCases ?? []).map((row) => row.id));
   const today = todayDateString();

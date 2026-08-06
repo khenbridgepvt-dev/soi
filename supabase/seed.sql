@@ -239,6 +239,30 @@ INSERT INTO public.cases (
   )
 ON CONFLICT (id) DO NOTHING;
 
+-- Hidden firm-operations case for ad-hoc schedule work (ADR-0019 / ticket 0043).
+INSERT INTO public.cases (
+  id,
+  reference,
+  client_first_name,
+  client_last_name,
+  application_type_id,
+  status,
+  is_internal,
+  created_by,
+  accepted_at
+) VALUES (
+  'f0000000-0000-4000-8000-000000000001',
+  'FIRM-GENERAL',
+  'Firm',
+  'operations',
+  (SELECT id FROM public.application_types WHERE code = 'SKW' LIMIT 1),
+  'active',
+  true,
+  'a0000000-0000-4000-8000-000000000001',
+  now()
+)
+ON CONFLICT (id) DO NOTHING;
+
 INSERT INTO public.dependants (id, case_id, name, relationship) VALUES
   (
     'd0000000-0000-4000-8000-000000000001',

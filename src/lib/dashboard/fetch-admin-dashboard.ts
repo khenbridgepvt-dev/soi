@@ -56,13 +56,15 @@ export async function fetchAdminDashboard(
       .from('cases')
       .select('id', { count: 'exact', head: true })
       .eq('status', 'active')
-      .eq('is_deleted', false),
+      .eq('is_deleted', false)
+      .eq('is_internal', false),
     client
       .from('cases')
       .select('id', { count: 'exact', head: true })
       .eq('status', 'active')
       .eq('is_deleted', false)
-      .eq('is_urgent', true),
+      .eq('is_urgent', true)
+      .eq('is_internal', false),
     client
       .from('tasks')
       .select('id', { count: 'exact', head: true })
@@ -126,7 +128,8 @@ export async function fetchAdminDashboard(
     .from('cases')
     .select('id')
     .eq('status', 'active')
-    .eq('is_deleted', false);
+    .eq('is_deleted', false)
+    .eq('is_internal', false);
 
   const activeCaseIds = new Set((activeCaseRows ?? []).map((row) => row.id));
 

@@ -36,6 +36,7 @@ Quick index for agents and developers. **Read this first** instead of re-auditin
 | **Notifications** | ADR-0003, ticket 0027 | `use-notifications.ts`, Realtime |
 | **Application types** | `database_schema.md` T2, EP-35–37, ticket [0036](../tracker/issues/0036-skilled-worker-dependant-application-type.md) | `ApplicationTypesSettings.tsx`, migration `00017` + `00040` (SKD) |
 | **Staff display identity** | ADR-0018, ticket [0042](../tracker/issues/0042-revert-profile-username.md) | `full_name` only; C-07 email admin-only |
+| **Ad-hoc schedule / internal case** | ADR-0019, ticket [0043](../tracker/issues/0043-internal-case-adhoc-model.md) | `cases.is_internal`; seed `FIRM-GENERAL`; `case_is_internal` on schedule |
 | **Client data / cache** | ADR-0016, ticket [0032](../tracker/issues/0032-reactive-data-layer.md) | `src/lib/query/` (`keys.ts`, `invalidate.ts`) |
 | **References** | ADR-0009, `src/lib/utils/reference.ts` | `accept_lead` RPC |
 | **Tests** | `docs/test_plan.md` | `tests/unit/`, `tests/integration/` |
@@ -45,7 +46,7 @@ Quick index for agents and developers. **Read this first** instead of re-auditin
 
 ---
 
-## 3. Post-MVP delivery log (0032–0042)
+## 3. Post-MVP delivery log (0032–0043)
 
 | Ticket | Date | Summary |
 |--------|------|---------|
@@ -59,6 +60,7 @@ Quick index for agents and developers. **Read this first** instead of re-auditin
 | [0040](../tracker/issues/0040-deleted-case-tombstone-and-calendar.md) | 2026-08-05 | Deleted case tombstone; schedule DELETED pills; assignments stay booked |
 | [0041](../tracker/issues/0041-mandatory-profile-username.md) | 2026-08-05 | Mandatory profile username — **superseded by 0042** |
 | [0042](../tracker/issues/0042-revert-profile-username.md) | 2026-08-06 | Revert username; `full_name` only display identity (ADR-0018) |
+| [0043](../tracker/issues/0043-internal-case-adhoc-model.md) | 2026-08-06 | Internal case model for ad-hoc schedule work; `is_internal` + `FIRM-GENERAL` seed (ADR-0019) |
 
 MVP modules (tickets 0002–0030) are implemented per the [implementation map](../tracker/issues/0001-mvp-implementation-map.md).
 

@@ -166,6 +166,7 @@ async function fetchAssignableRows(
         client_first_name,
         client_last_name,
         status,
+        is_internal,
         application_types ( name )
       )
     `,
@@ -173,6 +174,7 @@ async function fetchAssignableRows(
     .eq('is_deleted', false)
     .neq('status', 'completed')
     .eq('cases.status', 'active')
+    .eq('cases.is_internal', false)
     .order('sequence', { ascending: true });
 
   if (caseId) {

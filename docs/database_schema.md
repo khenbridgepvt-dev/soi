@@ -322,6 +322,7 @@ CREATE TYPE case_link_type AS ENUM ('follow_up', 'related', 'dependant_applicati
 | 18 | `deleted_by` | `uuid` | YES | `NULL` | FK → `profiles(id)` | Who soft-deleted |
 | 19 | `created_at` | `timestamptz` | NO | `now()` | — | |
 | 20 | `updated_at` | `timestamptz` | NO | `now()` | — | |
+| 21 | `is_internal` | `boolean` | NO | `false` | — | Hidden firm-operations case for ad-hoc schedule work (ADR-0019). Excluded from case list, search, and assignable picker. |
 
 **Relationships:**
 - `application_type_id` → `application_types(id)` — Many:1
@@ -336,6 +337,7 @@ CREATE TYPE case_link_type AS ENUM ('follow_up', 'related', 'dependant_applicati
 - `last_date` and `appointment_date` use the "cannot be cleared once set" rule. This is enforced via an API-level check (a `BEFORE UPDATE` trigger can also enforce this).
 - `status` transitions: `lead_pending` → `active` | `rejected`. `active` → `completed`. No other transitions.
 - `completed_at` is set automatically when the last of the case's tasks (default + custom) are marked `completed`.
+- **Seed (0043):** One internal case (`reference = FIRM-GENERAL`, client "Firm operations", `is_internal = true`) holds ad-hoc schedule tasks; never shown in client-facing case UIs.
 
 **Immutability Constraints (enforced via trigger or API):**
 

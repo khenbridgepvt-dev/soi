@@ -66,6 +66,7 @@ The MVP is **operational as a free-tier pilot**: all ten MVP modules (M1–M10) 
 - **0040 deleted tombstone:** Admin tombstone + schedule DELETED pills; assignments stay booked on soft-delete — [Deleted case tombstone and calendar deleted pills](./0040-deleted-case-tombstone-and-calendar.md)
 - **0041 mandatory username:** Superseded by 0042 — [Mandatory profile username (display handle)](./0041-mandatory-profile-username.md)
 - **0042 revert username:** Drop `profiles.username`; `full_name` only; ADR-0018 — [Revert profile username (supersedes 0041)](./0042-revert-profile-username.md)
+- **0043 internal case ad-hoc:** Hidden `FIRM-GENERAL` case; `is_internal` filter on list/search/picker; schedule `case_is_internal` — [Internal case model for ad-hoc schedule work](./0043-internal-case-adhoc-model.md)
 
 ## Not yet specified
 

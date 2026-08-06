@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, it } from 'vitest';
 import { assignTask } from '@/lib/tasks/assign-task';
 import { createCustomTask, readApiError } from '@/lib/tasks/create-custom-task';
-import { addDays, todayISODate } from '@/lib/utils/dates';
+import { addDays, dayKeyForDate, todayISODate } from '@/lib/utils/dates';
 import { createServiceClient } from './helpers';
 import { signInAsRole } from './rls-harness';
 
@@ -10,7 +10,11 @@ const LEAD_CASE_ID = 'c0000000-0000-4000-8000-000000000003';
 const ASHA_ID = 'a0000000-0000-4000-8000-000000000003';
 
 const service = createServiceClient();
-const TARGET_DATE = addDays(todayISODate(), 3);
+let targetDate = addDays(todayISODate(), 3);
+while (dayKeyForDate(targetDate) === 'sun') {
+  targetDate = addDays(targetDate, 1);
+}
+const TARGET_DATE = targetDate;
 const createdCustomTaskIds: string[] = [];
 const createdAssignmentIds: string[] = [];
 

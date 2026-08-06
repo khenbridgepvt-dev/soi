@@ -36,6 +36,7 @@ export type ScheduleAssignment = {
   is_urgent: boolean;
   case_deleted: boolean;
   task_deleted: boolean;
+  case_is_internal: boolean;
 };
 
 export type ScheduleStaff = {
@@ -78,6 +79,7 @@ type CaseRelation = {
   client_last_name: string;
   is_urgent: boolean;
   is_deleted: boolean;
+  is_internal: boolean;
 };
 
 type TaskRelation = {
@@ -120,7 +122,8 @@ const ASSIGNMENT_SELECT = `
       client_first_name,
       client_last_name,
       is_urgent,
-      is_deleted
+      is_deleted,
+      is_internal
     )
   )
 `;
@@ -175,6 +178,7 @@ function mapAssignment(row: AssignmentRow): ScheduleAssignment {
       (task?.is_urgent === true || caseRow?.is_urgent === true),
     case_deleted: caseRow?.is_deleted === true || taskMissing,
     task_deleted: task?.is_deleted === true || taskMissing,
+    case_is_internal: caseRow?.is_internal === true,
   };
 }
 
