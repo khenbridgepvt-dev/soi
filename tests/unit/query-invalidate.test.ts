@@ -34,7 +34,12 @@ describe('invalidateAfterMutation key map (ticket 0032)', () => {
     { type: 'purgeArchive', expected: ['archive', 'cases'] },
     { type: 'casePatch', expected: ['case', 'taskBoard', 'cases'] },
     { type: 'dependant', expected: ['case'] },
-    { type: 'customTask', expected: ['case'] },
+    { type: 'customTask', expected: ['schedule'] },
+    {
+      type: 'customTask',
+      expected: ['case', 'schedule'],
+      ctx: { caseId: 'x' },
+    },
     { type: 'seniorReview', expected: ['case'] },
     { type: 'staffStatus', expected: ['team', 'dashboard'] },
     { type: 'timetable', expected: ['schedule', 'team', 'staff'] },

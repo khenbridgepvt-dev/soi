@@ -19,7 +19,7 @@ import {
   scheduleAssignmentStatusSuffix,
 } from '@/lib/schedule/assignment-status';
 import { REFETCH_INTERVAL_MS, queryKeys } from '@/lib/query/keys';
-import { addDays, formatLongDate, todayISODate } from '@/lib/utils/dates';
+import { addDays, formatLongDate, minutesBetween, todayISODate } from '@/lib/utils/dates';
 
 /** 36px pill (DS-1) + 4px vertical gap between pills (design_system §6). */
 const ROW_HEIGHT = 40;
@@ -464,6 +464,7 @@ export default function ScheduleGridView() {
               staffName: slot.staffName,
               date,
               startTime: slot.start,
+              durationMinutes: minutesBetween(slot.start, slot.end),
             },
           });
         }}

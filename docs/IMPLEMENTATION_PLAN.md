@@ -257,6 +257,7 @@ Tier legend: **cheap** = budget model is fine · **STRONG** = use Fable/frontier
 | 0041 mandatory username | cheap | ADR-0017 · EP-18–20 · database_schema T1 | 1 |
 | 0042 revert username | cheap | ADR-0018 · migration 00042 | 1 |
 | 0043 internal case ad-hoc | cheap | ADR-0019 · migration 00043 · fetch-schedule `case_is_internal` | 1 |
+| 0044 ad-hoc custom task modal | cheap | ui_wireframe S-04 · api_spec EP-11b addendum · ADR-0019 | 1 |
 
 Estimated total: **42–49 sessions**. Recommended first ticket for a cheap model: **0002 scaffold** (0003 can run in parallel in a second session).
 

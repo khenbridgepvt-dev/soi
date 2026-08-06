@@ -140,9 +140,11 @@ export async function invalidateAfterMutation(
       ]);
       break;
     case 'dependant':
-    case 'customTask':
     case 'seniorReview':
       await invalidateCaseDetail();
+      break;
+    case 'customTask':
+      await Promise.all([invalidateCaseDetail(), invalidateSchedule()]);
       break;
     case 'staffStatus':
       await Promise.all([invalidateTeam(), invalidateDashboardAdmin()]);
@@ -194,9 +196,10 @@ export function invalidatedKeyPrefixesForMutation(
     case 'casePatch':
       return ['case', 'taskBoard', 'cases'];
     case 'dependant':
-    case 'customTask':
     case 'seniorReview':
       return ['case'];
+    case 'customTask':
+      return caseId ? ['case', 'schedule'] : ['schedule'];
     case 'staffStatus':
       return ['team', 'dashboard'];
     case 'timetable':

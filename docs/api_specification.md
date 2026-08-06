@@ -228,6 +228,7 @@ GET /api/cases?sort_by=created_at&sort_order=desc
 | 22 | PUT | `/api/staff/:id/timetable` | Update staff timetable | admin |
 | 23 | GET | `/api/staff/:id/timetable` | Get staff timetable | admin, self |
 | **Scheduling** | | | | |
+| 11c| POST | `/api/schedule/adhoc-task-assign` | Create ad-hoc task on internal case + assign slot | admin |
 | 24 | GET | `/api/schedule` | Get schedule grid data for a date | admin |
 | 25 | GET | `/api/schedule/:staffId` | Get single staff schedule for a date | admin, self |
 | **Leave** | | | | |
@@ -820,6 +821,53 @@ GET /api/cases?sort_by=created_at&sort_order=desc
 
 **Errors:**
 - 400 `VALIDATION_ERROR`: Exceeds 5 custom tasks limit.
+
+---
+
+### EP-11b addendum · Ad-hoc schedule task (ticket 0044)
+
+| Field | Value |
+|-------|-------|
+| Method | `POST` |
+| Path | `/api/schedule/adhoc-task-assign` |
+| Role | `admin` |
+| Scope | Post-MVP |
+
+Creates generic firm work on the hidden internal case (`FIRM-GENERAL`, ADR-0019) and assigns the selected schedule slot in one request. Optional audit link appends a one-line note to an existing client case task.
+
+**Request Body:**
+
+```json
+{
+  "name": "Clear emails",
+  "description": "Process shared inbox",
+  "staff_id": "uuid",
+  "date": "2026-08-09",
+  "start_time": "10:00",
+  "duration_minutes": 60,
+  "linked_task_id": "uuid"
+}
+```
+
+| Field | Type | Required | Validation |
+|-------|------|----------|------------|
+| `name` | string | Yes | 1–100 chars — primary calendar label |
+| `description` | string | No | Max 1000 chars |
+| `staff_id` | uuid | Yes | Active staff or senior |
+| `date` | string | Yes | `YYYY-MM-DD`, not in the past |
+| `start_time` | string | Yes | 30-minute aligned `HH:MM` |
+| `duration_minutes` | integer | Yes | 15–480 |
+| `linked_task_id` | uuid | No | Active client-case task for audit note |
+
+**Server-Side:**
+1. Validate input; derive `abbreviation` from `name` (not accepted from client).
+2. Insert custom task on internal case — **no** 5-per-case limit on internal case.
+3. Assign slot via same rules as EP-13.
+4. If `linked_task_id` set: verify task belongs to an active, non-internal case; append one timestamped audit line to `tasks.notes` (`[YYYY-MM-DD HH:mm UTC] Staff — Task — Description`).
+
+**Response — `201 Created`:** EP-13 assign payload plus `case_id` (internal), `linked_task_id`, `linked_case_id`.
+
+**Errors:** EP-13 conflict/unavailable errors; 400 if linked task invalid.
 
 ---
 

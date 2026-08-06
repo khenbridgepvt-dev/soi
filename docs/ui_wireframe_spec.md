@@ -476,7 +476,7 @@ Admin: Leave Management (S-13) → Pending tab → Review → Approve/Reject
 |--------|-----------|
 | Click available slot | Opens **slot action menu**: assign existing task (S-09) or add custom task & assign (ticket 0034) |
 | Assign existing (menu) | Opens S-09 pre-filled with staff member, date, and start time; case-first task picker (ticket 0033) |
-| Add custom task & assign (menu) | Wizard: pick active case → custom task form → creates task (EP-11b) and assigns slot (EP-13) |
+| Add custom task & assign (menu) | Single-screen modal (ticket 0044): task name, optional description, duration (prefilled from slot); optional collapsed **Record on case task** for audit note. Creates ad-hoc task on internal case (EP-11b addendum) and assigns slot (EP-13). Abbreviation auto-generated server-side. |
 | Click task block | Navigate to Case Detail (S-06) for that task's case |
 | Hover task block | Tooltip: full task name, case reference, client name, remaining time |
 | Prev/Next/Today | Navigate days. Date picker for jumping to specific dates. |

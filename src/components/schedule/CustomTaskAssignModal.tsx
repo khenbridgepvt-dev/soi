@@ -1,25 +1,26 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { INTERNAL_CASE_ID } from '@/lib/cases/internal-case';
+import { useInvalidateAfterMutation } from '@/lib/query/useInvalidateAfterMutation';
+import type { AssignableCaseGroup } from '@/lib/tasks/fetch-assignable-tasks';
 import {
   calculateEndTime,
   MAX_ASSIGNMENT_MINUTES,
   MIN_ASSIGNMENT_MINUTES,
 } from '@/lib/utils/availability';
-import { formatLongDate } from '@/lib/utils/dates';
 import {
-  validateCustomTaskAbbreviation,
   validateCustomTaskDescription,
   validateCustomTaskName,
 } from '@/lib/utils/custom-task';
-import { useInvalidateAfterMutation } from '@/lib/query/useInvalidateAfterMutation';
-import type { AssignableCaseGroup } from '@/lib/tasks/fetch-assignable-tasks';
+import { formatLongDate } from '@/lib/utils/dates';
 
 export type CustomTaskAssignPrefill = {
   staffId: string;
   staffName: string;
   date: string;
   startTime: string;
+  durationMinutes: number;
 };
 
 type CustomTaskAssignModalProps = {
@@ -33,10 +34,16 @@ type ApiError = {
   error?: { message?: string };
 };
 
-type WizardStep = 'case' | 'task';
-
 function partsToDuration(hours: number, minutes: number): number {
   return hours * 60 + minutes;
+}
+
+function durationToParts(totalMinutes: number): { hours: number; minutes: number } {
+  const safe = Math.max(MIN_ASSIGNMENT_MINUTES, Math.min(totalMinutes, MAX_ASSIGNMENT_MINUTES));
+  return {
+    hours: Math.floor(safe / 60),
+    minutes: safe % 60,
+  };
 }
 
 export default function CustomTaskAssignModal({
@@ -46,33 +53,32 @@ export default function CustomTaskAssignModal({
   onAssigned,
 }: CustomTaskAssignModalProps) {
   const invalidate = useInvalidateAfterMutation();
-  const [step, setStep] = useState<WizardStep>('case');
   const [caseGroups, setCaseGroups] = useState<AssignableCaseGroup[]>([]);
+  const [auditExpanded, setAuditExpanded] = useState(false);
   const [caseSearch, setCaseSearch] = useState('');
   const [selectedCaseId, setSelectedCaseId] = useState('');
+  const [linkedTaskId, setLinkedTaskId] = useState('');
   const [name, setName] = useState('');
-  const [abbreviation, setAbbreviation] = useState('');
   const [description, setDescription] = useState('');
   const [nameError, setNameError] = useState<string | null>(null);
-  const [abbreviationError, setAbbreviationError] = useState<string | null>(null);
   const [descriptionError, setDescriptionError] = useState<string | null>(null);
-  const [hours, setHours] = useState(2);
+  const [hours, setHours] = useState(1);
   const [minutes, setMinutes] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [bannerError, setBannerError] = useState<string | null>(null);
 
-  const resetForm = useCallback(() => {
-    setStep('case');
+  const resetForm = useCallback((durationMinutes = MIN_ASSIGNMENT_MINUTES) => {
+    const parts = durationToParts(durationMinutes);
+    setAuditExpanded(false);
     setCaseSearch('');
     setSelectedCaseId('');
+    setLinkedTaskId('');
     setName('');
-    setAbbreviation('');
     setDescription('');
     setNameError(null);
-    setAbbreviationError(null);
     setDescriptionError(null);
-    setHours(2);
-    setMinutes(0);
+    setHours(parts.hours);
+    setMinutes(parts.minutes);
     setSubmitting(false);
     setBannerError(null);
   }, []);
@@ -82,7 +88,7 @@ export default function CustomTaskAssignModal({
       return;
     }
 
-    resetForm();
+    resetForm(prefill?.durationMinutes ?? MIN_ASSIGNMENT_MINUTES);
 
     async function loadCases() {
       try {
@@ -90,12 +96,12 @@ export default function CustomTaskAssignModal({
         const json = (await response.json()) as { data?: AssignableCaseGroup[] };
         setCaseGroups(json.data ?? []);
       } catch {
-        setBannerError('Failed to load cases.');
+        setBannerError('Failed to load cases for audit link.');
       }
     }
 
     void loadCases();
-  }, [open, resetForm]);
+  }, [open, prefill?.durationMinutes, resetForm]);
 
   const filteredCaseGroups = useMemo(() => {
     const normalized = caseSearch.trim().toLowerCase();
@@ -124,21 +130,20 @@ export default function CustomTaskAssignModal({
     durationMinutes > MAX_ASSIGNMENT_MINUTES ||
     !endTimeResult?.ok;
 
-  const canSubmitTaskStep =
-    Boolean(selectedCaseId) &&
+  const canSubmit =
     Boolean(prefill?.staffId) &&
     Boolean(prefill?.startTime) &&
     Boolean(endTime) &&
     !durationInvalid &&
-    !submitting;
+    !submitting &&
+    (!auditExpanded || !selectedCaseId || Boolean(linkedTaskId));
 
   async function handleSubmit() {
-    if (!canSubmitTaskStep || !prefill || !endTime) {
+    if (!canSubmit || !prefill || !endTime) {
       return;
     }
 
     setNameError(null);
-    setAbbreviationError(null);
     setDescriptionError(null);
     setBannerError(null);
 
@@ -148,75 +153,60 @@ export default function CustomTaskAssignModal({
       return;
     }
 
-    const abbreviationResult = validateCustomTaskAbbreviation(abbreviation);
-    if (!abbreviationResult.ok) {
-      setAbbreviationError(abbreviationResult.message);
-      return;
-    }
-
     const descriptionResult = validateCustomTaskDescription(description);
     if (!descriptionResult.ok) {
       setDescriptionError(descriptionResult.message);
       return;
     }
 
+    if (auditExpanded && selectedCaseId && !linkedTaskId) {
+      setBannerError('Select a case task to record the audit link, or collapse the section.');
+      return;
+    }
+
     setSubmitting(true);
 
     try {
-      const createResponse = await fetch(`/api/cases/${selectedCaseId}/tasks/custom`, {
+      const response = await fetch('/api/schedule/adhoc-task-assign', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: nameResult.value,
-          abbreviation: abbreviationResult.value,
           description: descriptionResult.value ?? undefined,
-        }),
-      });
-
-      const createJson = (await createResponse.json()) as ApiError & {
-        data?: { id: string };
-      };
-
-      if (!createResponse.ok || !createJson.data?.id) {
-        setBannerError(createJson.error?.message ?? 'Failed to add custom task.');
-        return;
-      }
-
-      const taskId = createJson.data.id;
-
-      const assignResponse = await fetch(`/api/tasks/${taskId}/assign`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
           staff_id: prefill.staffId,
           date: prefill.date,
           start_time: prefill.startTime,
           duration_minutes: durationMinutes,
+          linked_task_id: auditExpanded && linkedTaskId ? linkedTaskId : undefined,
         }),
       });
 
-      const assignJson = (await assignResponse.json()) as ApiError & {
-        data?: { staff_name: string; start_time: string };
+      const json = (await response.json()) as ApiError & {
+        data?: {
+          staff_name: string;
+          start_time: string;
+          linked_case_id: string | null;
+        };
       };
 
-      if (!assignResponse.ok) {
-        setBannerError(
-          assignJson.error?.message ??
-            'Custom task created but assignment failed. Assign from case detail or scheduling grid.',
-        );
-        void invalidate('customTask', { caseId: selectedCaseId });
+      if (!response.ok || !json.data) {
+        setBannerError(json.error?.message ?? 'Failed to create and assign ad-hoc task.');
         return;
       }
 
-      const staffName = assignJson.data?.staff_name ?? prefill.staffName;
-      const assignedTime = assignJson.data?.start_time ?? prefill.startTime;
+      const linkedCaseId = json.data.linked_case_id;
+      if (linkedCaseId) {
+        void invalidate('customTask', { caseId: linkedCaseId });
+      }
+      void invalidate('customTask');
+      void invalidate('assign', { caseId: INTERNAL_CASE_ID });
 
-      void invalidate('customTask', { caseId: selectedCaseId });
-      void invalidate('assign', { caseId: selectedCaseId });
-      onAssigned(`Custom task assigned to ${staffName} at ${assignedTime}.`);
+      const staffName = json.data.staff_name ?? prefill.staffName;
+      const assignedTime = json.data.start_time ?? prefill.startTime;
+      onAssigned(`Ad-hoc task assigned to ${staffName} at ${assignedTime}.`);
       onClose();
     } catch {
-      setBannerError('Failed to create and assign custom task.');
+      setBannerError('Failed to create and assign ad-hoc task.');
     } finally {
       setSubmitting(false);
     }
@@ -225,12 +215,6 @@ export default function CustomTaskAssignModal({
   if (!open || !prefill) {
     return null;
   }
-
-  const caseLabel = selectedCase
-    ? selectedCase.reference
-      ? `${selectedCase.reference} — ${selectedCase.client_name}`
-      : selectedCase.client_name
-    : '—';
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 md:items-center md:p-4">
@@ -248,11 +232,9 @@ export default function CustomTaskAssignModal({
             <p className="mt-1 text-sm text-text-secondary">
               {prefill.staffName} · {formatLongDate(prefill.date)} · {prefill.startTime}
             </p>
-            {step === 'task' && (
-              <p className="text-sm text-text-secondary">
-                Case: <span className="font-medium text-text">{caseLabel}</span>
-              </p>
-            )}
+            <p className="text-sm text-text-secondary">
+              Generic firm work — not tied to a client case unless you add an audit link below.
+            </p>
           </div>
           <button
             type="button"
@@ -272,187 +254,199 @@ export default function CustomTaskAssignModal({
             </div>
           )}
 
-          {step === 'case' ? (
-            <div className="space-y-4">
-              <div>
-                <label
-                  className="mb-1 block text-sm font-medium text-text"
-                  htmlFor="custom-assign-case-search"
-                >
-                  Find case
-                </label>
-                <input
-                  id="custom-assign-case-search"
-                  type="search"
-                  value={caseSearch}
-                  onChange={(event) => setCaseSearch(event.target.value)}
-                  placeholder="Search by reference or client name…"
-                  className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
-                />
-              </div>
+          <div className="space-y-4">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-text" htmlFor="custom-task-name">
+                Task name *
+              </label>
+              <input
+                id="custom-task-name"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                placeholder="e.g. Clear emails"
+                className={`w-full rounded-md border bg-surface px-3 py-2 text-sm ${nameError ? 'border-error' : 'border-border'}`}
+              />
+              {nameError && <p className="mt-1 text-xs text-error">{nameError}</p>}
+            </div>
 
+            <div>
+              <label
+                className="mb-1 block text-sm font-medium text-text"
+                htmlFor="custom-task-description"
+              >
+                Description
+              </label>
+              <textarea
+                id="custom-task-description"
+                value={description}
+                rows={3}
+                onChange={(event) => setDescription(event.target.value)}
+                placeholder="Optional details for the calendar and audit note"
+                className={`w-full rounded-md border bg-surface px-3 py-2 text-sm ${descriptionError ? 'border-error' : 'border-border'}`}
+              />
+              {descriptionError && (
+                <p className="mt-1 text-xs text-error">{descriptionError}</p>
+              )}
+            </div>
+
+            <div>
+              <p className="mb-1 text-sm font-medium text-text">Duration *</p>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={0}
+                  max={8}
+                  value={hours}
+                  onChange={(event) => setHours(Number(event.target.value) || 0)}
+                  className="w-20 rounded-md border border-border px-3 py-2 text-sm"
+                  aria-label="Hours"
+                />
+                <span className="text-sm text-text-secondary">hours</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={59}
+                  step={15}
+                  value={minutes}
+                  onChange={(event) => setMinutes(Number(event.target.value) || 0)}
+                  className="w-20 rounded-md border border-border px-3 py-2 text-sm"
+                  aria-label="Minutes"
+                />
+                <span className="text-sm text-text-secondary">minutes</span>
+              </div>
+              {durationInvalid && (
+                <p className="mt-1 text-xs text-error">
+                  Duration must be between {MIN_ASSIGNMENT_MINUTES} minutes and 8 hours.
+                </p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
-                <label
-                  className="mb-1 block text-sm font-medium text-text"
-                  htmlFor="custom-assign-case"
-                >
-                  Case *
-                </label>
-                <select
-                  id="custom-assign-case"
-                  value={selectedCaseId}
-                  onChange={(event) => setSelectedCaseId(event.target.value)}
-                  className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
-                >
-                  <option value="">Select an active case…</option>
-                  {filteredCaseGroups.map((group) => (
-                    <option key={group.case_id} value={group.case_id}>
-                      {group.reference ? `${group.reference} — ` : ''}
-                      {group.client_name}
-                      {` · ${group.application_type_name}`}
-                    </option>
-                  ))}
-                </select>
+                <p className="text-text-secondary">Start time</p>
+                <p className="font-medium text-text">{prefill.startTime}</p>
+              </div>
+              <div>
+                <p className="text-text-secondary">End time</p>
+                <p className="font-medium text-text">{endTime ?? '—'}</p>
               </div>
             </div>
-          ) : (
-            <div className="space-y-4">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-text" htmlFor="custom-task-name">
-                  Task name *
-                </label>
-                <input
-                  id="custom-task-name"
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  className={`w-full rounded-md border bg-surface px-3 py-2 text-sm ${nameError ? 'border-error' : 'border-border'}`}
-                />
-                {nameError && <p className="mt-1 text-xs text-error">{nameError}</p>}
-              </div>
 
-              <div>
-                <label
-                  className="mb-1 block text-sm font-medium text-text"
-                  htmlFor="custom-task-abbreviation"
-                >
-                  Abbreviation *
-                </label>
-                <input
-                  id="custom-task-abbreviation"
-                  value={abbreviation}
-                  onChange={(event) => setAbbreviation(event.target.value)}
-                  className={`w-full rounded-md border bg-surface px-3 py-2 text-sm ${abbreviationError ? 'border-error' : 'border-border'}`}
-                />
-                {abbreviationError && (
-                  <p className="mt-1 text-xs text-error">{abbreviationError}</p>
-                )}
-              </div>
+            <div className="rounded-md border border-border">
+              <button
+                type="button"
+                onClick={() => {
+                  setAuditExpanded((value) => !value);
+                  if (auditExpanded) {
+                    setSelectedCaseId('');
+                    setLinkedTaskId('');
+                    setCaseSearch('');
+                  }
+                }}
+                className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-medium text-text hover:bg-page"
+                aria-expanded={auditExpanded}
+              >
+                <span>Record on case task (optional)</span>
+                <span aria-hidden="true">{auditExpanded ? '▾' : '▸'}</span>
+              </button>
 
-              <div>
-                <label
-                  className="mb-1 block text-sm font-medium text-text"
-                  htmlFor="custom-task-description"
-                >
-                  Description
-                </label>
-                <textarea
-                  id="custom-task-description"
-                  value={description}
-                  rows={3}
-                  onChange={(event) => setDescription(event.target.value)}
-                  className={`w-full rounded-md border bg-surface px-3 py-2 text-sm ${descriptionError ? 'border-error' : 'border-border'}`}
-                />
-                {descriptionError && (
-                  <p className="mt-1 text-xs text-error">{descriptionError}</p>
-                )}
-              </div>
-
-              <div>
-                <p className="mb-1 text-sm font-medium text-text">Time allocation *</p>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    min={0}
-                    max={8}
-                    value={hours}
-                    onChange={(event) => setHours(Number(event.target.value) || 0)}
-                    className="w-20 rounded-md border border-border px-3 py-2 text-sm"
-                    aria-label="Hours"
-                  />
-                  <span className="text-sm text-text-secondary">hours</span>
-                  <input
-                    type="number"
-                    min={0}
-                    max={59}
-                    step={15}
-                    value={minutes}
-                    onChange={(event) => setMinutes(Number(event.target.value) || 0)}
-                    className="w-20 rounded-md border border-border px-3 py-2 text-sm"
-                    aria-label="Minutes"
-                  />
-                  <span className="text-sm text-text-secondary">minutes</span>
-                </div>
-                {durationInvalid && (
-                  <p className="mt-1 text-xs text-error">
-                    Duration must be between {MIN_ASSIGNMENT_MINUTES} minutes and 8 hours.
+              {auditExpanded && (
+                <div className="space-y-4 border-t border-border px-4 py-4">
+                  <p className="text-sm text-text-secondary">
+                    Append a one-line audit note to an existing case task. The calendar entry still
+                    lives on firm general work.
                   </p>
-                )}
-              </div>
 
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div>
-                  <p className="text-text-secondary">Start time</p>
-                  <p className="font-medium text-text">{prefill.startTime}</p>
+                  <div>
+                    <label
+                      className="mb-1 block text-sm font-medium text-text"
+                      htmlFor="custom-assign-case-search"
+                    >
+                      Find case
+                    </label>
+                    <input
+                      id="custom-assign-case-search"
+                      type="search"
+                      value={caseSearch}
+                      onChange={(event) => setCaseSearch(event.target.value)}
+                      placeholder="Search by reference or client name…"
+                      className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      className="mb-1 block text-sm font-medium text-text"
+                      htmlFor="custom-assign-case"
+                    >
+                      Case
+                    </label>
+                    <select
+                      id="custom-assign-case"
+                      value={selectedCaseId}
+                      onChange={(event) => {
+                        setSelectedCaseId(event.target.value);
+                        setLinkedTaskId('');
+                      }}
+                      className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
+                    >
+                      <option value="">Select an active case…</option>
+                      {filteredCaseGroups.map((group) => (
+                        <option key={group.case_id} value={group.case_id}>
+                          {group.reference ? `${group.reference} — ` : ''}
+                          {group.client_name}
+                          {` · ${group.application_type_name}`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {selectedCase && (
+                    <div>
+                      <label
+                        className="mb-1 block text-sm font-medium text-text"
+                        htmlFor="custom-assign-linked-task"
+                      >
+                        Case task
+                      </label>
+                      <select
+                        id="custom-assign-linked-task"
+                        value={linkedTaskId}
+                        onChange={(event) => setLinkedTaskId(event.target.value)}
+                        className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
+                      >
+                        <option value="">Select a task…</option>
+                        {selectedCase.tasks.map((task) => (
+                          <option key={task.id} value={task.id}>
+                            {task.abbreviation} — {task.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <p className="text-text-secondary">End time</p>
-                  <p className="font-medium text-text">{endTime ?? '—'}</p>
-                </div>
-              </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
 
         <div className="flex justify-end gap-3 border-t border-border px-5 py-4">
-          {step === 'task' ? (
-            <button
-              type="button"
-              disabled={submitting}
-              onClick={() => setStep('case')}
-              className="rounded-full border border-border px-5 py-2.5 text-sm text-text hover:bg-page disabled:opacity-50"
-            >
-              Back
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={submitting}
-              className="rounded-full border border-border px-5 py-2.5 text-sm text-text hover:bg-page disabled:opacity-50"
-            >
-              Cancel
-            </button>
-          )}
-
-          {step === 'case' ? (
-            <button
-              type="button"
-              disabled={!selectedCaseId}
-              onClick={() => setStep('task')}
-              className="min-h-[44px] rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50"
-            >
-              Next
-            </button>
-          ) : (
-            <button
-              type="button"
-              disabled={!canSubmitTaskStep}
-              onClick={handleSubmit}
-              className="min-h-[44px] rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50"
-            >
-              {submitting ? 'Creating…' : 'Create & assign'}
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            className="rounded-full border border-border px-5 py-2.5 text-sm text-text hover:bg-page disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={!canSubmit}
+            onClick={handleSubmit}
+            className="min-h-[44px] rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50"
+          >
+            {submitting ? 'Creating…' : 'Create & assign'}
+          </button>
         </div>
       </div>
     </div>

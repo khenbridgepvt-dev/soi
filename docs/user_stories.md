@@ -684,6 +684,30 @@ Translate every functional requirement from the SRS into implementation-ready us
 
 ---
 
+#### US-5.4b · Ad-hoc custom task from schedule slot (post-MVP)
+
+| Field | Value |
+|-------|-------|
+| **Epic** | E5 — Team Scheduling |
+| **Priority** | Post-MVP |
+| **Actor** | Administrator |
+| **Dependencies** | US-5.4, ADR-0019 (ticket 0043) |
+
+**Story:** As an administrator, I want to add generic firm work from a schedule slot so that non-client tasks (clear emails, help invoices) appear on the calendar without creating a client case.
+
+**Acceptance Criteria:**
+- [ ] Slot menu **Add custom task & assign** opens a single-screen form: task name (required), description (optional), duration (prefilled from slot).
+- [ ] Task is created on the hidden internal case; abbreviation is generated server-side (not shown in UI).
+- [ ] Slot is assigned via the same rules as US-5.3; assignment appears on the schedule grid with `case_is_internal`.
+- [ ] Optional collapsed section **Record on case task**: search active case → pick task → append one-line audit note to that task's notes (timestamp, staff name, ad-hoc task name, description).
+- [ ] Case-detail custom task modal (US-3.1b) is unchanged — still case-first with manual abbreviation.
+
+**Edge Cases:**
+- Linked task must belong to an active client case (not internal case).
+- Audit note respects `tasks.notes` 500-character limit (truncate older content if needed).
+
+---
+
 #### US-5.5 · Conflict Prevention (Double-Booking)
 
 | Field | Value |

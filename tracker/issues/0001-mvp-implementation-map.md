@@ -67,6 +67,7 @@ The MVP is **operational as a free-tier pilot**: all ten MVP modules (M1–M10) 
 - **0041 mandatory username:** Superseded by 0042 — [Mandatory profile username (display handle)](./0041-mandatory-profile-username.md)
 - **0042 revert username:** Drop `profiles.username`; `full_name` only; ADR-0018 — [Revert profile username (supersedes 0041)](./0042-revert-profile-username.md)
 - **0043 internal case ad-hoc:** Hidden `FIRM-GENERAL` case; `is_internal` filter on list/search/picker; schedule `case_is_internal` — [Internal case model for ad-hoc schedule work](./0043-internal-case-adhoc-model.md)
+- **0044 ad-hoc custom task:** Schedule slot generic work on internal case; optional audit link — [Ad-hoc custom task from schedule slot](./0044-adhoc-custom-task-modal.md)
 
 ## Not yet specified
 
