@@ -28,7 +28,6 @@ describe('create staff (ticket 0019, EP-18)', () => {
     const result = await createStaffMember(service, {
       full_name: 'Harness Staff',
       email,
-      username: 'harness.staff',
       role: 'staff',
       password,
     });
@@ -36,7 +35,6 @@ describe('create staff (ticket 0019, EP-18)', () => {
     await trackUser(result.id);
 
     expect(result.email).toBe(email);
-    expect(result.username).toBe('harness.staff');
     expect(result.role).toBe('staff');
     expect(result.is_active).toBe(true);
 
@@ -68,7 +66,6 @@ describe('create staff (ticket 0019, EP-18)', () => {
     const first = await createStaffMember(service, {
       full_name: 'First User',
       email,
-      username: 'first.user',
       role: 'staff',
       password: 'HarnessPass1',
     });
@@ -78,53 +75,10 @@ describe('create staff (ticket 0019, EP-18)', () => {
       createStaffMember(service, {
         full_name: 'Second User',
         email,
-        username: 'second.user',
         role: 'staff',
         password: 'HarnessPass1',
       }),
     ).rejects.toThrow();
-  });
-
-  it('rejects duplicate username (ticket 0041)', async () => {
-    const suffix = Date.now();
-    const first = await createStaffMember(service, {
-      full_name: 'Username One',
-      email: `user1-${suffix}@firm.com`,
-      username: `dupuser${suffix}`,
-      role: 'staff',
-      password: 'HarnessPass1',
-    });
-    await trackUser(first.id);
-
-    await expect(
-      createStaffMember(service, {
-        full_name: 'Username Two',
-        email: `user2-${suffix}@firm.com`,
-        username: `dupuser${suffix}`,
-        role: 'staff',
-        password: 'HarnessPass1',
-      }),
-    ).rejects.toThrow();
-  });
-
-  it('staff list includes username (ticket 0041)', async () => {
-    const suffix = Date.now();
-    const created = await createStaffMember(service, {
-      full_name: 'Listed Staff',
-      email: `listed-${suffix}@firm.com`,
-      username: `listed${suffix}`,
-      role: 'staff',
-      password: 'HarnessPass1',
-    });
-    await trackUser(created.id);
-
-    const { data: profiles } = await service
-      .from('profiles')
-      .select('id, full_name, username')
-      .eq('id', created.id)
-      .single();
-
-    expect(profiles?.username).toBe(`listed${suffix}`);
   });
 });
 
@@ -170,7 +124,6 @@ describe('deactivation §10.4 (ticket 0019)', () => {
     const result = await createStaffMember(service, {
       full_name: 'Reactivate Me',
       email,
-      username: 'reactivate.me',
       role: 'staff',
       password,
     });

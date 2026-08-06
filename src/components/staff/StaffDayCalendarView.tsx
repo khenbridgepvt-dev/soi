@@ -17,7 +17,6 @@ import {
   timeToPixelOffset,
 } from '@/lib/utils/calendar-layout';
 import { addDays, formatLongDate, todayISODate } from '@/lib/utils/dates';
-import { formatStaffUsername } from '@/lib/staff/username';
 
 const ROW_HEIGHT = CALENDAR_ROW_HEIGHT;
 const PILL_GAP = 4;
@@ -58,7 +57,6 @@ type ScheduleAssignment = {
 type ScheduleStaff = {
   id: string;
   full_name: string;
-  username: string;
   working_hours: TimeInterval | null;
   is_on_leave: boolean;
   assignments: ScheduleAssignment[];
@@ -362,11 +360,8 @@ export default function StaffDayCalendarView({ staffId }: StaffDayCalendarViewPr
                 Time
               </div>
               <div className="border-l border-slot-line bg-page px-3 py-2 text-sm font-semibold text-text">
-                <p>{member.full_name}</p>
-                <p className="text-xs font-normal text-text-muted">
-                  {formatStaffUsername(member.username)}
-                  {member.is_on_leave ? ' · On Leave' : ''}
-                </p>
+                {member.full_name}
+                {member.is_on_leave ? ' · On Leave' : ''}
               </div>
             </div>
 

@@ -20,7 +20,6 @@ import {
 } from '@/lib/schedule/assignment-status';
 import { REFETCH_INTERVAL_MS, queryKeys } from '@/lib/query/keys';
 import { addDays, formatLongDate, todayISODate } from '@/lib/utils/dates';
-import { formatStaffUsername } from '@/lib/staff/username';
 
 /** 36px pill (DS-1) + 4px vertical gap between pills (design_system §6). */
 const ROW_HEIGHT = 40;
@@ -62,7 +61,6 @@ type ScheduleAssignment = {
 type ScheduleStaff = {
   id: string;
   full_name: string;
-  username: string;
   online_status: 'online' | 'break' | 'offline';
   working_hours: TimeInterval | null;
   is_on_leave: boolean;
@@ -378,7 +376,6 @@ export default function ScheduleGridView() {
                 className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs text-text-secondary"
               >
                 <span className="font-medium text-text">{member.full_name}</span>{' '}
-                <span className="text-text-muted">{formatStaffUsername(member.username)}</span>{' '}
                 {member.working_minutes === 0
                   ? member.booked_minutes === 0
                     ? 'Off'
@@ -405,10 +402,9 @@ export default function ScheduleGridView() {
                     {member.full_name}
                   </p>
                   <p className="truncate text-xs text-text-muted">
-                    {formatStaffUsername(member.username)}
                     {member.working_hours
-                      ? ` · ${member.working_hours.start}–${member.working_hours.end}`
-                      : ' · Off'}
+                      ? `${member.working_hours.start}–${member.working_hours.end}`
+                      : 'Off'}
                   </p>
                 </div>
               ))}

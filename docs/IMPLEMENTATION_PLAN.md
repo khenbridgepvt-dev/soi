@@ -255,6 +255,7 @@ Tier legend: **cheap** = budget model is fine · **STRONG** = use Fable/frontier
 | 0039 schedule status pills | cheap | ui_wireframe S-04/S-11 · assignment-status.ts | 1 |
 | 0040 deleted tombstone + calendar | cheap | EP-08 addendum · S-06 empty state | 1 |
 | 0041 mandatory username | cheap | ADR-0017 · EP-18–20 · database_schema T1 | 1 |
+| 0042 revert username | cheap | ADR-0018 · migration 00042 | 1 |
 
 Estimated total: **42–49 sessions**. Recommended first ticket for a cheap model: **0002 scaffold** (0003 can run in parallel in a second session).
 

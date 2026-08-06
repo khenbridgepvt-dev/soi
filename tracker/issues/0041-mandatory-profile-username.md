@@ -2,7 +2,8 @@
 id: 41
 title: Mandatory profile username (display handle)
 labels: [wayfinder:task, post-mvp, ux]
-status: closed
+status: superseded
+superseded-by: 42
 closed: 2026-08-05
 parent: 1
 blocked-by: []
@@ -34,7 +35,9 @@ created: 2026-08-05
 
 ## Resolution
 
-`profiles.username` is mandatory with deterministic backfill. Staff APIs return username + full_name; email remains admin-only in settings. Validation enforces charset and case-insensitive uniqueness. UI surfaces show `@username` alongside names; `UsernamePromptGate` covers edge cases. `staffSettings` invalidation refreshes team/schedule after profile changes.
+**Superseded by [0042](./0042-revert-profile-username.md)** (2026-08-06). Shipped briefly in commit `e6a5fa1`; reverted in 0042 per firm HITL.
+
+Original resolution: `profiles.username` mandatory with deterministic backfill. Staff APIs returned username + full_name; email admin-only in settings.
 
 ## Manual smoke
 

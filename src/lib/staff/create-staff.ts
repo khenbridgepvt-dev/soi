@@ -5,7 +5,6 @@ import type { StaffRole } from '@/lib/staff/validation';
 export type CreateStaffInput = {
   full_name: string;
   email: string;
-  username: string;
   role: StaffRole;
   password: string;
   timetable?: Partial<Database['public']['Tables']['staff_timetables']['Update']>;
@@ -14,7 +13,6 @@ export type CreateStaffInput = {
 export type CreateStaffResult = {
   id: string;
   full_name: string;
-  username: string;
   email: string;
   role: StaffRole;
   is_active: boolean;
@@ -48,7 +46,6 @@ export async function createStaffMember(
     user_metadata: {
       full_name: input.full_name,
       role: input.role,
-      username: input.username,
     },
   });
 
@@ -78,10 +75,9 @@ export async function createStaffMember(
     .update({
       full_name: input.full_name,
       role: input.role,
-      username: input.username,
     })
     .eq('id', userId)
-    .select('id, full_name, username, email, role, is_active')
+    .select('id, full_name, email, role, is_active')
     .single();
 
   if (profileError || !profile) {
@@ -92,7 +88,6 @@ export async function createStaffMember(
   return {
     id: profile.id,
     full_name: profile.full_name,
-    username: profile.username,
     email: profile.email,
     role: profile.role as StaffRole,
     is_active: profile.is_active,

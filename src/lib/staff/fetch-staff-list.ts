@@ -5,7 +5,6 @@ import { formatWorkingHours } from '@/lib/staff/working-hours';
 export type StaffListItem = {
   id: string;
   full_name: string;
-  username: string;
   email: string;
   role: Database['public']['Enums']['user_role'];
   is_active: boolean;
@@ -37,7 +36,7 @@ export async function fetchStaffList(
 ): Promise<StaffListItem[]> {
   let profileQuery = profilesClient
     .from('profiles')
-    .select('id, full_name, username, email, role, is_active, online_status')
+    .select('id, full_name, email, role, is_active, online_status')
     .order('full_name', { ascending: true });
 
   if (filters.is_active !== undefined) {
@@ -136,7 +135,6 @@ export async function fetchStaffList(
     return {
       id: profile.id,
       full_name: profile.full_name,
-      username: profile.username,
       email: profile.email,
       role: profile.role,
       is_active: profile.is_active,

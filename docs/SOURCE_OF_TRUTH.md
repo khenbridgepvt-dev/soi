@@ -35,7 +35,7 @@ Quick index for agents and developers. **Read this first** instead of re-auditin
 | **Schedule grid** | `ui_wireframe_spec.md` S-04, EP-24/25 | `ScheduleGridView.tsx`, `assignment-status.ts` (0039 status pills) |
 | **Notifications** | ADR-0003, ticket 0027 | `use-notifications.ts`, Realtime |
 | **Application types** | `database_schema.md` T2, EP-35–37, ticket [0036](../tracker/issues/0036-skilled-worker-dependant-application-type.md) | `ApplicationTypesSettings.tsx`, migration `00017` + `00040` (SKD) |
-| **Staff profiles / username** | ADR-0017, ticket [0041](../tracker/issues/0041-mandatory-profile-username.md) | `username.ts`, `UsernamePromptGate.tsx`, EP-18–20 |
+| **Staff display identity** | ADR-0018, ticket [0042](../tracker/issues/0042-revert-profile-username.md) | `full_name` only; C-07 email admin-only |
 | **Client data / cache** | ADR-0016, ticket [0032](../tracker/issues/0032-reactive-data-layer.md) | `src/lib/query/` (`keys.ts`, `invalidate.ts`) |
 | **References** | ADR-0009, `src/lib/utils/reference.ts` | `accept_lead` RPC |
 | **Tests** | `docs/test_plan.md` | `tests/unit/`, `tests/integration/` |
@@ -45,7 +45,7 @@ Quick index for agents and developers. **Read this first** instead of re-auditin
 
 ---
 
-## 3. Post-MVP delivery log (0032–0041)
+## 3. Post-MVP delivery log (0032–0042)
 
 | Ticket | Date | Summary |
 |--------|------|---------|
@@ -57,7 +57,8 @@ Quick index for agents and developers. **Read this first** instead of re-auditin
 | [0038](../tracker/issues/0038-task-board-direct-assign.md) | 2026-08-05 | Board card click opens Assign Task modal with task prefilled |
 | [0039](../tracker/issues/0039-schedule-calendar-status-parity.md) | 2026-08-05 | Schedule pills show COMPLETED/BLOCKED/URGENT; taskStatus invalidates schedule |
 | [0040](../tracker/issues/0040-deleted-case-tombstone-and-calendar.md) | 2026-08-05 | Deleted case tombstone; schedule DELETED pills; assignments stay booked |
-| [0041](../tracker/issues/0041-mandatory-profile-username.md) | 2026-08-05 | Mandatory profile username (display handle); team/assign UI; email admin-only |
+| [0041](../tracker/issues/0041-mandatory-profile-username.md) | 2026-08-05 | Mandatory profile username — **superseded by 0042** |
+| [0042](../tracker/issues/0042-revert-profile-username.md) | 2026-08-06 | Revert username; `full_name` only display identity (ADR-0018) |
 
 MVP modules (tickets 0002–0030) are implemented per the [implementation map](../tracker/issues/0001-mvp-implementation-map.md).
 

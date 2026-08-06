@@ -12,13 +12,11 @@ import {
   validateStaffRole,
   type StaffRole,
 } from '@/lib/staff/validation';
-import { suggestUsernameFromEmail, validateUsername } from '@/lib/staff/username';
 import { TIMETABLE_DAYS } from '@/lib/utils/dates';
 
 type StaffMember = {
   id: string;
   full_name: string;
-  username: string;
   email: string;
   role: 'admin' | 'staff' | 'senior';
   is_active: boolean;
@@ -52,21 +50,17 @@ export default function StaffMembersSettings() {
   const [saving, setSaving] = useState(false);
 
   const [fullName, setFullName] = useState('');
-  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<StaffRole>('staff');
   const [password, setPassword] = useState('');
   const [fullNameError, setFullNameError] = useState<string | null>(null);
-  const [usernameError, setUsernameError] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
   const [editName, setEditName] = useState('');
-  const [editUsername, setEditUsername] = useState('');
   const [editRole, setEditRole] = useState<StaffMember['role']>('staff');
   const [resetPassword, setResetPassword] = useState('');
   const [editNameError, setEditNameError] = useState<string | null>(null);
-  const [editUsernameError, setEditUsernameError] = useState<string | null>(null);
   const [resetPasswordError, setResetPasswordError] = useState<string | null>(null);
   const [timetable, setTimetable] = useState<TimetableEditorState>({});
   const [timetableLoading, setTimetableLoading] = useState(false);
@@ -103,12 +97,10 @@ export default function StaffMembersSettings() {
 
   function openAdd() {
     setFullName('');
-    setUsername('');
     setEmail('');
     setRole('staff');
     setPassword('');
     setFullNameError(null);
-    setUsernameError(null);
     setEmailError(null);
     setPasswordError(null);
     setAddOpen(true);
@@ -117,11 +109,9 @@ export default function StaffMembersSettings() {
   function openEdit(member: StaffMember) {
     setEditMember(member);
     setEditName(member.full_name);
-    setEditUsername(member.username);
     setEditRole(member.role === 'admin' ? 'staff' : member.role);
     setResetPassword('');
     setEditNameError(null);
-    setEditUsernameError(null);
     setResetPasswordError(null);
     setTimetable({});
     setTimetableErrors({});
@@ -159,19 +149,12 @@ export default function StaffMembersSettings() {
 
   async function handleAdd() {
     setFullNameError(null);
-    setUsernameError(null);
     setEmailError(null);
     setPasswordError(null);
 
     const nameResult = validateStaffFullName(fullName);
     if (!nameResult.ok) {
       setFullNameError(nameResult.message);
-      return;
-    }
-
-    const usernameResult = validateUsername(username);
-    if (!usernameResult.ok) {
-      setUsernameError(usernameResult.message);
       return;
     }
 
@@ -201,7 +184,6 @@ export default function StaffMembersSettings() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           full_name: nameResult.value,
-          username: usernameResult.value,
           email: emailResult.value,
           role: roleResult.value,
           password: passwordResult.value,
@@ -231,16 +213,9 @@ export default function StaffMembersSettings() {
     }
 
     setEditNameError(null);
-    setEditUsernameError(null);
     const nameResult = validateStaffFullName(editName);
     if (!nameResult.ok) {
       setEditNameError(nameResult.message);
-      return;
-    }
-
-    const usernameResult = validateUsername(editUsername);
-    if (!usernameResult.ok) {
-      setEditUsernameError(usernameResult.message);
       return;
     }
 
@@ -252,7 +227,6 @@ export default function StaffMembersSettings() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           full_name: nameResult.value,
-          username: usernameResult.value,
           role: editMember.role === 'admin' ? undefined : editRole,
         }),
       });
@@ -424,7 +398,6 @@ export default function StaffMembersSettings() {
             <thead className="border-b border-slate-200 bg-slate-50 text-left text-slate-600">
               <tr>
                 <th className="px-4 py-3 font-medium">Name</th>
-                <th className="px-4 py-3 font-medium">Username</th>
                 <th className="px-4 py-3 font-medium">Email</th>
                 <th className="px-4 py-3 font-medium">Role</th>
                 <th className="px-4 py-3 font-medium">Hours</th>
@@ -436,7 +409,6 @@ export default function StaffMembersSettings() {
               {staff.map((member) => (
                 <tr key={member.id}>
                   <td className="px-4 py-3 font-medium text-slate-900">{member.full_name}</td>
-                  <td className="px-4 py-3 text-slate-600">@{member.username}</td>
                   <td className="px-4 py-3 text-slate-600">{member.email}</td>
                   <td className="px-4 py-3">{roleLabel(member.role)}</td>
                   <td className="px-4 py-3 text-slate-600">{member.working_hours}</td>
@@ -496,25 +468,10 @@ export default function StaffMembersSettings() {
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => {
-                    const nextEmail = e.target.value;
-                    setEmail(nextEmail);
-                    if (!username) {
-                      setUsername(suggestUsernameFromEmail(nextEmail));
-                    }
-                  }}
+                  onChange={(e) => setEmail(e.target.value)}
                   className={`w-full rounded-md border px-3 py-2 ${emailError ? 'border-red-500' : 'border-slate-300'}`}
                 />
                 {emailError && <p className="mt-1 text-xs text-red-600">{emailError}</p>}
-              </div>
-              <div>
-                <label className="mb-1 block font-medium">Username</label>
-                <input
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className={`w-full rounded-md border px-3 py-2 ${usernameError ? 'border-red-500' : 'border-slate-300'}`}
-                />
-                {usernameError && <p className="mt-1 text-xs text-red-600">{usernameError}</p>}
               </div>
               <div>
                 <label className="mb-1 block font-medium">Role</label>
@@ -577,17 +534,6 @@ export default function StaffMembersSettings() {
                     className={`w-full rounded-md border px-3 py-2 ${editNameError ? 'border-red-500' : 'border-slate-300'}`}
                   />
                   {editNameError && <p className="mt-1 text-xs text-red-600">{editNameError}</p>}
-                </div>
-                <div>
-                  <label className="mb-1 block font-medium">Username</label>
-                  <input
-                    value={editUsername}
-                    onChange={(e) => setEditUsername(e.target.value)}
-                    className={`w-full rounded-md border px-3 py-2 ${editUsernameError ? 'border-red-500' : 'border-slate-300'}`}
-                  />
-                  {editUsernameError && (
-                    <p className="mt-1 text-xs text-red-600">{editUsernameError}</p>
-                  )}
                 </div>
                 {editMember.role !== 'admin' && (
                   <div>

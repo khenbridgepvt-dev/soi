@@ -8,7 +8,6 @@ import LeadReviewModal, { type LeadReviewTarget } from '@/components/cases/LeadR
 import MetricCard from '@/components/layout/MetricCard';
 import type { AdminDashboardPayload } from '@/lib/dashboard/fetch-admin-dashboard';
 import { REFETCH_INTERVAL_MS, queryKeys } from '@/lib/query/keys';
-import { formatStaffUsername } from '@/lib/staff/username';
 import { useInvalidateAfterMutation } from '@/lib/query/useInvalidateAfterMutation';
 
 type ApiError = {
@@ -205,12 +204,7 @@ export default function AdminDashboardView({
                       className={`inline-block h-2 w-2 rounded-full ${ONLINE_DOT[member.online_status] ?? ONLINE_DOT.offline}`}
                       aria-hidden
                     />
-                    <div>
-                      <span className="text-sm text-text">{member.full_name}</span>
-                      <span className="ml-1 text-xs text-text-muted">
-                        {formatStaffUsername(member.username)}
-                      </span>
-                    </div>
+                    <span className="text-sm text-text">{member.full_name}</span>
                   </div>
                   <span className="text-xs text-text-secondary">
                     {member.active_task_count} active

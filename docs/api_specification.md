@@ -1175,7 +1175,6 @@ Returns non-completed tasks on **active** cases, grouped by case for the S-09 ca
 {
   "full_name": "Asha Kumar",
   "email": "asha@firm.com",
-  "username": "asha.kumar",
   "role": "staff",
   "password": "temp-password-123",
   "timetable": {
@@ -1194,7 +1193,6 @@ Returns non-completed tasks on **active** cases, grouped by case for the S-09 ca
 |-------|------|----------|------------|
 | `full_name` | string | Yes | 1–100 chars |
 | `email` | string | Yes | Valid email, unique across auth.users |
-| `username` | string | Yes | 3–30 chars; `[a-z0-9._-]`; unique case-insensitively (ADR-0017) |
 | `role` | enum | Yes | `staff` or `senior` |
 | `password` | string | Yes | Min 8 chars |
 | `timetable` | object | No | If omitted, defaults to Mon–Fri 09:00–17:00 |
@@ -1211,7 +1209,6 @@ Returns non-completed tasks on **active** cases, grouped by case for the S-09 ca
   "data": {
     "id": "uuid",
     "full_name": "Asha Kumar",
-    "username": "asha.kumar",
     "email": "asha@firm.com",
     "role": "staff",
     "is_active": true
@@ -1223,7 +1220,7 @@ Returns non-completed tasks on **active** cases, grouped by case for the S-09 ca
 
 | Status | Code | Condition |
 |--------|------|-----------|
-| 409 | `CONFLICT` | Email already exists or username already taken |
+| 409 | `CONFLICT` | Email already exists |
 
 ---
 
@@ -1251,7 +1248,6 @@ Returns non-completed tasks on **active** cases, grouped by case for the S-09 ca
     {
       "id": "uuid",
       "full_name": "Asha Kumar",
-      "username": "asha.kumar",
       "email": "asha@firm.com",
       "role": "staff",
       "is_active": true,
@@ -1282,43 +1278,12 @@ Returns non-completed tasks on **active** cases, grouped by case for the S-09 ca
 ```json
 {
   "full_name": "Asha Kumar-Patel",
-  "username": "asha.kumar",
   "role": "senior",
   "is_active": false
 }
 ```
 
-| Field | Type | Required | Validation |
-|-------|------|----------|------------|
-| `full_name` | string | No | 1–100 chars |
-| `username` | string | No | Same rules as EP-18 |
-| `role` | enum | No | `staff` or `senior` (not `admin` via this endpoint) |
-| `is_active` | boolean | No | Deactivates auth on `false` |
-
 **Server-Side (on deactivation):** When `is_active` changes to `false`, the user's Supabase Auth account is disabled (they cannot log in).
-
----
-
-### EP-20b · Update Own Profile Username
-
-| Field | Value |
-|-------|-------|
-| Method | `PATCH` |
-| Path | `/api/profile` |
-| Role | `admin`, `staff`, `senior` (self only) |
-| Scope | Post-MVP (0041) |
-
-**Request Body:**
-
-```json
-{
-  "username": "asha.kumar"
-}
-```
-
-**Response — `200 OK`:** Updated profile with `id`, `full_name`, `username`, `role`, `online_status`.
-
-**Errors:** `409 CONFLICT` if username taken; `400 VALIDATION_ERROR` for format.
 
 ---
 

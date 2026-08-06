@@ -469,7 +469,6 @@ export type Database = {
           role: Database["public"]["Enums"]["user_role"]
           timezone: string | null
           updated_at: string
-          username: string
         }
         Insert: {
           created_at?: string
@@ -481,7 +480,6 @@ export type Database = {
           role?: Database["public"]["Enums"]["user_role"]
           timezone?: string | null
           updated_at?: string
-          username: string
         }
         Update: {
           created_at?: string
@@ -493,7 +491,6 @@ export type Database = {
           role?: Database["public"]["Enums"]["user_role"]
           timezone?: string | null
           updated_at?: string
-          username?: string
         }
         Relationships: []
       }
@@ -803,7 +800,6 @@ export type Database = {
           online_status: Database["public"]["Enums"]["online_status"] | null
           role: Database["public"]["Enums"]["user_role"] | null
           timezone: string | null
-          username: string | null
         }
         Insert: {
           full_name?: string | null
@@ -811,7 +807,6 @@ export type Database = {
           online_status?: Database["public"]["Enums"]["online_status"] | null
           role?: Database["public"]["Enums"]["user_role"] | null
           timezone?: string | null
-          username?: string | null
         }
         Update: {
           full_name?: string | null
@@ -819,7 +814,6 @@ export type Database = {
           online_status?: Database["public"]["Enums"]["online_status"] | null
           role?: Database["public"]["Enums"]["user_role"] | null
           timezone?: string | null
-          username?: string | null
         }
         Relationships: []
       }

@@ -2,12 +2,10 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query/keys';
-import { formatStaffUsername } from '@/lib/staff/username';
 
 type TeamMember = {
   id: string;
   full_name: string;
-  username: string;
   role: string;
   is_active: boolean;
   online_status: 'online' | 'break' | 'offline';
@@ -98,9 +96,7 @@ export default function TeamOverview() {
                 />
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-slate-900">{member.full_name}</p>
-                  <p className="text-sm text-slate-600">
-                    {formatStaffUsername(member.username)} · {statusLabel(member.online_status)}
-                  </p>
+                  <p className="text-sm text-slate-600">{statusLabel(member.online_status)}</p>
                 </div>
                 <div className="flex flex-wrap gap-4 text-sm text-slate-600">
                   <span>{member.active_case_count} cases</span>

@@ -41,7 +41,6 @@ export type ScheduleAssignment = {
 export type ScheduleStaff = {
   id: string;
   full_name: string;
-  username: string;
   online_status: Database['public']['Enums']['online_status'];
   working_hours: TimeInterval | null;
   /** Always false in MVP — leave management is Phase 2 (ADR-0001). */
@@ -69,7 +68,6 @@ export type SchedulePayload = {
 type ProfileRow = {
   id: string;
   full_name: string;
-  username: string;
   online_status: Database['public']['Enums']['online_status'];
 };
 
@@ -199,7 +197,7 @@ export async function fetchSchedule(
 ): Promise<SchedulePayload> {
   let profileQuery = client
     .from('profiles')
-    .select('id, full_name, username, online_status')
+    .select('id, full_name, online_status')
     .eq('is_active', true)
     .order('full_name', { ascending: true });
 
@@ -289,7 +287,6 @@ export async function fetchSchedule(
     return {
       id: profile.id,
       full_name: profile.full_name,
-      username: profile.username,
       online_status: profile.online_status,
       working_hours: workingHours,
       is_on_leave: false,

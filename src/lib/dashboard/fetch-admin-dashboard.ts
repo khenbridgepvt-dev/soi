@@ -13,7 +13,6 @@ export type AdminDashboardPendingLead = {
 export type AdminDashboardTeamStatus = {
   id: string;
   full_name: string;
-  username: string;
   online_status: Database['public']['Enums']['online_status'];
   active_task_count: number;
   is_on_leave: boolean;
@@ -92,7 +91,7 @@ export async function fetchAdminDashboard(
       .limit(5),
     client
       .from('profiles')
-      .select('id, full_name, username, online_status')
+      .select('id, full_name, online_status')
       .eq('is_active', true)
       .in('role', ['staff', 'senior'])
       .order('full_name', { ascending: true }),
@@ -160,7 +159,6 @@ export async function fetchAdminDashboard(
   const team_status: AdminDashboardTeamStatus[] = (staffProfiles ?? []).map((profile) => ({
     id: profile.id,
     full_name: profile.full_name,
-    username: profile.username,
     online_status: profile.online_status,
     active_task_count: taskCountByStaff.get(profile.id) ?? 0,
     is_on_leave: false,
