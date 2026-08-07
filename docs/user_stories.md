@@ -786,11 +786,14 @@ Translate every functional requirement from the SRS into implementation-ready us
 
 **Acceptance Criteria:**
 - [ ] The dashboard lists all tasks assigned to the logged-in staff member.
-- [ ] Tasks are auto-ordered by: (1) urgency flag, (2) deadline proximity, (3) task lifecycle position (earlier tasks first).
+- [ ] Tasks are auto-ordered by: (1) urgency flag, (2) scheduled time ascending. Firm and client tasks share one list.
 - [ ] The top task is visually highlighted as "Next Action."
-- [ ] Each task row shows: task name, case reference, client name, deadline, urgency indicator, status.
+- [ ] Each client task row shows: task name, case reference, client name, deadline, urgency indicator, status.
+- [ ] **Firm tasks** (ad-hoc internal work) appear in the same list with task name only; staff can complete in one step without opening a case.
+- [ ] Client tasks show a complete (✓) control when `not_started` or `in_progress`; **In progress** (◉) when `not_started` only; **Open case** last.
+- [ ] **Firm tasks** share the same action strip (✓ + in progress); no Open case.
+- [ ] Direct complete from `not_started` is allowed when prerequisites pass (ADR-0020); API returns clear error when blocked.
 - [ ] Only tasks from accepted cases are shown — pre-acceptance cases are invisible.
-- [ ] **Firm tasks** (ad-hoc internal work) appear in a separate section with task name only; staff can complete in one step without opening a case.
 
 ---
 

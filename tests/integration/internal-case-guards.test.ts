@@ -51,7 +51,7 @@ describe('internal case guards (ticket 0047)', () => {
     await client.auth.signOut();
   });
 
-  it('places firm tasks on staff dashboard without client case fields in priority list', async () => {
+  it('places firm tasks in unified priority list (ticket 0048)', async () => {
     const { client: admin } = await signInAsRole('admin');
 
     const result = await createAdhocTaskAssign(admin, {
@@ -76,11 +76,11 @@ describe('internal case guards (ticket 0047)', () => {
     const { client: staff } = await signInAsRole('staff');
     const dashboard = await fetchStaffDashboard(staff, ASHA_ID, 'all');
 
-    expect(dashboard.priority_list.some((task) => task.case_is_internal)).toBe(false);
-    expect(dashboard.firm_tasks.some((task) => task.name === 'Clear emails')).toBe(true);
+    expect(dashboard.firm_tasks).toEqual([]);
+    expect(dashboard.priority_list.some((task) => task.name === 'Clear emails')).toBe(true);
 
-    const firmTask = dashboard.firm_tasks.find((task) => task.id === result.data.task_id);
-    expect(firmTask?.case_reference).toBe('FIRM-GENERAL');
+    const firmTask = dashboard.priority_list.find((task) => task.id === result.data.task_id);
+    expect(firmTask?.case_is_internal).toBe(true);
     expect(firmTask?.description).toContain('Process shared inbox');
 
     await staff.auth.signOut();
@@ -120,7 +120,7 @@ describe('internal case guards (ticket 0047)', () => {
     expect(internalCase?.status).toBe('active');
 
     const dashboard = await fetchStaffDashboard(staff, ASHA_ID, 'all');
-    expect(dashboard.firm_tasks.some((row) => row.id === task.id)).toBe(false);
+    expect(dashboard.priority_list.some((row) => row.id === task.id)).toBe(false);
     expect(dashboard.firm_tasks_history.some((row) => row.id === task.id)).toBe(true);
 
     await staff.auth.signOut();

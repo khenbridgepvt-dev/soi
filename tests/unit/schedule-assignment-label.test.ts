@@ -5,6 +5,7 @@ import {
   formatScheduleAssignmentDetailLine,
   formatScheduleAssignmentPrimaryLabel,
   isScheduleAssignmentNavigable,
+  scheduleAssignmentPillClassName,
 } from '@/lib/schedule/assignment-label';
 
 const internalAssignment = {
@@ -71,6 +72,17 @@ describe('formatScheduleAssignmentAriaLabel', () => {
     expect(formatScheduleAssignmentAriaLabel(caseAssignment, 'admin')).toBe(
       'Google Form Received · 072601/SKW/VIS · Vishnu Patel · 14:00–15:00',
     );
+  });
+});
+
+describe('scheduleAssignmentPillClassName (ticket 0048)', () => {
+  it('applies on-track green styling for completed assignments', () => {
+    expect(
+      scheduleAssignmentPillClassName({
+        ...caseAssignment,
+        task_status: 'completed',
+      }),
+    ).toContain('bg-status-onTrack');
   });
 });
 

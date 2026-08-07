@@ -147,5 +147,5 @@ export const TASK_BOARD_TOKEN_LABELS: Record<
   approaching: 'APPROACHING',
   'on-track': null,
   standard: null,
-  completed: null,
+  completed: 'COMPLETED',
 };

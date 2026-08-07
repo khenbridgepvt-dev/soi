@@ -14,23 +14,13 @@ describe('task status transitions (EP-12)', () => {
     expect(canTransitionTaskStatus('in_progress', 'completed')).toBe(true);
   });
 
+  it('allows not_started → completed for all assigned tasks (ticket 0049, ADR-0020)', () => {
+    expect(canTransitionTaskStatus('not_started', 'completed')).toBe(true);
+  });
+
   it('denies completed → in_progress for MVP (TC-038)', () => {
     expect(canTransitionTaskStatus('completed', 'in_progress')).toBe(false);
     expect(getTransitionError('completed', 'in_progress')).toContain('cannot be reverted');
-  });
-
-  it('denies not_started → completed for client lifecycle tasks (TC-039)', () => {
-    expect(canTransitionTaskStatus('not_started', 'completed')).toBe(false);
-    expect(getTransitionError('not_started', 'completed')).toContain('in progress');
-  });
-
-  it('allows not_started → completed for internal firm tasks only (ticket 0047)', () => {
-    expect(canTransitionTaskStatus('not_started', 'completed', { caseIsInternal: true })).toBe(
-      true,
-    );
-    expect(canTransitionTaskStatus('not_started', 'completed', { caseIsInternal: false })).toBe(
-      false,
-    );
   });
 
   it('denies blocked transitions via EP-12', () => {

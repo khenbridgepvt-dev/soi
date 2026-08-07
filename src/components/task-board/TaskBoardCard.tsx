@@ -22,7 +22,7 @@ const TOKEN_SURFACE: Record<TaskBoardStatusToken, string> = {
   approaching: 'border-l-4 border-status-approaching bg-status-approaching text-text',
   'on-track': 'border-l-4 border-status-onTrack bg-status-onTrack text-text',
   standard: 'border border-border bg-surface text-text',
-  completed: 'border border-border bg-page text-text-muted',
+  completed: 'border-l-4 border-status-onTrack bg-status-onTrack text-text',
 };
 
 function StatusLabel({ token }: { token: TaskBoardStatusToken }) {
@@ -35,6 +35,8 @@ function StatusLabel({ token }: { token: TaskBoardStatusToken }) {
   const labelClass =
     token === 'blocked'
       ? 'text-[#B86E00]'
+      : token === 'completed'
+        ? 'text-[#1B7F4B]'
       : token === 'urgent' || token === 'overdue'
         ? 'text-error'
         : 'text-[#B86E00]';

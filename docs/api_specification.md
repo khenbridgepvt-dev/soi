@@ -897,6 +897,7 @@ Creates generic firm work on the hidden internal case (`FIRM-GENERAL`, ADR-0019)
 | From | To | Condition |
 |------|----|-----------|
 | `not_started` | `in_progress` | None |
+| `not_started` | `completed` | Prerequisite check passes (ADR-0020, ticket 0049) |
 | `in_progress` | `completed` | Prerequisite check passes (see below) |
 | `in_progress` | `blocked` | Use EP-14 instead |
 | `blocked` | `in_progress` | Use EP-15 instead |
@@ -2054,26 +2055,15 @@ Same as EP-24 but filtered to a single staff member. Staff can only query their 
         "priority_rank": 1
       }
     ],
-    "firm_tasks": [
-      {
-        "id": "uuid",
-        "name": "Clear emails",
-        "description": "Process shared inbox",
-        "case_is_internal": true,
-        "status": "not_started",
-        "current_assignment": {
-          "date": "2026-07-07",
-          "start_time": "09:00",
-          "end_time": "10:00"
-        }
-      }
-    ],
+    "firm_tasks": [],
     "firm_tasks_history": []
   }
 }
 ```
 
-> **Firm tasks (ticket 0047):** Ad-hoc work on the internal case (`FIRM-GENERAL`) is returned in `firm_tasks` (active) and `firm_tasks_history` (completed, last 30 days). These tasks are **excluded** from `priority_list`. Staff complete firm tasks via `PATCH /api/tasks/:id/status` with `{ "status": "completed" }` (direct `not_started → completed` allowed).
+> **Unified list (ticket 0048):** Firm and client tasks share `priority_list`, sorted urgent-first then scheduled time. `firm_tasks` is deprecated (empty array). Completed firm tasks appear in `firm_tasks_history`.
+
+> **Firm tasks (ticket 0047):** Ad-hoc work on the internal case (`FIRM-GENERAL`) history is returned in `firm_tasks_history` (completed, last 30 days). Staff complete firm tasks via `PATCH /api/tasks/:id/status` with `{ "status": "completed" }` (direct `not_started → completed` allowed).
 
 > **Default view (`today`):** Returns only tasks scheduled for today + any overdue tasks + any blocked tasks. This keeps the payload small and the dashboard fast. Staff can switch to `week` or `all` views for broader visibility.
 

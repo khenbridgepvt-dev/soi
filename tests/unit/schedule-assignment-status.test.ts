@@ -72,7 +72,7 @@ describe('scheduleAssignmentStatusDotClass', () => {
     ).toBe('bg-status-blocked-border');
     expect(
       scheduleAssignmentStatusDotClass({ task_status: 'completed' }),
-    ).toBe('bg-text-muted');
+    ).toBe('bg-status-onTrack-border');
     expect(
       scheduleAssignmentStatusDotClass({ task_status: 'in_progress', is_urgent: true }),
     ).toBe('bg-error');

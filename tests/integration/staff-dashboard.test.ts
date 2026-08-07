@@ -138,8 +138,8 @@ describe('staff dashboard (ticket 0025, EP-43 / S-10)', () => {
 
     expect(visible.map((task) => task.id)).toEqual([
       urgentId,
-      overdueId,
       onTrackEarlyId,
+      overdueId,
       onTrackLateId,
       blockedId,
     ]);

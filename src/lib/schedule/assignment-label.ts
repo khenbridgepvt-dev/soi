@@ -14,6 +14,7 @@ export type ScheduleAssignmentNavInput = ScheduleAssignmentLabelInput & {
   case_id: string | null;
   case_deleted?: boolean;
   task_deleted?: boolean;
+  task_status?: string;
 };
 
 function formatTimeRange(startTime: string, endTime: string): string {
@@ -101,6 +102,13 @@ export function scheduleAssignmentPillClassName(
   assignment: ScheduleAssignmentNavInput,
   extra?: string,
 ): string | undefined {
-  const classes = [extra, assignment.case_is_internal ? 'opacity-90' : undefined].filter(Boolean);
+  const classes = [
+    extra,
+    assignment.task_status === 'completed'
+      ? 'border border-status-onTrack-border bg-status-onTrack'
+      : undefined,
+    assignment.case_is_internal ? 'opacity-90' : undefined,
+  ].filter(Boolean);
+
   return classes.length > 0 ? classes.join(' ') : undefined;
 }

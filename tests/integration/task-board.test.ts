@@ -1,11 +1,12 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { fetchAdminDashboard } from '@/lib/dashboard/fetch-admin-dashboard';
 import { fetchTaskBoard } from '@/lib/task-board/fetch-task-board';
+import { fetchAdminDashboard } from '@/lib/dashboard/fetch-admin-dashboard';
 import {
   formatBoardAppointment,
   formatBoardClientName,
   formatBoardLastDate,
 } from '@/lib/task-board/format-card';
+import { todayISODate } from '@/lib/utils/dates';
 import { createServiceClient, ensureKimLeadCase } from './helpers';
 import { signInAsRole } from './rls-harness';
 
@@ -122,6 +123,76 @@ describe('task board (ticket 0024, S-03 / EP-42)', () => {
     expect(`/cases/${sample.case_id}?task=${sample.id}`).toMatch(
       /^\/cases\/[0-9a-f-]+\?task=[0-9a-f-]+$/,
     );
+
+    await client.auth.signOut();
+  });
+
+  it('includes completed tasks assigned today with completed token (ticket 0048)', async () => {
+    const { client } = await signInAsRole('admin');
+    const today = todayISODate();
+
+    const { data: caseRow } = await service
+      .from('cases')
+      .select('application_type_id, created_by')
+      .eq('id', VISHNU_CASE_ID)
+      .single();
+
+    const { data: createdCase, error: caseError } = await service
+      .from('cases')
+      .insert({
+        client_first_name: 'Done',
+        client_last_name: 'Today',
+        application_type_id: caseRow!.application_type_id,
+        status: 'active',
+        created_by: caseRow!.created_by,
+        accepted_at: new Date().toISOString(),
+      })
+      .select('id')
+      .single();
+
+    expect(caseError).toBeNull();
+
+    const { data: createdTask, error: taskError } = await service
+      .from('tasks')
+      .insert({
+        case_id: createdCase!.id,
+        sequence: 99,
+        name: 'Completed today',
+        abbreviation: 'DONE',
+        status: 'completed',
+        assigned_to: ASHA_ID,
+        is_custom: true,
+        completed_at: new Date().toISOString(),
+      })
+      .select('id')
+      .single();
+
+    expect(taskError).toBeNull();
+
+    const { data: assignment, error: assignmentError } = await service
+      .from('task_assignments')
+      .insert({
+        task_id: createdTask!.id,
+        staff_id: ASHA_ID,
+        date: today,
+        start_time: '16:00',
+        end_time: '17:00',
+        duration_minutes: 60,
+      })
+      .select('id')
+      .single();
+
+    expect(assignmentError).toBeNull();
+
+    const board = await fetchTaskBoard(client);
+    const completedCard = board.tasks.find((task) => task.id === createdTask!.id);
+
+    expect(completedCard).toBeTruthy();
+    expect(completedCard?.token).toBe('completed');
+
+    await service.from('task_assignments').delete().eq('id', assignment!.id);
+    await service.from('tasks').delete().eq('id', createdTask!.id);
+    await service.from('cases').delete().eq('id', createdCase!.id);
 
     await client.auth.signOut();
   });

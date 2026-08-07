@@ -94,13 +94,12 @@ flowchart TD
 
 ### Firm tasks vs client tasks
 
-Some work (e.g. “Clear emails”, “Help invoices”) is **firm operations** — not tied to a client case. These appear under **Firm tasks** on My Dashboard:
+Firm operations work (e.g. “Clear emails”) appears in the **same priority list** as client tasks, ordered **urgent first**, then **scheduled time**:
 
-- You see the **task name** and optional description — not `FIRM-GENERAL` or “Open Case”.
-- Tap **✓** to mark complete in one step (no case detail required).
-- Completed firm tasks appear under **Show history**.
-
-Client cases still use the **priority list** with reference, client name, and **Open Case**.
+- Firm rows show **task name** only. Action strip: **✓ Complete** → **◉ In progress** (no Open case).
+- Client rows show reference, client name. Action strip: **✓** → **◉** → **Open case** (folder icon).
+- **✓** works from `not_started` or `in_progress` when prerequisites pass; errors surface on the row.
+- Completed firm tasks appear under **Show history** at the bottom of the list.
 
 Staff cannot accept leads, assign tasks to others, or access firm-wide settings.
 

@@ -109,19 +109,56 @@ describe('task status machine (ticket 0017, EP-12)', () => {
     await bless.auth.signOut();
   });
 
-  it('TC-039 · denies not_started → completed', async () => {
+  it('TC-039 · allows not_started → completed for custom tasks (ticket 0049)', async () => {
     const { client: bless } = await signIn(OTHER_STAFF.email, OTHER_STAFF.password);
 
-    const { data: task } = await bless
+    const { data: customTask, error: insertError } = await service
+      .from('tasks')
+      .insert({
+        case_id: SAKURA_CASE_ID,
+        sequence: 99,
+        name: 'Direct complete harness',
+        abbreviation: 'DCH',
+        status: 'not_started',
+        assigned_to: BLESS_ID,
+        is_custom: true,
+      })
+      .select('id')
+      .single();
+
+    expect(insertError).toBeNull();
+
+    const { data, error } = await bless.rpc('update_task_status', {
+      p_task_id: customTask!.id,
+      p_new_status: 'completed',
+    });
+
+    expect(error).toBeNull();
+    const payload = data as { status: string } | null;
+    expect(payload?.status).toBe('completed');
+
+    await service.from('tasks').delete().eq('id', customTask!.id);
+    await bless.auth.signOut();
+  });
+
+  it('TC-039b · denies not_started → completed when prerequisites fail (ticket 0049)', async () => {
+    const { client: bless } = await signIn(OTHER_STAFF.email, OTHER_STAFF.password);
+
+    const { data: task } = await service
       .from('tasks')
       .select('id')
       .eq('case_id', SAKURA_CASE_ID)
-      .eq('sequence', 6)
+      .eq('sequence', 10)
       .maybeSingle();
 
-    await bless
+    await service
       .from('tasks')
-      .update({ status: 'not_started', completed_at: null, completed_by: null })
+      .update({
+        assigned_to: BLESS_ID,
+        status: 'not_started',
+        completed_at: null,
+        completed_by: null,
+      })
       .eq('id', task!.id);
 
     const { error } = await bless.rpc('update_task_status', {
@@ -130,7 +167,7 @@ describe('task status machine (ticket 0017, EP-12)', () => {
     });
 
     expect(error).not.toBeNull();
-    expect(error?.message).toContain('INVALID_STATE_TRANSITION');
+    expect(error?.message).toContain('PREREQUISITE_NOT_MET');
 
     await bless.auth.signOut();
   });

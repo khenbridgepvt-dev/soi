@@ -70,6 +70,8 @@ The MVP is **operational as a free-tier pilot**: all ten MVP modules (M1–M10) 
 - **0044 ad-hoc custom task:** Schedule slot generic work on internal case; optional audit link — [Ad-hoc custom task from schedule slot](./0044-adhoc-custom-task-modal.md)
 - **0045 calendar ad-hoc pills:** Name-first schedule labels; internal omits ref/client — [Calendar name-first display for ad-hoc work](./0045-calendar-adhoc-pill-display.md)
 - **0047 internal case guards:** Firm-task staff UX; case API 404; cloud seed; quick-complete — [Internal case guards and ad-hoc UX](./0047-internal-case-guards-and-adhoc-ux.md)
+- **0048 unified priority list:** Urgent then time; completed green on board/schedule — [Unified priority list and completed visual](./0048-unified-priority-list-and-completed-visual.md)
+- **0049 priority list actions:** ✓/◉/Open case strip; staff direct-complete — [Priority list status actions](./0049-priority-list-status-actions.md)
 
 ## Not yet specified
 

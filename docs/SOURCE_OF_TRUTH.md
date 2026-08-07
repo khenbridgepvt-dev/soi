@@ -40,6 +40,8 @@ Quick index for agents and developers. **Read this first** instead of re-auditin
 | **Staff display identity** | ADR-0018, ticket [0042](../tracker/issues/0042-revert-profile-username.md) | `full_name` only; C-07 email admin-only |
 | **Ad-hoc schedule / internal case** | ADR-0019, ticket [0043](../tracker/issues/0043-internal-case-adhoc-model.md) | `cases.is_internal`; seed `FIRM-GENERAL`; `case_is_internal` on schedule |
 | **Firm tasks (staff dashboard)** | Ticket [0047](../tracker/issues/0047-internal-case-guards-and-adhoc-ux.md) | `firm_tasks` / quick complete; internal case guards |
+| **Unified priority list** | Ticket [0048](../tracker/issues/0048-unified-priority-list-and-completed-visual.md) | `sortStaffPriorityList`; completed green on board/schedule |
+| **Staff status actions** | ADR-0020, ticket [0049](../tracker/issues/0049-priority-list-status-actions.md) | Dashboard ✓/◉/Open case; direct complete when prereqs pass |
 | **Client data / cache** | ADR-0016, ticket [0032](../tracker/issues/0032-reactive-data-layer.md) | `src/lib/query/` (`keys.ts`, `invalidate.ts`) |
 | **References** | ADR-0009, `src/lib/utils/reference.ts` | `accept_lead` RPC |
 | **Tests** | `docs/test_plan.md` | `tests/unit/`, `tests/integration/` |
@@ -49,7 +51,7 @@ Quick index for agents and developers. **Read this first** instead of re-auditin
 
 ---
 
-## 3. Post-MVP delivery log (0032–0047)
+## 3. Post-MVP delivery log (0032–0049)
 
 | Ticket | Date | Summary |
 |--------|------|---------|
@@ -67,6 +69,8 @@ Quick index for agents and developers. **Read this first** instead of re-auditin
 | [0044](../tracker/issues/0044-adhoc-custom-task-modal.md) | 2026-08-06 | Ad-hoc custom task from schedule slot; internal case + optional audit link (EP-11b addendum) |
 | [0045](../tracker/issues/0045-calendar-adhoc-pill-display.md) | 2026-08-06 | Calendar name-first pills; internal assignments omit ref/client (S-04/S-11) |
 | [0047](../tracker/issues/0047-internal-case-guards-and-adhoc-ux.md) | 2026-08-07 | Internal case guards; staff firm-task UX; cloud seed; quick-complete |
+| [0048](../tracker/issues/0048-unified-priority-list-and-completed-visual.md) | 2026-08-07 | Unified priority list (urgent then time); completed green on board/schedule |
+| [0049](../tracker/issues/0049-priority-list-status-actions.md) | 2026-08-07 | Priority list action icons; staff direct-complete (ADR-0020) |
 
 MVP modules (tickets 0002–0030) are implemented per the [implementation map](../tracker/issues/0001-mvp-implementation-map.md).
 

@@ -3,47 +3,27 @@ import type { Database } from '@/types/database';
 export type TaskStatus = Database['public']['Enums']['task_status'];
 
 const ALLOWED_TARGETS: Record<TaskStatus, TaskStatus[]> = {
-  not_started: ['in_progress'],
+  not_started: ['in_progress', 'completed'],
   in_progress: ['completed'],
   blocked: [],
   completed: [],
 };
 
-export type TaskStatusTransitionOptions = {
-  caseIsInternal?: boolean;
-};
-
-export function canTransitionTaskStatus(
-  from: TaskStatus,
-  to: TaskStatus,
-  options: TaskStatusTransitionOptions = {},
-): boolean {
+export function canTransitionTaskStatus(from: TaskStatus, to: TaskStatus): boolean {
   if (from === to) {
-    return true;
-  }
-
-  if (options.caseIsInternal && from === 'not_started' && to === 'completed') {
     return true;
   }
 
   return ALLOWED_TARGETS[from]?.includes(to) ?? false;
 }
 
-export function getTransitionError(
-  from: TaskStatus,
-  to: TaskStatus,
-  options: TaskStatusTransitionOptions = {},
-): string {
+export function getTransitionError(from: TaskStatus, to: TaskStatus): string {
   if (from === 'completed') {
     return 'Completed tasks cannot be reverted.';
   }
 
   if (from === 'not_started' && to === 'completed') {
-    if (options.caseIsInternal) {
-      return 'This firm task cannot be completed from its current state.';
-    }
-
-    return 'Task must be in progress before it can be completed.';
+    return 'This task cannot be completed from its current state.';
   }
 
   if (to === 'blocked') {

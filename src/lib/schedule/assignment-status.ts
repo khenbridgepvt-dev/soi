@@ -47,7 +47,7 @@ export function scheduleAssignmentStatusDotClass(
   }
 
   if (assignment.task_status === 'completed') {
-    return 'bg-text-muted';
+    return 'bg-status-onTrack-border';
   }
 
   if (assignment.is_urgent) {

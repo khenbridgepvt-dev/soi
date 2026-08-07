@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
-import { assignPriorityRanks } from '@/lib/utils/priority';
+import { assignStaffPriorityRanks } from '@/lib/utils/priority-schedule';
 import { addDays, todayISODate } from '@/lib/utils/dates';
 
 export type StaffDashboardView = 'today' | 'week' | 'all';
@@ -303,25 +303,8 @@ export async function fetchStaffDashboard(
   const assignmentByTask = await loadAssignments(client, staffId, taskIds, today);
 
   const mapped = activeRows.map((row) => mapTaskRow(row, assignmentByTask, today));
-  const clientTasks = mapped.filter((task) => !task.case_is_internal);
-  const firmTasks = mapped.filter(
-    (task) => task.case_is_internal && task.status !== 'completed',
-  );
 
-  const visibleClient = clientTasks.filter((task) =>
-    matchesView(
-      {
-        status: task.status,
-        is_overdue: task.is_overdue,
-        assignmentDate: task.current_assignment?.date ?? null,
-      },
-      view,
-      today,
-      weekEnd,
-    ),
-  );
-
-  const visibleFirm = firmTasks.filter((task) =>
+  const visible = mapped.filter((task) =>
     matchesView(
       {
         status: task.status,
@@ -360,11 +343,7 @@ export async function fetchStaffDashboard(
     return Boolean(date && date >= today && date <= weekEnd);
   }).length;
 
-  const priority_list = assignPriorityRanks(visibleClient, today).map((task) =>
-    toDashboardTask(task as MappedTask),
-  );
-
-  const firm_tasks = assignPriorityRanks(visibleFirm, today).map((task) =>
+  const priority_list = assignStaffPriorityRanks(visible, today).map((task) =>
     toDashboardTask(task as MappedTask),
   );
 
@@ -374,7 +353,7 @@ export async function fetchStaffDashboard(
     blocked_count: blockedCount,
     due_this_week_count: dueThisWeekCount,
     priority_list,
-    firm_tasks,
+    firm_tasks: [],
     firm_tasks_history,
   };
 }
