@@ -21,3 +21,10 @@ Generic calendar work ("clear emails", "help invoices") is usually not tied to a
 - `case_id` stays NOT NULL everywhere; no schema fork for "general" work.
 - Staff never pick the internal case from normal case UIs.
 - Schedule and assignment APIs must surface the internal flag for display logic.
+
+## Addendum (ticket 0047)
+
+- Internal case **never** transitions to `completed` — `check_case_completion` returns false when `is_internal`.
+- Cloud seed via migration `00044_seed_internal_case.sql` (admin `created_by` subquery).
+- Staff dashboard **firm tasks** section: task name only; quick complete (`not_started → completed`); history list.
+- Case detail, PATCH, DELETE, dependants, and reference edit return **404** for internal case id.

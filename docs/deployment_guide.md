@@ -317,6 +317,8 @@ supabase db push
 
 Reversing this order will cause runtime errors (code references columns/tables that don't exist yet).
 
+**Internal case (ADR-0019):** Cloud environments must apply migrations through `00045_internal_case_operational_rules.sql` (includes `00044_seed_internal_case.sql`). The `FIRM-GENERAL` row is upserted when an admin profile exists; local `supabase db reset` also seeds it via `seed.sql`.
+
 ### 4.5 Release Checklist
 
 ```markdown

@@ -100,6 +100,7 @@ export async function fetchCaseDetail(
         client_last_name,
         status,
         is_urgent,
+        is_internal,
         senior_revision_count,
         last_date,
         appointment_date,
@@ -115,6 +116,10 @@ export async function fetchCaseDetail(
     .maybeSingle();
 
   if (caseError || !caseRow) {
+    return null;
+  }
+
+  if ((caseRow as { is_internal?: boolean }).is_internal === true) {
     return null;
   }
 

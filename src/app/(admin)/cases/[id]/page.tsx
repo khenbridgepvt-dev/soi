@@ -1,5 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import CaseDetailView from '@/components/cases/CaseDetailView';
+import { isInternalCaseId } from '@/lib/cases/internal-case';
 import { getSessionWithRole } from '@/lib/auth/session';
 import { createClient } from '@/lib/supabase/server';
 
@@ -22,6 +23,10 @@ export default async function CaseDetailPage({
   const { role, session } = sessionWithRole;
 
   if (role !== 'admin') {
+    notFound();
+  }
+
+  if (isInternalCaseId(id)) {
     notFound();
   }
 

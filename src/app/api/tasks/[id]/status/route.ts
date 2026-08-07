@@ -40,7 +40,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   const { data: task, error: fetchError } = await supabase
     .from('tasks')
     .select(
-      'id, case_id, sequence, status, is_custom, assigned_to, senior_approval',
+      'id, case_id, sequence, status, is_custom, assigned_to, senior_approval, cases ( is_internal )',
     )
     .eq('id', id)
     .maybeSingle();
@@ -53,17 +53,27 @@ export async function PATCH(request: Request, context: RouteContext) {
     return apiError(404, 'NOT_FOUND', 'Task not found.');
   }
 
+  const caseRelation = Array.isArray(task.cases) ? task.cases[0] : task.cases;
+  const caseIsInternal = caseRelation?.is_internal === true;
+
   if (role !== 'admin') {
     if (task.assigned_to !== userId) {
       return apiError(403, 'FORBIDDEN', 'You do not have permission to update this task.');
     }
   }
 
-  if (!canTransitionTaskStatus(task.status, newStatus)) {
-    return apiError(400, 'INVALID_STATE_TRANSITION', getTransitionError(task.status, newStatus));
+  if (!canTransitionTaskStatus(task.status, newStatus, { caseIsInternal })) {
+    return apiError(
+      400,
+      'INVALID_STATE_TRANSITION',
+      getTransitionError(task.status, newStatus, { caseIsInternal }),
+    );
   }
 
-  if (newStatus === 'completed' && task.status === 'in_progress') {
+  if (
+    newStatus === 'completed' &&
+    (task.status === 'in_progress' || (caseIsInternal && task.status === 'not_started'))
+  ) {
     const { data: caseTasks, error: caseTasksError } = await supabase
       .from('tasks')
       .select('sequence, name, abbreviation, status, is_custom, senior_approval')

@@ -126,10 +126,10 @@ describe('staff dashboard (ticket 0025, EP-43 / S-10)', () => {
       status: 'blocked',
     });
 
-    await createAssignment(onTrackEarlyId, staffId, TODAY, '09:00');
-    await createAssignment(onTrackLateId, staffId, TODAY, '14:00');
-    await createAssignment(urgentId, staffId, TODAY, '11:00');
-    await createAssignment(overdueId, staffId, TODAY, '10:00');
+    await createAssignment(onTrackEarlyId, staffId, TODAY, '07:00');
+    await createAssignment(overdueId, staffId, TODAY, '08:00');
+    await createAssignment(onTrackLateId, staffId, TODAY, '13:00');
+    await createAssignment(urgentId, staffId, TODAY, '15:00');
 
     const dashboard = await fetchStaffDashboard(client, staffId, 'today');
 
@@ -171,6 +171,8 @@ describe('staff dashboard (ticket 0025, EP-43 / S-10)', () => {
     const dashboard = await fetchStaffDashboard(client, userId, 'today');
 
     expect(dashboard.priority_list).toEqual([]);
+    expect(dashboard.firm_tasks).toEqual([]);
+    expect(dashboard.firm_tasks_history).toEqual([]);
     expect(dashboard.today_task_count).toBe(0);
     expect(dashboard.overdue_count).toBe(0);
     expect(dashboard.blocked_count).toBe(0);

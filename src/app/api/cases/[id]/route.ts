@@ -1,5 +1,6 @@
 import { requireApiAuth } from '@/lib/api/auth';
 import { apiError } from '@/lib/api/response';
+import { rejectIfInternalCase } from '@/lib/cases/guard-internal-case';
 import { fetchCaseDetail } from '@/lib/cases/fetch-case-detail';
 import {
   parseCasePatchBody,
@@ -23,6 +24,11 @@ export async function GET(_request: Request, context: RouteContext) {
     return apiError(404, 'NOT_FOUND', 'Case not found.');
   }
 
+  const internalGuard = await rejectIfInternalCase(auth.supabase, id);
+  if (internalGuard) {
+    return internalGuard;
+  }
+
   const detail = await fetchCaseDetail(auth.supabase, id, auth.role);
 
   if (!detail) {
@@ -42,6 +48,11 @@ export async function PATCH(request: Request, context: RouteContext) {
   const { id } = await context.params;
   if (!isUuid(id)) {
     return apiError(404, 'NOT_FOUND', 'Case not found.');
+  }
+
+  const internalGuard = await rejectIfInternalCase(auth.supabase, id);
+  if (internalGuard) {
+    return internalGuard;
   }
 
   const body = (await request.json()) as Record<string, unknown>;
@@ -144,6 +155,11 @@ export async function DELETE(_request: Request, context: RouteContext) {
   const { id } = await context.params;
   if (!isUuid(id)) {
     return apiError(404, 'NOT_FOUND', 'Case not found.');
+  }
+
+  const internalGuard = await rejectIfInternalCase(auth.supabase, id);
+  if (internalGuard) {
+    return internalGuard;
   }
 
   try {

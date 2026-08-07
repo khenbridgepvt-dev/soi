@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import CaseDetailView from '@/components/cases/CaseDetailView';
+import { isInternalCaseId } from '@/lib/cases/internal-case';
 import { getSessionWithRole } from '@/lib/auth/session';
 
 type StaffCaseDetailPageProps = {
@@ -28,6 +29,10 @@ export default async function StaffCaseDetailPage({
 
   const { id } = await params;
   const { task } = await searchParams;
+
+  if (isInternalCaseId(id)) {
+    notFound();
+  }
 
   return (
     <CaseDetailView

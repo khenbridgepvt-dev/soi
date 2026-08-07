@@ -259,6 +259,7 @@ Tier legend: **cheap** = budget model is fine · **STRONG** = use Fable/frontier
 | 0043 internal case ad-hoc | cheap | ADR-0019 · migration 00043 · fetch-schedule `case_is_internal` | 1 |
 | 0044 ad-hoc custom task modal | cheap | ui_wireframe S-04 · api_spec EP-11b addendum · ADR-0019 | 1 |
 | 0045 calendar ad-hoc pills | cheap | ui_wireframe S-04/S-11 · assignment-label.ts | 1 |
+| 0047 internal case guards + firm UX | cheap | ADR-0019 addendum · migrations 00044–00045 · staff dashboard | 1 |
 
 Estimated total: **42–49 sessions**. Recommended first ticket for a cheap model: **0002 scaffold** (0003 can run in parallel in a second session).
 

@@ -1,5 +1,6 @@
 import { requireAdminApiAuth } from '@/lib/api/auth';
 import { apiError } from '@/lib/api/response';
+import { rejectIfInternalCase } from '@/lib/cases/guard-internal-case';
 import { createCustomTask } from '@/lib/tasks/create-custom-task';
 import { isUuid } from '@/lib/utils/lead-form';
 
@@ -17,6 +18,11 @@ export async function POST(request: Request, context: RouteContext) {
   const { id: caseId } = await context.params;
   if (!isUuid(caseId)) {
     return apiError(404, 'NOT_FOUND', 'Case not found.');
+  }
+
+  const internalGuard = await rejectIfInternalCase(auth.supabase, caseId);
+  if (internalGuard) {
+    return internalGuard;
   }
 
   const body = (await request.json()) as {

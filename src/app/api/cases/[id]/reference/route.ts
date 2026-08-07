@@ -1,5 +1,6 @@
 import { requireAdminApiAuth } from '@/lib/api/auth';
 import { apiError } from '@/lib/api/response';
+import { rejectIfInternalCase } from '@/lib/cases/guard-internal-case';
 import { mapReferenceEditError } from '@/lib/cases/reference-edit-errors';
 import { validateReferenceEditInput } from '@/lib/cases/update-case';
 import { isUuid } from '@/lib/utils/lead-form';
@@ -24,6 +25,11 @@ export async function PATCH(request: Request, context: RouteContext) {
   const { id } = await context.params;
   if (!isUuid(id)) {
     return apiError(404, 'NOT_FOUND', 'Case not found.');
+  }
+
+  const internalGuard = await rejectIfInternalCase(auth.supabase, id);
+  if (internalGuard) {
+    return internalGuard;
   }
 
   const body = (await request.json()) as { reference?: string };

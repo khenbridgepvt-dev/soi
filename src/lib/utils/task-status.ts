@@ -9,20 +9,40 @@ const ALLOWED_TARGETS: Record<TaskStatus, TaskStatus[]> = {
   completed: [],
 };
 
-export function canTransitionTaskStatus(from: TaskStatus, to: TaskStatus): boolean {
+export type TaskStatusTransitionOptions = {
+  caseIsInternal?: boolean;
+};
+
+export function canTransitionTaskStatus(
+  from: TaskStatus,
+  to: TaskStatus,
+  options: TaskStatusTransitionOptions = {},
+): boolean {
   if (from === to) {
+    return true;
+  }
+
+  if (options.caseIsInternal && from === 'not_started' && to === 'completed') {
     return true;
   }
 
   return ALLOWED_TARGETS[from]?.includes(to) ?? false;
 }
 
-export function getTransitionError(from: TaskStatus, to: TaskStatus): string {
+export function getTransitionError(
+  from: TaskStatus,
+  to: TaskStatus,
+  options: TaskStatusTransitionOptions = {},
+): string {
   if (from === 'completed') {
     return 'Completed tasks cannot be reverted.';
   }
 
   if (from === 'not_started' && to === 'completed') {
+    if (options.caseIsInternal) {
+      return 'This firm task cannot be completed from its current state.';
+    }
+
     return 'Task must be in progress before it can be completed.';
   }
 

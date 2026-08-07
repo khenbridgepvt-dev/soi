@@ -940,6 +940,12 @@ Admin: Leave Management (S-13) → Pending tab → Review → Approve/Reject
 │  │                                                                  ││
 │  └──────────────────────────────────────────────────────────────────┘│
 │                                                                     │
+│  ┌─── FIRM TASKS ──────────────────────────────────────────────────┐│
+│  │  Clear emails                                    [✓ Complete]   ││
+│  │  Process shared inbox · Scheduled 09:00–10:00 today             ││
+│  │  [Show history ▾]                                               ││
+│  └──────────────────────────────────────────────────────────────────┘│
+│                                                                     │
 │  [View Day Calendar →]                                             │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -953,6 +959,7 @@ Admin: Leave Management (S-13) → Pending tab → Review → Approve/Reject
 | **Priority List** | Ordered list of all assigned tasks. First item is "Next Action" with a highlighted card. Remaining items are compact rows. |
 | **Next Action Card** | Prominent card with: colour indicator, task name, case reference, client, urgency label, scheduled time, quick action buttons. |
 | **Compact Task Row** | For items 2+: colour dot, task name, case reference, client, status label, scheduled time |
+| **Firm Tasks** | Ad-hoc internal-case tasks: task name (+ optional description), schedule, ✓ complete button. No case reference, client, or Open Case. Collapsible history for completed firm tasks. |
 | **Calendar Link** | "View Day Calendar →" navigates to S-11 |
 
 **Priority Ordering Logic:**

@@ -92,6 +92,16 @@ flowchart TD
 5. Use **My Calendar** for an hour-by-hour view of today’s assignments.
 6. Check the **notification bell** for new assignments, urgent cases, and overdue reminders.
 
+### Firm tasks vs client tasks
+
+Some work (e.g. “Clear emails”, “Help invoices”) is **firm operations** — not tied to a client case. These appear under **Firm tasks** on My Dashboard:
+
+- You see the **task name** and optional description — not `FIRM-GENERAL` or “Open Case”.
+- Tap **✓** to mark complete in one step (no case detail required).
+- Completed firm tasks appear under **Show history**.
+
+Client cases still use the **priority list** with reference, client name, and **Open Case**.
+
 Staff cannot accept leads, assign tasks to others, or access firm-wide settings.
 
 ---
