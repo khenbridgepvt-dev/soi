@@ -265,37 +265,18 @@ export async function fetchStaffDashboard(
 ): Promise<StaffDashboardPayload> {
   const today = todayISODate(now);
   const weekEnd = addDays(today, 6);
-  const historySince = addDays(today, -30);
 
-  const [{ data: taskRows, error: taskError }, { data: historyRows, error: historyError }] =
-    await Promise.all([
-      client
-        .from('tasks')
-        .select(TASK_SELECT)
-        .eq('assigned_to', staffId)
-        .eq('is_deleted', false)
-        .neq('status', 'completed')
-        .eq('cases.status', 'active')
-        .eq('cases.is_deleted', false),
-      client
-        .from('tasks')
-        .select(TASK_SELECT)
-        .eq('assigned_to', staffId)
-        .eq('is_deleted', false)
-        .eq('status', 'completed')
-        .eq('cases.is_internal', true)
-        .eq('cases.is_deleted', false)
-        .gte('completed_at', `${historySince}T00:00:00.000Z`)
-        .order('completed_at', { ascending: false })
-        .limit(20),
-    ]);
+  const { data: taskRows, error: taskError } = await client
+    .from('tasks')
+    .select(TASK_SELECT)
+    .eq('assigned_to', staffId)
+    .eq('is_deleted', false)
+    .neq('status', 'completed')
+    .eq('cases.status', 'active')
+    .eq('cases.is_deleted', false);
 
   if (taskError) {
     throw taskError;
-  }
-
-  if (historyError) {
-    throw historyError;
   }
 
   const activeRows = (taskRows ?? []) as RawTaskRow[];
@@ -315,17 +296,6 @@ export async function fetchStaffDashboard(
       today,
       weekEnd,
     ),
-  );
-
-  const historyAssignmentByTask = await loadAssignments(
-    client,
-    staffId,
-    (historyRows ?? []).map((row) => row.id),
-    today,
-  );
-
-  const firm_tasks_history = ((historyRows ?? []) as RawTaskRow[]).map((row) =>
-    toDashboardTask(mapTaskRow(row, historyAssignmentByTask, today)),
   );
 
   const todayTaskCount = mapped.filter(
@@ -354,6 +324,6 @@ export async function fetchStaffDashboard(
     due_this_week_count: dueThisWeekCount,
     priority_list,
     firm_tasks: [],
-    firm_tasks_history,
+    firm_tasks_history: [],
   };
 }

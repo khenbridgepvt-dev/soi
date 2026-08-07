@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { StaffDashboardPayload, StaffDashboardTask } from '@/lib/dashboard/fetch-staff-dashboard';
+import type { StaffDashboardHistoryPayload } from '@/lib/dashboard/fetch-staff-dashboard-history';
 import { useInvalidateAfterMutation } from '@/lib/query/useInvalidateAfterMutation';
 import { queryKeys } from '@/lib/query/keys';
 
@@ -252,6 +253,129 @@ function UnifiedPriorityRow({
   );
 }
 
+function formatCompletedAt(iso: string | null | undefined): string | null {
+  if (!iso) {
+    return null;
+  }
+
+  return new Date(iso).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function historyRowLabel(task: StaffDashboardTask): string {
+  if (task.case_is_internal) {
+    return task.name;
+  }
+
+  return `${task.name} · ${task.case_reference ?? 'No reference'}`;
+}
+
+function TaskHistorySection({ refreshKey }: { refreshKey: number }) {
+  const [expanded, setExpanded] = useState(false);
+  const [items, setItems] = useState<StaffDashboardTask[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function loadPage(cursor?: string | null) {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const params = new URLSearchParams({ limit: '10' });
+      if (cursor) {
+        params.set('cursor', cursor);
+      }
+
+      const response = await fetch(`/api/dashboard/staff/history?${params.toString()}`);
+      const json = (await response.json()) as { data?: StaffDashboardHistoryPayload } & ApiError;
+
+      if (!response.ok) {
+        setError(json.error?.message ?? 'Failed to load history.');
+        return;
+      }
+
+      const page = json.data ?? { items: [], next_cursor: null, has_more: false };
+      setItems((current) => (cursor ? [...current, ...page.items] : page.items));
+      setNextCursor(page.next_cursor);
+      setHasMore(page.has_more);
+    } catch {
+      setError('Failed to load history.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleToggle() {
+    const nextExpanded = !expanded;
+    setExpanded(nextExpanded);
+
+    if (nextExpanded && items.length === 0) {
+      void loadPage();
+    }
+  }
+
+  useEffect(() => {
+    if (!expanded || refreshKey === 0) {
+      return;
+    }
+
+    setItems([]);
+    setNextCursor(null);
+    setHasMore(false);
+    void loadPage();
+  }, [refreshKey, expanded]);
+
+  return (
+    <div className="mt-6 border-t border-border pt-4">
+      <button
+        type="button"
+        onClick={handleToggle}
+        className="text-sm font-medium text-primary hover:underline"
+      >
+        {expanded ? 'Hide history' : 'Show history'}
+      </button>
+
+      {expanded && (
+        <div className="mt-3 space-y-2">
+          {error && <p className="text-sm text-error">{error}</p>}
+
+          {items.length === 0 && !loading && !error && (
+            <p className="text-sm text-text-secondary">No completed tasks yet.</p>
+          )}
+
+          {items.map((task) => (
+            <div key={task.id} className="rounded-md border border-border px-3 py-2">
+              <p className="text-sm font-medium text-text">{historyRowLabel(task)}</p>
+              {formatCompletedAt(task.completed_at) && (
+                <p className="text-xs text-text-muted">
+                  Completed {formatCompletedAt(task.completed_at)}
+                </p>
+              )}
+            </div>
+          ))}
+
+          {loading && <p className="text-sm text-text-secondary">Loading…</p>}
+
+          {hasMore && !loading && (
+            <button
+              type="button"
+              onClick={() => loadPage(nextCursor)}
+              className="text-sm font-medium text-primary hover:underline"
+            >
+              Load more
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function StaffDashboardView() {
   const queryClient = useQueryClient();
   const invalidate = useInvalidateAfterMutation();
@@ -279,11 +403,12 @@ export default function StaffDashboardView() {
     },
   });
 
-  const [showHistory, setShowHistory] = useState(false);
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
 
   async function handleStatusChanged() {
     await invalidate('taskStatus');
     await queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.staffAll });
+    setHistoryRefreshKey((value) => value + 1);
     void refetch();
   }
 
@@ -381,31 +506,7 @@ export default function StaffDashboardView() {
             </div>
           )}
 
-          {!isLoading && metrics.firm_tasks_history.length > 0 && (
-            <div className="mt-6 border-t border-border pt-4">
-              <button
-                type="button"
-                onClick={() => setShowHistory((value) => !value)}
-                className="text-sm font-medium text-primary hover:underline"
-              >
-                {showHistory ? 'Hide history' : 'Show history'}
-              </button>
-              {showHistory && (
-                <div className="mt-3 space-y-2">
-                  {metrics.firm_tasks_history.map((task) => (
-                    <div key={task.id} className="rounded-md border border-border px-3 py-2">
-                      <p className="text-sm font-medium text-text">{task.name}</p>
-                      {descriptionSnippet(task.description) && (
-                        <p className="text-sm text-text-secondary">
-                          {descriptionSnippet(task.description)}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+          {!isLoading && <TaskHistorySection refreshKey={historyRefreshKey} />}
         </div>
       </section>
     </div>

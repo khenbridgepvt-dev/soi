@@ -257,6 +257,7 @@ GET /api/cases?sort_by=created_at&sort_order=desc
 | **Dashboard** | | | | |
 | 42 | GET | `/api/dashboard/admin` | Admin dashboard summary data | admin |
 | 43 | GET | `/api/dashboard/staff` | Staff dashboard priority list | staff |
+| 43b | GET | `/api/dashboard/staff/history` | Paginated completed task history | staff |
 
 ### 5.2 Advanced Endpoints (Phase 2)
 
@@ -2061,9 +2062,52 @@ Same as EP-24 but filtered to a single staff member. Staff can only query their 
 }
 ```
 
-> **Unified list (ticket 0048):** Firm and client tasks share `priority_list`, sorted urgent-first then scheduled time. `firm_tasks` is deprecated (empty array). Completed firm tasks appear in `firm_tasks_history`.
+> **Unified list (ticket 0048):** Firm and client tasks share `priority_list`, sorted urgent-first then scheduled time. `firm_tasks` is deprecated (empty array).
 
-> **Firm tasks (ticket 0047):** Ad-hoc work on the internal case (`FIRM-GENERAL`) history is returned in `firm_tasks_history` (completed, last 30 days). Staff complete firm tasks via `PATCH /api/tasks/:id/status` with `{ "status": "completed" }` (direct `not_started → completed` allowed).
+> **Completed history (ticket 0051):** `firm_tasks_history` is deprecated (empty array on dashboard mount). Completed firm and client tasks load lazily via `GET /api/dashboard/staff/history` (10 per page, cursor pagination).
+
+> **Firm tasks (ticket 0047):** Ad-hoc work on the internal case (`FIRM-GENERAL`). Staff complete firm tasks via `PATCH /api/tasks/:id/status` with `{ "status": "completed" }` (direct `not_started → completed` allowed).
+
+---
+
+#### EP-43 addendum · Staff dashboard task history (ticket 0051)
+
+| Field | Value |
+|-------|-------|
+| Method | `GET` |
+| Path | `/api/dashboard/staff/history` |
+| Role | `staff`, `senior` |
+| Scope | Post-MVP |
+
+**Query Parameters:**
+
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `limit` | number | `10` | Page size (max 20) |
+| `cursor` | string | — | Opaque cursor from previous response (`base64` of `completed_at` + task `id`) |
+
+**Response — `200 OK`:**
+
+```json
+{
+  "data": {
+    "items": [
+      {
+        "id": "uuid",
+        "name": "Application Preparation",
+        "case_reference": "072601/SKW/VIS",
+        "case_is_internal": false,
+        "status": "completed",
+        "completed_at": "2026-08-07T10:00:00.000Z"
+      }
+    ],
+    "next_cursor": "eyJjb21wbGV0ZWRfYXQiOi...",
+    "has_more": true
+  }
+}
+```
+
+**Query rules:** `assigned_to` = logged-in staff; `status` = `completed`; `is_deleted` = false; case `status` = `active` and `is_deleted` = false. Includes client and internal (firm) tasks. Ordered by `completed_at DESC`, then `id DESC`.
 
 > **Default view (`today`):** Returns only tasks scheduled for today + any overdue tasks + any blocked tasks. This keeps the payload small and the dashboard fast. Staff can switch to `week` or `all` views for broader visibility.
 

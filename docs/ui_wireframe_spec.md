@@ -944,7 +944,7 @@ Admin: Leave Management (S-13) → Pending tab → Review → Approve/Reject
 │  │  ➤ NEXT ACTION — task name (firm) OR name · ref (client)        ││
 │  │  Unified list: urgent first, then scheduled time ascending       ││
 │  │  Actions: [✓] [◉] [📁] — Complete · In progress · Open case      ││
-│  │  [Show history ▾] — completed firm tasks                        ││
+│  │  [Show history ▾] — completed firm + client tasks (lazy load)   ││
 │  └──────────────────────────────────────────────────────────────────┘│
 │                                                                     │
 │  [View Day Calendar →]                                             │

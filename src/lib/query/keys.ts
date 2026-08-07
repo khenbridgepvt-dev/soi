@@ -16,6 +16,7 @@ export const queryKeys = {
     admin: () => ['dashboard', 'admin'] as const,
     staff: (view: string) => ['dashboard', 'staff', view] as const,
     staffAll: ['dashboard', 'staff'] as const,
+    staffHistory: () => ['dashboard', 'staff', 'history'] as const,
   },
   cases: {
     allLists: ['cases', 'list'] as const,

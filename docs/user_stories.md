@@ -794,6 +794,9 @@ Translate every functional requirement from the SRS into implementation-ready us
 - [ ] **Firm tasks** share the same action strip (✓ + in progress); no Open case.
 - [ ] Direct complete from `not_started` is allowed when prerequisites pass (ADR-0020); API returns clear error when blocked.
 - [ ] Only tasks from accepted cases are shown — pre-acceptance cases are invisible.
+- [ ] A collapsible **History** section below the priority list loads completed firm and client tasks on expand (not on dashboard mount).
+- [ ] History uses cursor pagination: 10 items per page, **Load more** when more exist.
+- [ ] History rows are read-only; firm rows show task name; client rows show task name, reference, and completed date.
 
 ---
 

@@ -263,6 +263,7 @@ Tier legend: **cheap** = budget model is fine · **STRONG** = use Fable/frontier
 | 0048 unified priority + completed visual | cheap | priority-schedule.ts · US-6.1 · board/schedule green | 1 |
 | 0049 priority list status actions | cheap | ADR-0020 · migration 00046 · StaffDashboardView actions | 1 |
 | 0050 auth redirect hardening | cheap | middleware `next` · require-login.ts · login page | 1 |
+| 0051 staff task history pagination | cheap | EP-43 addendum · US-6.1 · StaffDashboardView History | 1 |
 
 Estimated total: **42–49 sessions**. Recommended first ticket for a cheap model: **0002 scaffold** (0003 can run in parallel in a second session).
 

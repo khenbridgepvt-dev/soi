@@ -2,6 +2,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { fetchCaseDetail } from '@/lib/cases/fetch-case-detail';
 import { INTERNAL_CASE_ID } from '@/lib/cases/internal-case';
 import { createAdhocTaskAssign } from '@/lib/tasks/create-adhoc-task-assign';
+import { fetchStaffDashboardHistory } from '@/lib/dashboard/fetch-staff-dashboard-history';
 import { fetchStaffDashboard } from '@/lib/dashboard/fetch-staff-dashboard';
 import { addDays, dayKeyForDate, todayISODate } from '@/lib/utils/dates';
 import { createServiceClient } from './helpers';
@@ -121,7 +122,9 @@ describe('internal case guards (ticket 0047)', () => {
 
     const dashboard = await fetchStaffDashboard(staff, ASHA_ID, 'all');
     expect(dashboard.priority_list.some((row) => row.id === task.id)).toBe(false);
-    expect(dashboard.firm_tasks_history.some((row) => row.id === task.id)).toBe(true);
+
+    const history = await fetchStaffDashboardHistory(staff, ASHA_ID, { limit: 10 });
+    expect(history.items.some((row) => row.id === task.id)).toBe(true);
 
     await staff.auth.signOut();
   });

@@ -101,7 +101,7 @@ Firm operations work (e.g. “Clear emails”) appears in the **same priority li
 - Firm rows show **task name** only. Action strip: **✓ Complete** → **◉ In progress** (no Open case).
 - Client rows show reference, client name. Action strip: **✓** → **◉** → **Open case** (folder icon).
 - **✓** works from `not_started` or `in_progress` when prerequisites pass; errors surface on the row.
-- Completed firm tasks appear under **Show history** at the bottom of the list.
+- Completed firm and client tasks appear under **Show history** (lazy-loaded, 10 per page, **Load more**). Firm rows show task name; client rows show `task name · reference` plus completed date. Read-only — no action buttons.
 
 Staff cannot accept leads, assign tasks to others, or access firm-wide settings.
 
