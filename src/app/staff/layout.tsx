@@ -1,6 +1,6 @@
 import AppShell from '@/components/layout/AppShell';
 import QueryProvider from '@/components/providers/QueryProvider';
-import { getSessionWithRole } from '@/lib/auth/session';
+import { requireSessionWithRoles } from '@/lib/auth/require-login';
 import { createClient } from '@/lib/supabase/server';
 
 const STAFF_NAV = [
@@ -14,37 +14,38 @@ export default async function StaffLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const sessionWithRole = await getSessionWithRole();
+  const sessionWithRole = await requireSessionWithRoles(['staff', 'senior'], {
+    fallbackPath: '/staff/dashboard',
+    wrongRoleRedirect: '/dashboard',
+  });
   const appName = process.env.NEXT_PUBLIC_APP_NAME ?? 'Task Manager';
   const supabase = await createClient();
 
   let onlineStatus: 'online' | 'break' | 'offline' = 'offline';
-  if (sessionWithRole?.session.user.id) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('online_status')
-      .eq('id', sessionWithRole.session.user.id)
-      .maybeSingle();
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('online_status')
+    .eq('id', sessionWithRole.session.user.id)
+    .maybeSingle();
 
-    if (profile?.online_status) {
-      onlineStatus = profile.online_status;
-    }
+  if (profile?.online_status) {
+    onlineStatus = profile.online_status;
   }
 
   return (
     <QueryProvider>
-    <AppShell
-      appName={appName}
-      dashboardHref="/staff/dashboard"
-      casesBasePath="/staff/cases"
-      navItems={STAFF_NAV}
-      userEmail={sessionWithRole?.session.user.email}
-      userId={sessionWithRole?.session.user.id}
-      onlineStatus={onlineStatus}
-      showStatusToggle
-    >
-      {children}
-    </AppShell>
+      <AppShell
+        appName={appName}
+        dashboardHref="/staff/dashboard"
+        casesBasePath="/staff/cases"
+        navItems={STAFF_NAV}
+        userEmail={sessionWithRole.session.user.email}
+        userId={sessionWithRole.session.user.id}
+        onlineStatus={onlineStatus}
+        showStatusToggle
+      >
+        {children}
+      </AppShell>
     </QueryProvider>
   );
 }

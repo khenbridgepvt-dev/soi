@@ -8,7 +8,11 @@ import { DEACTIVATED_MESSAGE, mapLoginError } from '@/lib/auth/errors';
 import { getUserRoleFromAccessToken } from '@/lib/auth/jwt';
 import { getDashboardPathForRole } from '@/lib/auth/routes';
 
-export default function LoginForm() {
+type LoginFormProps = {
+  nextPath?: string | null;
+};
+
+export default function LoginForm({ nextPath = null }: LoginFormProps) {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -89,7 +93,7 @@ export default function LoginForm() {
         return;
       }
 
-      router.push(getDashboardPathForRole(role));
+      router.push(nextPath ?? getDashboardPathForRole(role));
       router.refresh();
     } catch {
       setBannerError('Unable to connect. Check your internet connection.');

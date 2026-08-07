@@ -1,12 +1,19 @@
 import type { Metadata } from 'next';
 import LoginForm from '@/components/auth/LoginForm';
+import { sanitizeNextPath } from '@/lib/auth/login-redirect';
 
 export const metadata: Metadata = {
   title: 'Sign in',
 };
 
-export default function LoginPage() {
+type LoginPageProps = {
+  searchParams: Promise<{ next?: string }>;
+};
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
   const appName = process.env.NEXT_PUBLIC_APP_NAME ?? 'Task Manager';
+  const params = await searchParams;
+  const nextPath = sanitizeNextPath(params.next ?? null);
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-page px-4 py-12">
@@ -20,7 +27,7 @@ export default function LoginPage() {
           </div>
           <h1 className="text-xl font-semibold text-text">{appName}</h1>
         </div>
-        <LoginForm />
+        <LoginForm nextPath={nextPath} />
       </div>
     </main>
   );

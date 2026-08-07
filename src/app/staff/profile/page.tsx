@@ -1,11 +1,17 @@
 import type { Metadata } from 'next';
 import ChangePasswordForm from '@/components/settings/ChangePasswordForm';
+import { requireSessionWithRoles } from '@/lib/auth/require-login';
 
 export const metadata: Metadata = {
   title: 'My Profile',
 };
 
-export default function StaffProfilePage() {
+export default async function StaffProfilePage() {
+  await requireSessionWithRoles(['staff', 'senior'], {
+    fallbackPath: '/staff/profile',
+    wrongRoleRedirect: '/dashboard',
+  });
+
   return (
     <div>
       <div className="mb-6">

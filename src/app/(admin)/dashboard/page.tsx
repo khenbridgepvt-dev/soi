@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import AdminDashboardView from '@/components/dashboard/AdminDashboardView';
-import { getUser } from '@/lib/auth/session';
+import { requireSessionWithRoles } from '@/lib/auth/require-login';
 import { createClient } from '@/lib/supabase/server';
 import { getGreeting } from '@/lib/utils/greeting';
 
@@ -9,15 +9,16 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminDashboardPage() {
-  const user = await getUser();
+  const { session } = await requireSessionWithRoles(['admin'], {
+    fallbackPath: '/dashboard',
+    wrongRoleRedirect: '/staff/dashboard',
+  });
   const supabase = await createClient();
-  const { data: profile } = user
-    ? await supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('id', user.id)
-        .maybeSingle()
-    : { data: null };
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('full_name')
+    .eq('id', session.user.id)
+    .maybeSingle();
 
   let fullName = 'Admin';
   if (profile?.full_name) {

@@ -1,3 +1,4 @@
+import { sanitizeNextPath } from '@/lib/auth/login-redirect';
 import { getUserRoleFromAccessToken } from '@/lib/auth/jwt';
 import { getDashboardPathForRole } from '@/lib/auth/routes';
 import { createClient } from '@/lib/supabase/server';
@@ -12,8 +13,7 @@ export async function GET(request: Request) {
   const code = searchParams.get('code');
   const nextParam = searchParams.get('next');
 
-  const safeNext =
-    nextParam?.startsWith('/') && !nextParam.startsWith('//') ? nextParam : null;
+  const safeNext = sanitizeNextPath(nextParam);
 
   if (!code) {
     return NextResponse.redirect(`${origin}${safeNext ?? '/login'}`);

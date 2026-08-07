@@ -15,6 +15,8 @@ This application helps your firm manage immigration cases from first enquiry thr
 
 **Sign in:** Open the URL above and use your firm email and password. If you forget your password, use **Forgot password** on the login screen.
 
+If you open a protected page while signed out, you are sent to the login screen and returned to that page after a successful sign-in.
+
 ### Two main roles
 
 | Role | Who | Landing page after login |

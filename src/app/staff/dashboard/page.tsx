@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import StaffDashboardView from '@/components/staff/StaffDashboardView';
-import { getUser } from '@/lib/auth/session';
+import { requireSessionWithRoles } from '@/lib/auth/require-login';
 import { createClient } from '@/lib/supabase/server';
 import { getGreeting } from '@/lib/utils/greeting';
 
@@ -9,19 +9,21 @@ export const metadata: Metadata = {
 };
 
 export default async function StaffDashboardPage() {
-  const user = await getUser();
+  const { session } = await requireSessionWithRoles(['staff', 'senior'], {
+    fallbackPath: '/staff/dashboard',
+    wrongRoleRedirect: '/dashboard',
+  });
   const supabase = await createClient();
 
   let fullName = 'Staff';
-  if (user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('full_name')
-      .eq('id', user.id)
-      .maybeSingle();
-    if (profile?.full_name) {
-      fullName = profile.full_name;
-    }
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('full_name')
+    .eq('id', session.user.id)
+    .maybeSingle();
+
+  if (profile?.full_name) {
+    fullName = profile.full_name;
   }
 
   return (

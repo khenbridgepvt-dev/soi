@@ -262,6 +262,7 @@ Tier legend: **cheap** = budget model is fine · **STRONG** = use Fable/frontier
 | 0047 internal case guards + firm UX | cheap | ADR-0019 addendum · migrations 00044–00045 · staff dashboard | 1 |
 | 0048 unified priority + completed visual | cheap | priority-schedule.ts · US-6.1 · board/schedule green | 1 |
 | 0049 priority list status actions | cheap | ADR-0020 · migration 00046 · StaffDashboardView actions | 1 |
+| 0050 auth redirect hardening | cheap | middleware `next` · require-login.ts · login page | 1 |
 
 Estimated total: **42–49 sessions**. Recommended first ticket for a cheap model: **0002 scaffold** (0003 can run in parallel in a second session).
 

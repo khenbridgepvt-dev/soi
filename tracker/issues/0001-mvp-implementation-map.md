@@ -72,6 +72,7 @@ The MVP is **operational as a free-tier pilot**: all ten MVP modules (M1–M10) 
 - **0047 internal case guards:** Firm-task staff UX; case API 404; cloud seed; quick-complete — [Internal case guards and ad-hoc UX](./0047-internal-case-guards-and-adhoc-ux.md)
 - **0048 unified priority list:** Urgent then time; completed green on board/schedule — [Unified priority list and completed visual](./0048-unified-priority-list-and-completed-visual.md)
 - **0049 priority list actions:** ✓/◉/Open case strip; staff direct-complete — [Priority list status actions](./0049-priority-list-status-actions.md)
+- **0050 auth redirects:** Login `next` param; layout guards — [Auth redirect hardening](./0050-auth-redirect-hardening.md)
 
 ## Not yet specified
 
