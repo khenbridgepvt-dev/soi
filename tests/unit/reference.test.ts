@@ -140,9 +140,26 @@ describe('parseCaseReference', () => {
     expect(parseCaseReference('0726/SKW/MAR')).toBeNull();
     expect(parseCaseReference('072604/SKW')).toBeNull();
     expect(parseCaseReference('072604/SKW/MA')).toBeNull();
-    expect(parseCaseReference('072604/SK/MAR')).toBeNull();
+    expect(parseCaseReference('072604/S/MAR')).toBeNull();
     expect(parseCaseReference('72604/SKW/MAR')).toBeNull();
     expect(parseCaseReference('072604/SKW/MAR/EXTRA')).toBeNull();
+  });
+
+  it('supports FM and SKD_OUT_UK type codes (ticket 0054)', () => {
+    expect(parseCaseReference('072604/FM/MAR')).toEqual({
+      yearMonth: '0726',
+      sequence: 4,
+      typeCode: 'FM',
+      nameSegment: 'MAR',
+    });
+    expect(parseCaseReference('072604/SKD_OUT_UK/MAR')).toEqual({
+      yearMonth: '0726',
+      sequence: 4,
+      typeCode: 'SKD_OUT_UK',
+      nameSegment: 'MAR',
+    });
+    expect(isValidCaseReference('072604/FM/MAR')).toBe(true);
+    expect(isValidCaseReference('072604/SKD_OUT_UK/MAR')).toBe(true);
   });
 });
 

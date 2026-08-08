@@ -40,5 +40,6 @@ export const queryKeys = {
     filterOptions: () => ['staff', 'filterOptions'] as const,
   },
   applicationTypes: () => ['applicationTypes'] as const,
+  coveringLetterhead: () => ['coveringLetterhead'] as const,
   notifications: () => ['notifications'] as const,
 };

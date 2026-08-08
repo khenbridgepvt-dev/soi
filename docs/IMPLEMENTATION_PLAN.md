@@ -264,6 +264,15 @@ Tier legend: **cheap** = budget model is fine · **STRONG** = use Fable/frontier
 | 0049 priority list status actions | cheap | ADR-0020 · migration 00046 · StaffDashboardView actions | 1 |
 | 0050 auth redirect hardening | cheap | middleware `next` · require-login.ts · login page | 1 |
 | 0051 staff task history pagination | cheap | EP-43 addendum · US-6.1 · StaffDashboardView History | 1 |
+| 0053 case document prep ADR + docs | cheap | ADR-0021 · `docs/templates/` · ticket 0053 | 1 |
+| 0054 app types + dependant relationship | cheap | ADR-0021 · `database_schema.md` T2 · dependants relationship enum | 1 |
+| 0055 case_document_preparations DB | cheap | ADR-0021 · database_schema addendum · RLS mirrors cases | 1 |
+| 0056 document registry + merge lib | cheap⚠ | ADR-0021 · `docs/templates/FIELD_CATALOG.md` · unit fixtures | 1–2 |
+| 0057 DOCX generation | cheap⚠ | ADR-0021 · letterhead shell · `sample covering letter.docx` | 1–2 |
+| 0058 PDF generation | cheap⚠ | ADR-0021 · merged HTML/text seam | 1 |
+| 0059 document preparation API | cheap | ADR-0021 · api_spec addendum · regenerate on download | 1–2 |
+| 0060 document wizard UI | cheap⚠ | ADR-0021 · `WIZARD_FLOWS.md` · hide internal case | 2 |
+| 0061 admin letterhead upload | cheap | ADR-0021 · Settings · optional Storage bucket | 1 |
 
 Estimated total: **42–49 sessions**. Recommended first ticket for a cheap model: **0002 scaffold** (0003 can run in parallel in a second session).
 

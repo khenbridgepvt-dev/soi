@@ -63,7 +63,7 @@ export async function POST(request: Request, context: RouteContext) {
   const { data, error } = await auth.supabase.rpc('submit_senior_review', {
     p_task_id: id,
     p_outcome: outcomeResult.value,
-    p_revision_notes: notesResult.value,
+    p_revision_notes: notesResult.value ?? undefined,
   });
 
   if (error) {

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import LeadDetailActionsClient from '@/components/cases/LeadDetailActionsClient';
 import CaseDeletedTombstone from '@/components/cases/CaseDeletedTombstone';
+import CaseDocumentsSection from '@/components/cases/CaseDocumentsSection';
 import DeleteCaseButton from '@/components/cases/DeleteCaseButton';
 import DependantsSection from '@/components/cases/DependantsSection';
 import TaskChecklistSection from '@/components/cases/TaskChecklistSection';
@@ -541,6 +542,18 @@ export default function CaseDetailView({
           placeholder="Notes visible to staff on assigned cases…"
         />
       </div>
+
+      {!isLead && (
+        <CaseDocumentsSection
+          caseId={caseId}
+          readOnly={isReadOnly}
+          clientFirstName={caseData.client_first_name}
+          clientLastName={caseData.client_last_name}
+          applicationTypeCode={caseData.application_type.code}
+          dependants={caseData.dependants}
+          reference={caseData.reference}
+        />
+      )}
 
       <TaskChecklistSection
         caseId={caseId}

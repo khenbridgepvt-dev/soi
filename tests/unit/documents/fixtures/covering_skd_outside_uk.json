@@ -1,0 +1,28 @@
+{
+  "answers": {
+    "sponsor_name": "Mr. John Doe",
+    "sponsor_relationship": "husband",
+    "applicants": [
+      {
+        "title": "Mrs",
+        "name": "Jane Doe",
+        "gwf": "GWF088242882",
+        "uan": "1212-0001-6189-1364"
+      },
+      {
+        "title": "Miss",
+        "name": "Amy Doe",
+        "gwf": "GWF088276043",
+        "uan": "1212-0001-6194-7017"
+      }
+    ],
+    "present_date": "2026-06-15"
+  },
+  "expectedSubstrings": [
+    "15th June 2026",
+    "Applicant 1: GWF088242882 and Applicant 2: GWF088276043",
+    "UAN: 1212-0001-6189-1364 and 1212-0001-6194-7017",
+    "Mrs Jane Doe and her daughter Miss Amy Doe",
+    "her husband, Mr. John Doe"
+  ]
+}

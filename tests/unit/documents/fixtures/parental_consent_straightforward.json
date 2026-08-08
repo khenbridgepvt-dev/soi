@@ -1,0 +1,35 @@
+{
+  "answers": {
+    "child_name": "Amy Doe",
+    "child_dob": "30/10/2018",
+    "child_passport_number": "P1234567",
+    "visa_category_label": "PBS, Start-up, Innovator or Global Talent – Child Visa",
+    "parent1_name": "John Doe",
+    "parent1_passport_country": "Indian",
+    "parent1_passport_number": "A1111111",
+    "parent2_name": "Jane Doe",
+    "parent2_passport_country": "Indian",
+    "parent2_passport_number": "B2222222",
+    "shared_address": "1 Example Street, London",
+    "application_refs": [
+      "xxxx-xxxx-xxxx-xxxx",
+      "xxxx-xxxx-xxxx-xxxx/01",
+      "xxxx-xxxx-xxxx-xxxx/02"
+    ],
+    "parent1_email": "father@example.com",
+    "parent1_mobile": "+441111111111",
+    "parent2_email": "mother@example.com",
+    "parent2_mobile": "+442222222222",
+    "present_date": "2026-01-26"
+  },
+  "expectedSubstrings": [
+    "26th January 2026",
+    "Consent for Amy Doe",
+    "John Doe (holder of Indian passport: A1111111)",
+    "Jane Doe (holder of Indian passport: B2222222)",
+    "1 Example Street, London",
+    "DOB: 30/10/2018",
+    "father@example.com",
+    "mother@example.com"
+  ]
+}
