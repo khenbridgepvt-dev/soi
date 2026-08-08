@@ -200,17 +200,25 @@ Replace `https://your-firm-app.vercel.app` with your live address.
 
 ### Administrator
 
+**Main**
+
 | Page | URL |
 |------|-----|
 | Dashboard | `/dashboard` |
-| Task Board | `/task-board` |
 | Cases | `/cases` |
 | Case detail | `/cases/{case-id}` |
 | Schedule (assign tasks) | `/schedule` |
-| Blocked Tasks | `/blocked` |
-| Archive | `/archive` |
+| Task Board | `/task-board` |
 | Team overview | `/team` |
+| Blocked Tasks | `/blocked` |
+
+**Advanced**
+
+| Page | URL |
+|------|-----|
+| Archive | `/archive` |
 | Application Types | `/settings/application-types` |
+| Covering Letterhead | `/settings/covering-letterhead` |
 | Staff Members | `/settings/staff` |
 | My Profile | `/settings/profile` |
 

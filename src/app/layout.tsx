@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { IBM_Plex_Sans } from 'next/font/google';
 import '@/styles/globals.css';
+import { getAppDisplayName } from '@/lib/app/display-name';
 
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ['latin'],
@@ -8,8 +9,8 @@ const ibmPlexSans = IBM_Plex_Sans({
 });
 
 export const metadata: Metadata = {
-  title: process.env.NEXT_PUBLIC_APP_NAME ?? 'Task Manager',
-  description: 'Team Scheduling & Task Management',
+  title: getAppDisplayName(),
+  description: 'Immigration case and task management for Soi',
 };
 
 export default function RootLayout({

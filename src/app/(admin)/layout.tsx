@@ -1,7 +1,8 @@
 import AdminAppShell from '@/components/layout/AdminAppShell';
 import QueryProvider from '@/components/providers/QueryProvider';
+import { getAppDisplayName } from '@/lib/app/display-name';
 import { requireSessionWithRoles } from '@/lib/auth/require-login';
-import { ADMIN_NAV } from '@/lib/nav/admin';
+import { ADMIN_NAV_SECTIONS } from '@/lib/nav/admin';
 
 export default async function AdminLayout({
   children,
@@ -12,13 +13,12 @@ export default async function AdminLayout({
     fallbackPath: '/dashboard',
     wrongRoleRedirect: '/staff/dashboard',
   });
-  const appName = process.env.NEXT_PUBLIC_APP_NAME ?? 'Task Manager';
 
   return (
     <QueryProvider>
       <AdminAppShell
-        appName={appName}
-        navItems={ADMIN_NAV}
+        appName={getAppDisplayName()}
+        navSections={ADMIN_NAV_SECTIONS}
         userEmail={sessionWithRole.session.user.email}
         userId={sessionWithRole.session.user.id}
       >

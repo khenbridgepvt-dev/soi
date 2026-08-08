@@ -145,7 +145,7 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
 
 # App
 NEXT_PUBLIC_APP_URL=http://localhost:3000
-NEXT_PUBLIC_APP_NAME="Task Manager (Dev)"
+NEXT_PUBLIC_APP_NAME="Soi (Beta) (Dev)"
 
 # Optional: Node environment
 NODE_ENV=development
@@ -375,7 +375,7 @@ Reversing this order will cause runtime errors (code references columns/tables t
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Local anon key | Dev project anon key | Prod project anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Local service key | Dev project service key | Prod project service key |
 | `NEXT_PUBLIC_APP_URL` | `http://localhost:3000` | Vercel preview URL | `https://lawcrm.vercel.app` |
-| `NEXT_PUBLIC_APP_NAME` | "Task Manager (Dev)" | "Task Manager (Staging)" | "Task Manager" |
+| `NEXT_PUBLIC_APP_NAME` | "Soi (Beta) (Dev)" | "Soi (Beta) (Staging)" | "Soi (Beta)" |
 
 ### 5.3 Secret Management Rules
 

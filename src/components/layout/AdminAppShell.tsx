@@ -2,16 +2,12 @@
 
 import { usePathname } from 'next/navigation';
 import AppShell from '@/components/layout/AppShell';
-
-type NavItem = {
-  href: string;
-  label: string;
-};
+import type { NavSection } from '@/lib/nav/types';
 
 type AdminAppShellProps = {
   children: React.ReactNode;
   appName: string;
-  navItems: NavItem[];
+  navSections: NavSection[];
   userEmail?: string | null;
   userId?: string;
 };
@@ -19,7 +15,7 @@ type AdminAppShellProps = {
 export default function AdminAppShell({
   children,
   appName,
-  navItems,
+  navSections,
   userEmail,
   userId,
 }: AdminAppShellProps) {
@@ -29,7 +25,7 @@ export default function AdminAppShell({
     <AppShell
       appName={appName}
       dashboardHref="/dashboard"
-      navItems={navItems}
+      navSections={navSections}
       activeHref={pathname}
       userEmail={userEmail}
       userId={userId}

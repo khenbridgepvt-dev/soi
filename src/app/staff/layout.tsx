@@ -1,5 +1,6 @@
 import AppShell from '@/components/layout/AppShell';
 import QueryProvider from '@/components/providers/QueryProvider';
+import { getAppDisplayName } from '@/lib/app/display-name';
 import { requireSessionWithRoles } from '@/lib/auth/require-login';
 import { createClient } from '@/lib/supabase/server';
 
@@ -18,7 +19,7 @@ export default async function StaffLayout({
     fallbackPath: '/staff/dashboard',
     wrongRoleRedirect: '/dashboard',
   });
-  const appName = process.env.NEXT_PUBLIC_APP_NAME ?? 'Task Manager';
+  const appName = getAppDisplayName();
   const supabase = await createClient();
 
   let onlineStatus: 'online' | 'break' | 'offline' = 'offline';
@@ -38,7 +39,7 @@ export default async function StaffLayout({
         appName={appName}
         dashboardHref="/staff/dashboard"
         casesBasePath="/staff/cases"
-        navItems={STAFF_NAV}
+        navSections={[{ items: STAFF_NAV }]}
         userEmail={sessionWithRole.session.user.email}
         userId={sessionWithRole.session.user.id}
         onlineStatus={onlineStatus}

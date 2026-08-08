@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import LoginForm from '@/components/auth/LoginForm';
+import { getAppDisplayName, getAppMonogram } from '@/lib/app/display-name';
 import { sanitizeNextPath } from '@/lib/auth/login-redirect';
 
 export const metadata: Metadata = {
@@ -11,7 +12,8 @@ type LoginPageProps = {
 };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const appName = process.env.NEXT_PUBLIC_APP_NAME ?? 'Task Manager';
+  const appName = getAppDisplayName();
+  const appMonogram = getAppMonogram(appName);
   const params = await searchParams;
   const nextPath = sanitizeNextPath(params.next ?? null);
 
@@ -23,7 +25,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-brand text-sm font-semibold text-white"
             aria-hidden="true"
           >
-            TM
+            {appMonogram}
           </div>
           <h1 className="text-xl font-semibold text-text">{appName}</h1>
         </div>

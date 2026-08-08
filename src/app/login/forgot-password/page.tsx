@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
 import ForgotPasswordForm from '@/components/auth/ForgotPasswordForm';
+import { getAppDisplayName } from '@/lib/app/display-name';
 
 export const metadata: Metadata = {
   title: 'Forgot password',
 };
 
 export default function ForgotPasswordPage() {
-  const appName = process.env.NEXT_PUBLIC_APP_NAME ?? 'Task Manager';
+  const appName = getAppDisplayName();
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-page px-4 py-12">

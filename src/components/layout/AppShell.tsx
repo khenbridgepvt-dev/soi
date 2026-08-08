@@ -7,19 +7,15 @@ import {
   useAutoSaveFooterLabel,
 } from '@/components/layout/AutoSaveStatusProvider';
 import OnlineStatusToggle from '@/components/staff/OnlineStatusToggle';
+import type { NavSection } from '@/lib/nav/types';
 import type { Database } from '@/types/database';
-
-type NavItem = {
-  href: string;
-  label: string;
-};
 
 type AppShellProps = {
   children: React.ReactNode;
   appName: string;
   dashboardHref: string;
   casesBasePath?: string;
-  navItems: NavItem[];
+  navSections: NavSection[];
   activeHref?: string;
   userEmail?: string | null;
   userId?: string;
@@ -32,7 +28,7 @@ export default function AppShell({
   appName,
   dashboardHref,
   casesBasePath = '/cases',
-  navItems,
+  navSections,
   activeHref,
   userEmail,
   userId,
@@ -45,7 +41,7 @@ export default function AppShell({
         appName={appName}
         dashboardHref={dashboardHref}
         casesBasePath={casesBasePath}
-        navItems={navItems}
+        navSections={navSections}
         activeHref={activeHref}
         userEmail={userEmail}
         userId={userId}
@@ -63,7 +59,7 @@ function AppShellFrame({
   appName,
   dashboardHref,
   casesBasePath = '/cases',
-  navItems,
+  navSections,
   activeHref,
   userEmail,
   userId,
@@ -88,7 +84,7 @@ function AppShellFrame({
       />
 
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar items={navItems} activeHref={activeHref} />
+        <Sidebar sections={navSections} activeHref={activeHref} />
         <main className="flex-1 overflow-auto p-6">{children}</main>
       </div>
 

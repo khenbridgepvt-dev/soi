@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import ResetPasswordForm from '@/components/auth/ResetPasswordForm';
+import { getAppDisplayName } from '@/lib/app/display-name';
 import { getSession } from '@/lib/auth/session';
 
 export const metadata: Metadata = {
@@ -13,7 +14,7 @@ export default async function ResetPasswordPage() {
     redirect('/login');
   }
 
-  const appName = process.env.NEXT_PUBLIC_APP_NAME ?? 'Task Manager';
+  const appName = getAppDisplayName();
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-page px-4 py-12">

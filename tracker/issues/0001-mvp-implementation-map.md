@@ -74,6 +74,7 @@ The MVP is **operational as a free-tier pilot**: all ten MVP modules (M1–M10) 
 - **0049 priority list actions:** ✓/◉/Open case strip; staff direct-complete — [Priority list status actions](./0049-priority-list-status-actions.md)
 - **0050 auth redirects:** Login `next` param; layout guards — [Auth redirect hardening](./0050-auth-redirect-hardening.md)
 - **0051 staff task history:** Lazy paginated history API + S-10 History section — [Paginated completed task history](./0051-staff-task-history-pagination.md)
+- **0052 Soi (Beta) branding:** `getAppDisplayName()`, admin Main/Advanced nav sections — [Soi (Beta) branding and admin nav reorder](./0052-soi-branding-beta.md)
 
 ## Not yet specified
 
