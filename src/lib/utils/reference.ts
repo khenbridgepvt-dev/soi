@@ -14,7 +14,11 @@ export const REFERENCE_SEQUENCE_MIN_DIGITS = 2;
 export const REFERENCE_NAME_PAD_CHAR = 'X';
 
 const NON_LETTER_RE = /[^\p{L}]/gu;
-const REFERENCE_RE = /^(\d{4})(\d{2,})\/([A-Z]{3})\/(\p{L}{3})$/u;
+const REFERENCE_TYPE_CODE_RE = '[A-Z][A-Z0-9_]{1,19}';
+const REFERENCE_RE = new RegExp(
+  `^(\\d{4})(\\d{2,})\\/(${REFERENCE_TYPE_CODE_RE})\\/(\\p{L}{3})$`,
+  'u',
+);
 
 /** `MMYY` for the given instant, in UTC to match the database counter. */
 export function formatYearMonth(date: Date): string {

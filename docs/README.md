@@ -52,7 +52,8 @@ Specification package for the **Team Scheduling & Task Management System** — a
 | [test_plan.md](./test_plan.md) | Test cases |
 | [deployment_guide.md](./deployment_guide.md) | CI/CD, environments |
 | [SOURCE_OF_TRUTH.md](./SOURCE_OF_TRUTH.md) | Agent index — hierarchy, read map, post-MVP log |
-| [adr/](./adr/) | Architecture decisions (16 ADRs) |
+| [adr/](./adr/) | Architecture decisions (21 ADRs) |
+| [templates/](./templates/) | Case document prep — registry, fields, wizard flows (ADR-0021) |
 
 ---
 
@@ -104,4 +105,6 @@ Per [scope_matrix.md](./scope_matrix.md) §7:
 
 ## Out of scope (all phases)
 
-Document storage · SMS/email notifications · Payment processing · Multi-tenant
+General client **document archive / upload storage** · SMS/email notifications · Payment processing · Multi-tenant
+
+**Narrow exception (post-MVP, ADR-0021):** Staff may save **wizard answers + merged text** per case and **download generated covering letters / parental consent** (DOCX/PDF) on demand — binaries are not stored; see [docs/templates/](./templates/) and tickets 0053+.

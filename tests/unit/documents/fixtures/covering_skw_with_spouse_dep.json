@@ -1,0 +1,20 @@
+{
+  "answers": {
+    "primary_applicant_name": "Jane Doe",
+    "primary_applicant_title": "Mrs",
+    "dependant_name": "John Doe",
+    "dependant_title": "Mr",
+    "dependant_relationship": "husband",
+    "application_refs": ["1212-0001-xxxx-xxxx/00", "1212-0001-xxxx-xxxx/01"],
+    "is_extension": true,
+    "present_date": "2026-02-27"
+  },
+  "expectedSubstrings": [
+    "27th February 2026",
+    "1212-0001-xxxx-xxxx/00, and 01",
+    "Mrs Jane Doe",
+    "her husband Mr John Doe",
+    "Certificate of Sponsorship for extension",
+    "their respective careers"
+  ]
+}

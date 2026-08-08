@@ -219,6 +219,7 @@ CREATE TYPE case_link_type AS ENUM ('follow_up', 'related', 'dependant_applicati
 | T7 | `staff_timetables` | Weekly working hours per staff member | Belongs to profile |
 | T8 | `notifications` | In-app notification records | Belongs to profile (recipient) |
 | T9 | `reference_counters` | Atomic sequential counters for case references | Standalone |
+| T16 | `case_document_preparations` | Saved wizard answers + merged snapshots per case/kind (ADR-0021) | Belongs to case |
 
 ### Advanced Entities (6 tables)
 
@@ -271,7 +272,7 @@ CREATE TYPE case_link_type AS ENUM ('follow_up', 'related', 'dependant_applicati
 |---|--------|------|----------|---------|-------------|-------------|
 | 1 | `id` | `uuid` | NO | `gen_random_uuid()` | PK | |
 | 2 | `name` | `text` | NO | — | UNIQUE, CHECK `length(name) >= 2` | Full name, e.g., "Skilled Worker Visa" |
-| 3 | `code` | `varchar(3)` | NO | — | UNIQUE, CHECK `code ~ '^[A-Z]{3}$'` | 3-letter uppercase abbreviation for references, e.g., "SKW" |
+| 3 | `code` | `varchar(20)` | NO | — | UNIQUE, CHECK `code ~ '^[A-Z][A-Z0-9_]{1,19}$'` | Type abbreviation for references and document-prep mapping, e.g., `SKW`, `FM`, `SKD_OUT_UK` (ticket 0054 widened from 3-letter-only) |
 | 4 | `is_active` | `boolean` | NO | `true` | — | Inactive types hidden from dropdowns but retained on existing cases |
 | 5 | `sort_order` | `integer` | NO | `0` | — | Display ordering in dropdowns |
 | 6 | `created_at` | `timestamptz` | NO | `now()` | — | |
@@ -359,7 +360,7 @@ IF OLD.appointment_date IS NOT NULL AND NEW.appointment_date IS NULL → REJECT
 | 1 | `id` | `uuid` | NO | `gen_random_uuid()` | PK | |
 | 2 | `case_id` | `uuid` | NO | — | FK → `cases(id)` ON DELETE CASCADE | Parent case |
 | 3 | `name` | `text` | NO | — | CHECK `length(name) >= 1` | Dependant's full name |
-| 4 | `relationship` | `text` | NO | — | CHECK `length(relationship) >= 1` | e.g., "spouse", "child", "partner" |
+| 4 | `relationship` | `text` | NO | — | CHECK `relationship IN ('spouse', 'partner', 'child', 'other')` | Dependant relationship to primary client (ticket 0054) |
 | 5 | `is_deleted` | `boolean` | NO | `false` | — | Soft-delete |
 | 6 | `deleted_at` | `timestamptz` | YES | `NULL` | — | When soft-deleted |
 | 7 | `deleted_by` | `uuid` | YES | `NULL` | FK → `profiles(id)` | Who soft-deleted |
@@ -371,6 +372,31 @@ IF OLD.appointment_date IS NOT NULL AND NEW.appointment_date IS NULL → REJECT
 
 **Denormalisation Note:**
 The task board displays client names as "Vishnu + 2 children". Rather than JOINing on every board render, consider a `dependant_summary` computed column or a materialised count on the `cases` table. However, for MVP scale (~500 cases), the JOIN is negligible. Defer denormalisation.
+
+---
+
+### T16 · `case_document_preparations` — Post-MVP (ADR-0021, ticket 0055)
+
+**Purpose:** Persist wizard answers and merged text/HTML for on-demand DOCX/PDF export. At most one row per `(case_id, kind)`; overwrite on save.
+
+| # | Column | Type | Nullable | Default | Constraints | Description |
+|---|--------|------|----------|---------|-------------|-------------|
+| 1 | `id` | `uuid` | NO | `gen_random_uuid()` | PK | |
+| 2 | `case_id` | `uuid` | NO | — | FK → `cases(id)` ON DELETE CASCADE | Parent case |
+| 3 | `kind` | `text` | NO | — | CHECK `kind IN ('covering_letter', 'parental_consent')` | Document kind |
+| 4 | `variant_id` | `text` | NO | — | — | Registry variant, e.g. `covering_skw_solo` |
+| 5 | `wizard_schema_id` | `text` | NO | — | — | Wizard schema id |
+| 6 | `answers` | `jsonb` | NO | `'{}'` | — | Wizard field answers |
+| 7 | `merged_text` | `text` | NO | `''` | — | Plain-text merge snapshot |
+| 8 | `merged_html` | `text` | YES | `NULL` | — | Optional HTML preview |
+| 9 | `created_by` | `uuid` | NO | — | FK → `profiles(id)` | |
+| 10 | `updated_by` | `uuid` | NO | — | FK → `profiles(id)` | |
+| 11 | `created_at` | `timestamptz` | NO | `now()` | — | |
+| 12 | `updated_at` | `timestamptz` | NO | `now()` | — | |
+
+**Constraints:** `UNIQUE (case_id, kind)` — one covering letter and one parental consent per case.
+
+**RLS:** Mirrors case/dependant access — admin on non-deleted writable cases; staff/senior on `staff_assigned_active_case_ids()` only. No DELETE policy (overwrite via UPSERT in API 0059).
 
 ---
 

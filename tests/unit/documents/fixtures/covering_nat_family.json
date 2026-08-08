@@ -1,0 +1,23 @@
+{
+  "answers": {
+    "lead_applicant_name": "Jane Doe",
+    "lead_applicant_title": "Ms",
+    "applicants": [
+      { "title": "Mr", "name": "John Doe" },
+      { "title": "Miss", "name": "Amy Doe" }
+    ],
+    "application_refs": [
+      "1212-0001-xxxx-xxxx/00",
+      "1212-0001-xxxx-xxxx/01",
+      "1212-0001-xxxx-xxxx/02",
+      "1212-0001-xxxx-xxxx/03"
+    ],
+    "present_date": "2026-03-16"
+  },
+  "expectedSubstrings": [
+    "16th March 2026",
+    "1212-0001-xxxx-xxxx/00, /01, /02 & /03",
+    "Ms Jane Doe, Mr John Doe, and Miss Amy Doe",
+    "naturalisation and registration as a British citizen"
+  ]
+}

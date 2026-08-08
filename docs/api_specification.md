@@ -2273,6 +2273,31 @@ Same as EP-24 but filtered to a single staff member. Staff can only query their 
 
 ---
 
+### EP-61 · Case Document Preparation
+| Route | Method | Role | Purpose |
+|-------|--------|------|---------|
+| `/api/cases/:id/documents` | `GET` | admin, staff, senior | List saved preparations (`kind`, `variant_id`, `updated_at`) |
+| `/api/cases/:id/documents/variants?kind=` | `GET` | admin, staff, senior | Suggested + available variants for wizard |
+| `/api/cases/:id/documents/:kind` | `GET` / `PUT` | admin, staff, senior | Load or upsert answers + merged text snapshot |
+| `/api/cases/:id/documents/:kind/download?format=docx\|pdf` | `GET` | admin, staff, senior | Binary export (regenerated from latest templates) |
+
+Internal cases (`FIRM-GENERAL`) return `404`. Completed/rejected cases reject `PUT`. Parental consent requires a child dependant.
+
+---
+
+### EP-62 · Covering Letter Letterhead (Admin Settings)
+
+| Route | Method | Role | Purpose |
+|-------|--------|------|---------|
+| `/api/settings/covering-letterhead` | `GET` | admin | Current letterhead source (`storage` or `bundled`), paths, `updated_at` |
+| `/api/settings/covering-letterhead` | `POST` | admin | Upload `.docx` letterhead shell (`multipart/form-data`, field `file`); overwrites `letterhead/covering-letter-shell.docx` |
+
+**Validation:** DOCX only, max 5 MB, must contain `{{body}}` placeholder. Staff exports read Storage via service role (no public bucket access).
+
+**Response — `200 OK`:** `{ "data": { "source": "storage" | "bundled", "storage_path": "...", "bundled_path": "...", "updated_at": "..." | null } }`
+
+---
+
 ## 7. Advanced Endpoints (Phase 2 — Specifications)
 
 Provided at summary level for planning. Full request/response schemas to be defined before Phase 2 development.

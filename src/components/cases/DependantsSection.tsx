@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import {
+  DEPENDANT_RELATIONSHIP_OPTIONS,
+  formatDependantRelationshipLabel,
   validateDependantName,
   validateDependantRelationship,
 } from '@/lib/utils/dependant';
@@ -204,7 +206,7 @@ export default function DependantsSection({
             {dependants.map((dep) => (
               <li key={dep.id} className="flex items-center justify-between gap-2">
                 <span>
-                  {dep.name} ({dep.relationship})
+                  {dep.name} ({formatDependantRelationshipLabel(dep.relationship)})
                 </span>
                 {!readOnly && (
                   <span className="flex gap-2 text-xs">
@@ -250,11 +252,18 @@ export default function DependantsSection({
               </div>
               <div>
                 <label className="mb-1 block font-medium">Relationship</label>
-                <input
+                <select
                   value={relationship}
                   onChange={(e) => setRelationship(e.target.value)}
                   className={`w-full rounded-md border px-3 py-2 ${relationshipError ? 'border-red-500' : 'border-slate-300'}`}
-                />
+                >
+                  <option value="">Select relationship</option>
+                  {DEPENDANT_RELATIONSHIP_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
                 {relationshipError && (
                   <p className="mt-1 text-xs text-red-600">{relationshipError}</p>
                 )}
@@ -290,7 +299,7 @@ export default function DependantsSection({
           <div className="w-full max-w-sm rounded-lg bg-white shadow-lg p-5">
             <h3 className="text-lg font-semibold text-slate-900">Remove dependant?</h3>
             <p className="mt-2 text-sm text-slate-600">
-              {deleteTarget.name} ({deleteTarget.relationship}) will be removed from this case.
+              {deleteTarget.name} ({formatDependantRelationshipLabel(deleteTarget.relationship)}) will be removed from this case.
             </p>
             <div className="mt-4 flex justify-end gap-3">
               <button

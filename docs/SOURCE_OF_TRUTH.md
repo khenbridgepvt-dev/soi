@@ -44,6 +44,7 @@ Quick index for agents and developers. **Read this first** instead of re-auditin
 | **Staff status actions** | ADR-0020, ticket [0049](../tracker/issues/0049-priority-list-status-actions.md) | Dashboard ✓/◉/Open case; direct complete when prereqs pass |
 | **Auth redirects** | Ticket [0050](../tracker/issues/0050-auth-redirect-hardening.md) | `/login?next=`; layout guards; API 401 |
 | **Staff task history** | Ticket [0051](../tracker/issues/0051-staff-task-history-pagination.md), EP-43 addendum | `GET /api/dashboard/staff/history`; lazy History section on S-10 |
+| **Document preparation** | ADR-0021, ticket [0053](../tracker/issues/0053-case-document-preparation-adr-and-docs.md), `docs/templates/`, `src/lib/documents/` | Epic 0054–0061 (registry, wizard, DOCX/PDF); hide on `FIRM-GENERAL` |
 | **Client data / cache** | ADR-0016, ticket [0032](../tracker/issues/0032-reactive-data-layer.md) | `src/lib/query/` (`keys.ts`, `invalidate.ts`) |
 | **References** | ADR-0009, `src/lib/utils/reference.ts` | `accept_lead` RPC |
 | **Tests** | `docs/test_plan.md` | `tests/unit/`, `tests/integration/` |
@@ -53,7 +54,7 @@ Quick index for agents and developers. **Read this first** instead of re-auditin
 
 ---
 
-## 3. Post-MVP delivery log (0032–0051)
+## 3. Post-MVP delivery log (0032–0053)
 
 | Ticket | Date | Summary |
 |--------|------|---------|
@@ -75,6 +76,7 @@ Quick index for agents and developers. **Read this first** instead of re-auditin
 | [0049](../tracker/issues/0049-priority-list-status-actions.md) | 2026-08-07 | Priority list action icons; staff direct-complete (ADR-0020) |
 | [0050](../tracker/issues/0050-auth-redirect-hardening.md) | 2026-08-07 | Auth redirect hardening; login `next` param; layout guards |
 | [0051](../tracker/issues/0051-staff-task-history-pagination.md) | 2026-08-07 | Paginated completed task history (firm + client); lazy load on S-10 |
+| [0053](../tracker/issues/0053-case-document-preparation-adr-and-docs.md) | 2026-08-08 | ADR-0021 + `docs/templates/` planning (registry, fields, wizard flows); epic 0054–0061 |
 
 MVP modules (tickets 0002–0030) are implemented per the [implementation map](../tracker/issues/0001-mvp-implementation-map.md).
 

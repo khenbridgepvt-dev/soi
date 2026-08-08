@@ -75,6 +75,15 @@ The MVP is **operational as a free-tier pilot**: all ten MVP modules (M1–M10) 
 - **0050 auth redirects:** Login `next` param; layout guards — [Auth redirect hardening](./0050-auth-redirect-hardening.md)
 - **0051 staff task history:** Lazy paginated history API + S-10 History section — [Paginated completed task history](./0051-staff-task-history-pagination.md)
 - **0052 Soi (Beta) branding:** `getAppDisplayName()`, admin Main/Advanced nav sections — [Soi (Beta) branding and admin nav reorder](./0052-soi-branding-beta.md)
+- **0053 case document prep (docs):** ADR-0021 + `docs/templates/` planning (registry, fields, wizard flows) — [Case document preparation ADR and planning docs](./0053-case-document-preparation-adr-and-docs.md)
+- **0054 FM + SKD_OUT_UK + dependant relationship:** Migration 00047; relationship dropdown; CHECK constraint — [FM + SKD_OUT_UK application types and dependant relationship dropdown](./0054-fm-skd-out-uk-and-dependant-relationship.md)
+- **0055 case_document_preparations:** Migration 00048; RLS mirrors case access; UNIQUE(case_id, kind) — [case_document_preparations table and RLS](./0055-case-document-preparations-db.md)
+- **0056 document registry + merge lib:** `src/lib/documents/`; tokenised templates; unit fixtures — [Document registry and merge/render lib](./0056-document-registry-and-merge-lib.md)
+- **0057 DOCX generation:** letterhead shell merge + plain parental DOCX; unit tests — [DOCX generation (letterhead vs plain parental)](./0057-docx-generation.md)
+- **0058 PDF generation:** plain layout from merged text; unit tests — [PDF generation (plain layout)](./0058-pdf-generation.md)
+- **0059 case documents API:** list/upsert/download routes + server lib — [Case document preparation API](./0059-case-documents-api.md)
+- **0060 case detail document wizard UI:** Prepare documents section + step wizard — [Case detail document preparation UI](./0060-case-detail-document-wizard-ui.md)
+- **0061 admin letterhead upload:** Storage bucket + Settings upload; DOCX export uses custom shell — [Admin letterhead upload (Settings)](./0061-admin-letterhead-upload.md)
 
 ## Not yet specified
 
@@ -87,5 +96,5 @@ The MVP is **operational as a free-tier pilot**: all ten MVP modules (M1–M10) 
 - **Old lawcrm application code** — disposable per [ADR-0012](../../docs/adr/0012-greenfield-rebuild-of-application-code.md); never a reference.
 - **Phase 2 Advanced (Sprints 9–14, M11–M15):** leave management ([ADR-0001](../../docs/adr/0001-leave-management-deferred-to-phase-2.md)), realtime board + drag-and-drop ([ADR-0003](../../docs/adr/0003-realtime-split-notifications-mvp-board-advanced.md)), overtime, audit log, extensions, analytics.
 - **Phase 3 Future:** SMS/email notifications, dark mode, config-driven task lifecycle, half-day leave, public holiday calendar.
-- **All phases** ([docs/README.md](../../docs/README.md)): document storage, payment processing, multi-tenant.
+- **All phases** ([docs/README.md](../../docs/README.md)): general client document archive/storage, payment processing, multi-tenant. *Narrow exception:* on-demand generated letter export + saved prep metadata (ADR-0021, tickets 0053+).
 - **Spec re-audits** — the docs are locked; gaps found mid-build get the smallest spec-consistent fix plus an ADR if architectural (plan §A.2.7).

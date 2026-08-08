@@ -1,0 +1,17 @@
+{
+  "answers": {
+    "applicant_name": "John Doe",
+    "applicant_title": "Mr",
+    "uan": "1212-0001-xxxx-xxxx",
+    "applicant_pronoun_object": "him",
+    "applicant_pronoun_possessive": "his",
+    "present_date": "2026-08-03"
+  },
+  "expectedSubstrings": [
+    "3rd August 2026",
+    "UAN: 1212-0001-xxxx-xxxx",
+    "Mr John Doe",
+    "his skilled worker visa application",
+    "continue progressing in his career"
+  ]
+}

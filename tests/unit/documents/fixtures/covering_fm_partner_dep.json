@@ -1,0 +1,17 @@
+{
+  "answers": {
+    "applicant_name": "John Doe",
+    "applicant_title": "Mr",
+    "partner_name": "Jane Doe",
+    "partner_title": "Mrs",
+    "uan": "1212-0001-xxxx-xxxx",
+    "present_date": "2026-06-18"
+  },
+  "expectedSubstrings": [
+    "18th June 2026",
+    "Mr John Doe",
+    "Mrs Jane Doe",
+    "Partner dependant visa application under family route",
+    "genuineness of the relationship"
+  ]
+}

@@ -90,7 +90,7 @@ describe('senior review (ticket 0018, EP-17)', () => {
     const { data, error } = await senior.rpc('submit_senior_review', {
       p_task_id: task8Id,
       p_outcome: 'approved',
-      p_revision_notes: null,
+      p_revision_notes: undefined,
     });
 
     expect(error).toBeNull();
@@ -206,7 +206,7 @@ describe('senior review (ticket 0018, EP-17)', () => {
     const { error } = await staff.rpc('submit_senior_review', {
       p_task_id: task8Id,
       p_outcome: 'approved',
-      p_revision_notes: null,
+      p_revision_notes: undefined,
     });
 
     expect(error).not.toBeNull();
@@ -222,7 +222,7 @@ describe('senior review (ticket 0018, EP-17)', () => {
     const { data, error } = await admin.rpc('submit_senior_review', {
       p_task_id: task8Id,
       p_outcome: 'approved',
-      p_revision_notes: null,
+      p_revision_notes: undefined,
     });
 
     expect(error).toBeNull();
@@ -239,7 +239,7 @@ describe('senior review (ticket 0018, EP-17)', () => {
     const { error } = await bless.rpc('submit_senior_review', {
       p_task_id: task8Id,
       p_outcome: 'approved',
-      p_revision_notes: null,
+      p_revision_notes: undefined,
     });
 
     expect(error).not.toBeNull();

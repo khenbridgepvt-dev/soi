@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -63,6 +63,87 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      case_document_preparations: {
+        Row: {
+          answers: Json
+          case_id: string
+          created_at: string
+          created_by: string
+          id: string
+          kind: string
+          merged_html: string | null
+          merged_text: string
+          updated_at: string
+          updated_by: string
+          variant_id: string
+          wizard_schema_id: string
+        }
+        Insert: {
+          answers?: Json
+          case_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+          kind: string
+          merged_html?: string | null
+          merged_text?: string
+          updated_at?: string
+          updated_by: string
+          variant_id: string
+          wizard_schema_id: string
+        }
+        Update: {
+          answers?: Json
+          case_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          kind?: string
+          merged_html?: string | null
+          merged_text?: string
+          updated_at?: string
+          updated_by?: string
+          variant_id?: string
+          wizard_schema_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_document_preparations_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_document_preparations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_document_preparations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_staff_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_document_preparations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_document_preparations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_staff_view"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cases: {
         Row: {
@@ -824,7 +905,10 @@ export type Database = {
     Functions: {
       accept_lead: { Args: { p_case_id: string }; Returns: Json }
       check_case_completion: { Args: { p_case_id: string }; Returns: boolean }
-      check_task_prerequisites: { Args: { p_task_id: string }; Returns: undefined }
+      check_task_prerequisites: {
+        Args: { p_task_id: string }
+        Returns: undefined
+      }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       edit_case_reference: {
         Args: { p_case_id: string; p_new_reference: string }
@@ -832,40 +916,14 @@ export type Database = {
       }
       is_active_user: { Args: never; Returns: boolean }
       jwt_role: { Args: never; Returns: string }
+      purge_expired_records: {
+        Args: { p_retention_days?: number }
+        Returns: Json
+      }
       release_assignment_on_block: {
         Args: { p_task_id: string }
         Returns: number
       }
-      show_limit: { Args: never; Returns: number }
-      show_trgm: { Args: { "": string }; Returns: string[] }
-      staff_assigned_active_case_ids: { Args: never; Returns: string[] }
-      update_task_status: {
-        Args: {
-          p_task_id: string
-          p_new_status: Database["public"]["Enums"]["task_status"]
-        }
-        Returns: Json
-      }
-      submit_senior_review: {
-        Args: {
-          p_task_id: string
-          p_outcome: Database["public"]["Enums"]["senior_review_outcome"]
-          p_revision_notes?: string | null
-        }
-        Returns: Json
-      }
-      search_cases: {
-        Args: { p_query: string; p_limit?: number }
-        Returns: {
-          id: string
-          reference: string | null
-          client_name: string
-          status: Database["public"]["Enums"]["case_status"]
-          is_urgent: boolean
-          assigned_staff: string | null
-        }[]
-      }
-      soft_delete_case: { Args: { p_case_id: string }; Returns: Json }
       restore_archived_record: {
         Args: {
           p_id: string
@@ -873,7 +931,36 @@ export type Database = {
         }
         Returns: Json
       }
-      purge_expired_records: { Args: { p_retention_days?: number }; Returns: Json }
+      search_cases: {
+        Args: { p_limit?: number; p_query: string }
+        Returns: {
+          assigned_staff: string
+          client_name: string
+          id: string
+          is_urgent: boolean
+          reference: string
+          status: Database["public"]["Enums"]["case_status"]
+        }[]
+      }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
+      soft_delete_case: { Args: { p_case_id: string }; Returns: Json }
+      staff_assigned_active_case_ids: { Args: never; Returns: string[] }
+      submit_senior_review: {
+        Args: {
+          p_outcome: Database["public"]["Enums"]["senior_review_outcome"]
+          p_revision_notes?: string
+          p_task_id: string
+        }
+        Returns: Json
+      }
+      update_task_status: {
+        Args: {
+          p_new_status: Database["public"]["Enums"]["task_status"]
+          p_task_id: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       archive_record_type: "case" | "task" | "dependant"
@@ -1025,6 +1112,7 @@ export const Constants = {
   },
   public: {
     Enums: {
+      archive_record_type: ["case", "task", "dependant"],
       case_status: ["lead_pending", "active", "rejected", "completed"],
       excess_leave_handling: ["paid", "salary_deduction"],
       leave_status: ["pending", "approved", "rejected"],
