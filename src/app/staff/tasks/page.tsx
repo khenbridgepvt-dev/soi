@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import MyTasksView from '@/components/staff/MyTasksView';
 import { requireSessionWithRoles } from '@/lib/auth/require-login';
 
@@ -11,6 +12,10 @@ export default async function StaffTasksPage() {
     fallbackPath: '/staff/tasks',
     wrongRoleRedirect: '/schedule',
   });
+
+  if (role !== 'staff' && role !== 'senior') {
+    redirect('/schedule');
+  }
 
   return <MyTasksView userId={session.user.id} role={role} />;
 }
