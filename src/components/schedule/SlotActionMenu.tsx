@@ -66,9 +66,9 @@ export default function SlotActionMenu({
             onClick={onAddCustomTask}
             className="w-full rounded-full border border-border bg-surface px-5 py-3 text-left text-sm font-medium text-text hover:bg-page"
           >
-            Add custom task &amp; assign
+            Add team task &amp; assign
             <span className="mt-0.5 block text-xs font-normal text-text-secondary">
-              Create a one-off task on an active case, then book this slot
+              Create firm work on the team schedule for this slot
             </span>
           </button>
         </div>

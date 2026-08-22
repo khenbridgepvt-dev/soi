@@ -24,7 +24,7 @@ export default function AdminAppShell({
   return (
     <AppShell
       appName={appName}
-      dashboardHref="/dashboard"
+      dashboardHref="/schedule"
       navSections={navSections}
       activeHref={pathname}
       userEmail={userEmail}

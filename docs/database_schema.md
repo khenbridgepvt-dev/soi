@@ -178,6 +178,7 @@ ALTER TYPE notification_type ADD VALUE 'blocked_reminder';
 ALTER TYPE notification_type ADD VALUE 'appointment_alert';
 ALTER TYPE notification_type ADD VALUE 'reschedule_request';
 ALTER TYPE notification_type ADD VALUE 'reschedule_response';
+ALTER TYPE notification_type ADD VALUE 'task_status_changed';
 ```
 
 #### `reschedule_request_status`
@@ -503,6 +504,8 @@ Each case has exactly one non-deleted task per sequence number.
 - **Completion protection (MVP):** Once `status = 'completed'`, staff cannot change it. Only admin can reverse (Advanced feature).
 - **Blocking:** When `status` changes to `blocked`, `blocked_at` is set to `now()`. When unblocked, `blocked_at` is cleared.
 - **Custom task limit:** A maximum of 5 custom tasks (`is_custom = true`) may be added per case. Enforced by API and database trigger.
+
+**Realtime (0097):** `tasks` is in the `supabase_realtime` publication (migration `00056_tasks_realtime.sql`). Staff receive events for assigned rows via RLS + client filter (`assigned_to=eq.{userId}`); admin receives broader updates. Clients invalidate schedule, staff dashboard, and My tasks query keys on status / assignee / overdue changes.
 
 ---
 

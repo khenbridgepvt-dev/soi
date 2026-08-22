@@ -6,9 +6,9 @@ import {
 
 describe('getDashboardPathForRole', () => {
   it.each([
-    ['admin', '/dashboard'],
-    ['staff', '/staff/dashboard'],
-    ['senior', '/staff/dashboard'],
+    ['admin', '/schedule'],
+    ['staff', '/staff/tasks'],
+    ['senior', '/staff/tasks'],
   ] as const)('maps %s to %s', (role, expected) => {
     expect(getDashboardPathForRole(role)).toBe(expected);
   });
@@ -48,7 +48,7 @@ describe('getRouteDecision', () => {
     ).toEqual({ action: 'redirect', url: '/login' });
   });
 
-  it('redirects authenticated admin from /login to /dashboard (TC-008)', () => {
+  it('redirects authenticated admin from /login to /schedule (TC-008)', () => {
     expect(
       getRouteDecision({
         pathname: '/login',
@@ -56,10 +56,10 @@ describe('getRouteDecision', () => {
         role: 'admin',
         isActive: true,
       }),
-    ).toEqual({ action: 'redirect', url: '/dashboard' });
+    ).toEqual({ action: 'redirect', url: '/schedule' });
   });
 
-  it('redirects authenticated staff from /login to /staff/dashboard (TC-009)', () => {
+  it('redirects authenticated staff from /login to /staff/tasks (TC-009)', () => {
     expect(
       getRouteDecision({
         pathname: '/login',
@@ -67,10 +67,10 @@ describe('getRouteDecision', () => {
         role: 'staff',
         isActive: true,
       }),
-    ).toEqual({ action: 'redirect', url: '/staff/dashboard' });
+    ).toEqual({ action: 'redirect', url: '/staff/tasks' });
   });
 
-  it('redirects authenticated admin from /app to /dashboard', () => {
+  it('redirects authenticated admin from /app to /schedule', () => {
     expect(
       getRouteDecision({
         pathname: '/app',
@@ -78,10 +78,10 @@ describe('getRouteDecision', () => {
         role: 'admin',
         isActive: true,
       }),
-    ).toEqual({ action: 'redirect', url: '/dashboard' });
+    ).toEqual({ action: 'redirect', url: '/schedule' });
   });
 
-  it('redirects staff from /dashboard to /staff/dashboard (TC-006)', () => {
+  it('redirects staff from /dashboard to /staff/tasks (TC-006)', () => {
     expect(
       getRouteDecision({
         pathname: '/dashboard',
@@ -89,10 +89,10 @@ describe('getRouteDecision', () => {
         role: 'staff',
         isActive: true,
       }),
-    ).toEqual({ action: 'redirect', url: '/staff/dashboard' });
+    ).toEqual({ action: 'redirect', url: '/staff/tasks' });
   });
 
-  it('redirects staff from /settings/application-types to /staff/dashboard', () => {
+  it('redirects staff from /settings/application-types to /staff/tasks', () => {
     expect(
       getRouteDecision({
         pathname: '/settings/application-types',
@@ -100,10 +100,10 @@ describe('getRouteDecision', () => {
         role: 'staff',
         isActive: true,
       }),
-    ).toEqual({ action: 'redirect', url: '/staff/dashboard' });
+    ).toEqual({ action: 'redirect', url: '/staff/tasks' });
   });
 
-  it('redirects staff from /cases to /staff/dashboard', () => {
+  it('redirects staff from /cases to /staff/tasks', () => {
     expect(
       getRouteDecision({
         pathname: '/cases',
@@ -111,10 +111,10 @@ describe('getRouteDecision', () => {
         role: 'staff',
         isActive: true,
       }),
-    ).toEqual({ action: 'redirect', url: '/staff/dashboard' });
+    ).toEqual({ action: 'redirect', url: '/staff/tasks' });
   });
 
-  it('redirects admin from /staff/dashboard to /dashboard', () => {
+  it('redirects admin from /staff/dashboard to /schedule', () => {
     expect(
       getRouteDecision({
         pathname: '/staff/dashboard',
@@ -122,7 +122,7 @@ describe('getRouteDecision', () => {
         role: 'admin',
         isActive: true,
       }),
-    ).toEqual({ action: 'redirect', url: '/dashboard' });
+    ).toEqual({ action: 'redirect', url: '/schedule' });
   });
 
   it('allows admin on /dashboard', () => {
@@ -166,7 +166,18 @@ describe('getRouteDecision', () => {
         role: 'staff',
         isActive: true,
       }),
-    ).toEqual({ action: 'redirect', url: '/staff/dashboard' });
+    ).toEqual({ action: 'redirect', url: '/staff/tasks' });
+  });
+
+  it('allows staff on /staff/tasks', () => {
+    expect(
+      getRouteDecision({
+        pathname: '/staff/tasks',
+        isAuthenticated: true,
+        role: 'staff',
+        isActive: true,
+      }),
+    ).toEqual({ action: 'allow' });
   });
 
   it('redirects deactivated session to /login', () => {

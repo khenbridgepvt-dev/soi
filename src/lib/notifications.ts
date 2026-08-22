@@ -3,6 +3,7 @@ import type { Database } from '@/types/database';
 import { createServiceClient } from '@/lib/supabase/service';
 import {
   buildDuAlertNotificationRows,
+  buildFirmTaskCompletedNotificationRows,
   buildRevisionStaffNotificationRows,
   buildSeniorRevisionAdminAlertRows,
   buildLeadRejectedNotificationRows,
@@ -318,6 +319,41 @@ export async function fanoutTaskOverdueNotification(input: {
 }): Promise<number> {
   const rows = buildTaskOverdueNotificationRows(input);
   return insertNotificationRows(rows, input.service);
+}
+
+/** ADR-0023 / ticket 0098: notify active admins when staff complete a firm task. */
+export async function fanoutFirmTaskCompletedAdminNotification(input: {
+  taskId: string;
+  caseId: string;
+  taskName: string;
+  staffName: string;
+  slotStartTime?: string | null;
+  slotEndTime?: string | null;
+  service?: SupabaseClient<Database>;
+}): Promise<number> {
+  const client = input.service ?? createServiceClient();
+
+  const { data: admins, error } = await client
+    .from('profiles')
+    .select('id')
+    .eq('role', 'admin')
+    .eq('is_active', true);
+
+  if (error || !admins?.length) {
+    return 0;
+  }
+
+  const rows = buildFirmTaskCompletedNotificationRows({
+    adminIds: admins.map((admin) => admin.id),
+    taskId: input.taskId,
+    caseId: input.caseId,
+    taskName: input.taskName,
+    staffName: input.staffName,
+    slotStartTime: input.slotStartTime,
+    slotEndTime: input.slotEndTime,
+  });
+
+  return insertNotificationRows(rows, client);
 }
 
 /** ADR-0007: notify staff and admins during the DU escalation ladder. */

@@ -9,6 +9,7 @@ import AssignTaskModal, {
 import CustomTaskAssignModal, {
   type CustomTaskAssignPrefill,
 } from '@/components/schedule/CustomTaskAssignModal';
+import TeamWorkloadStrip from '@/components/schedule/TeamWorkloadStrip';
 import SlotActionMenu from '@/components/schedule/SlotActionMenu';
 import ScheduleLegend from '@/components/schedule/ScheduleLegend';
 import SlotBlock, { type SlotBlockState } from '@/components/schedule/SlotBlock';
@@ -27,6 +28,9 @@ import {
 } from '@/lib/schedule/assignment-label';
 import { REFETCH_INTERVAL_MS, queryKeys } from '@/lib/query/keys';
 import { useScheduleRealtime } from '@/lib/hooks/use-schedule-realtime';
+import { useTasksRealtime } from '@/lib/hooks/use-tasks-realtime';
+import { buildScheduleAssignPrefill } from '@/lib/schedule/build-assign-prefill';
+import { buildTeamWorkloadSummaries } from '@/lib/schedule/team-workload-summary';
 import { addDays, formatLongDate, minutesBetween, todayISODate } from '@/lib/utils/dates';
 
 /** 36px pill (DS-1) + 4px vertical gap between pills (design_system §6). */
@@ -62,6 +66,7 @@ type ScheduleAssignment = {
   end_time: string;
   duration_minutes: number;
   is_urgent: boolean;
+  is_overdue?: boolean;
   case_deleted: boolean;
   task_deleted: boolean;
   case_is_internal: boolean;
@@ -157,6 +162,7 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useScheduleRealtime({ viewedDate: date, userId, role: 'admin' });
+  useTasksRealtime({ userId, role: 'admin' });
 
   const {
     data: payload,
@@ -183,6 +189,28 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
 
   const timeline = payload?.grid.times ?? [];
   const staff = useMemo(() => payload?.staff ?? [], [payload]);
+
+  const workloadSummaries = useMemo(
+    () => buildTeamWorkloadSummaries(staff, date),
+    [staff, date],
+  );
+
+  const assignTaskDisabled = isLoading || staff.length === 0;
+
+  function openCustomTaskAssign(prefill: CustomTaskAssignPrefill) {
+    setCustomTaskModal({ open: true, prefill });
+    setSelected(null);
+    setSlotAction({ open: false, slot: null });
+  }
+
+  function handleHeaderAssignTask() {
+    const prefill = buildScheduleAssignPrefill(staff, date);
+    if (!prefill) {
+      return;
+    }
+
+    openCustomTaskAssign(prefill);
+  }
 
   const gridTemplateColumns = `${GUTTER_WIDTH}px repeat(${Math.max(staff.length, 1)}, minmax(${COLUMN_MIN_WIDTH}px, 1fr))`;
 
@@ -216,10 +244,10 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
               state="booked"
               className={
                 assignment
-                  ? scheduleAssignmentPillClassName(
-                      assignment,
-                      isDeleted ? 'opacity-80' : undefined,
-                    )
+                  ? scheduleAssignmentPillClassName(assignment, {
+                      viewedDate: date,
+                      extra: isDeleted ? 'opacity-80' : undefined,
+                    })
                   : undefined
               }
               label={
@@ -238,7 +266,7 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
                 <span className="flex items-center gap-1">
                   {assignment && (
                     <span
-                      className={`inline-block h-2 w-2 shrink-0 rounded-full ${scheduleAssignmentStatusDotClass(assignment)}`}
+                      className={`inline-block h-2 w-2 shrink-0 rounded-full ${scheduleAssignmentStatusDotClass(assignment, date)}`}
                       aria-hidden
                     />
                   )}
@@ -324,7 +352,17 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
+          <button
+            type="button"
+            onClick={handleHeaderAssignTask}
+            disabled={assignTaskDisabled}
+            className="min-h-[44px] w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+          >
+            + Assign task
+          </button>
+
+          <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => setDate((current) => addDays(current, -1))}
@@ -359,8 +397,11 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
             aria-label="Jump to date"
             className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-text"
           />
+          </div>
         </div>
       </div>
+
+      <TeamWorkloadStrip summaries={workloadSummaries} />
 
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <ScheduleLegend />
@@ -481,15 +522,12 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
           }
 
           setSlotAction({ open: false, slot: null });
-          setCustomTaskModal({
-            open: true,
-            prefill: {
-              staffId: slot.staffId,
-              staffName: slot.staffName,
-              date,
-              startTime: slot.start,
-              durationMinutes: minutesBetween(slot.start, slot.end),
-            },
+          openCustomTaskAssign({
+            staffId: slot.staffId,
+            staffName: slot.staffName,
+            date,
+            startTime: slot.start,
+            durationMinutes: minutesBetween(slot.start, slot.end),
           });
         }}
       />
@@ -510,6 +548,7 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
       />
 
       <CustomTaskAssignModal
+        variant="team"
         open={customTaskModal.open}
         prefill={customTaskModal.prefill}
         onClose={() => {

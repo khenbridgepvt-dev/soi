@@ -107,7 +107,12 @@ function mapHistoryRow(row: RawTaskRow): StaffDashboardTask {
 export async function fetchStaffDashboardHistory(
   client: SupabaseClient<Database>,
   staffId: string,
-  options: { limit?: number; cursor?: string | null; now?: Date } = {},
+  options: {
+    limit?: number;
+    cursor?: string | null;
+    now?: Date;
+    internalOnly?: boolean;
+  } = {},
 ): Promise<StaffDashboardHistoryPayload> {
   const limit = clampHistoryLimit(options.limit);
   const decodedCursor = options.cursor ? decodeHistoryCursor(options.cursor) : null;
@@ -123,7 +128,13 @@ export async function fetchStaffDashboardHistory(
     .eq('is_deleted', false)
     .eq('status', 'completed')
     .eq('cases.status', 'active')
-    .eq('cases.is_deleted', false)
+    .eq('cases.is_deleted', false);
+
+  if (options.internalOnly) {
+    query = query.eq('cases.is_internal', true);
+  }
+
+  query = query
     .order('completed_at', { ascending: false })
     .order('id', { ascending: false })
     .limit(limit + 1);

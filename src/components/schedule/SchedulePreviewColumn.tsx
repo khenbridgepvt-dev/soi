@@ -41,6 +41,7 @@ type SchedulePreviewColumnProps = {
   gridTimes: TimeInterval[];
   selectedStart: string | null;
   conflictStart: string | null;
+  viewedDate?: string;
   onSelectSlot: (start: string) => void;
   onOpenCase?: (caseId: string) => void;
 };
@@ -61,6 +62,7 @@ export default function SchedulePreviewColumn({
   gridTimes,
   selectedStart,
   conflictStart,
+  viewedDate,
   onSelectSlot,
   onOpenCase,
 }: SchedulePreviewColumnProps) {
@@ -90,7 +92,9 @@ export default function SchedulePreviewColumn({
           <SlotBlock
             state="booked"
             className={
-              assignment ? scheduleAssignmentPillClassName(assignment) : undefined
+              assignment
+                ? scheduleAssignmentPillClassName(assignment, { viewedDate })
+                : undefined
             }
             label={
               assignment

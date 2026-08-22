@@ -13,6 +13,7 @@ export async function GET(request: Request) {
   const limitParam = searchParams.get('limit');
   const limit = limitParam ? Number(limitParam) : undefined;
   const cursor = searchParams.get('cursor');
+  const internalOnly = searchParams.get('internalOnly') === 'true';
 
   if (limitParam && (Number.isNaN(limit) || limit! < 1)) {
     return apiError(400, 'VALIDATION_ERROR', 'limit must be a positive number.', [
@@ -24,6 +25,7 @@ export async function GET(request: Request) {
     const data = await fetchStaffDashboardHistory(auth.supabase, auth.userId, {
       limit,
       cursor,
+      internalOnly,
     });
 
     return Response.json({ data });

@@ -1,0 +1,159 @@
+# Team Task OS — product guide
+
+**ADR:** [0023-team-task-os-ui-pivot.md](./adr/0023-team-task-os-ui-pivot.md)  
+**Epic:** tickets [0090](../tracker/issues/0090-team-task-os-adr.md)–[0099](../tracker/issues/0099-team-workload-strip.md)  
+**Paused:** [0080–0086](./REMINDERS_AND_CALENDAR.md) (reminders calendar epic UI)
+
+Soi's **primary product** after this pivot is a **team task calendar**: admins schedule firm work; staff see **My tasks** and complete them; the calendar uses **status-first full-cell colours**.
+
+Case CRM (cases, 13-task checklist, documents, leads) stays in the product under **Advanced** navigation — not deleted.
+
+---
+
+## 1. Target admin screen — Team Schedule
+
+**Route:** `/schedule` (default after admin login)
+
+| Zone | Content |
+|------|---------|
+| Header | Date picker · **+ Assign task** CTA (0092) · view controls |
+| Workload strip | Per staff member: in progress / done today / overdue (0099) — **implemented** |
+| Grid | TLS day grid (S-04) — one column per staff member |
+| Cells | **Full background colour** by task status (see §3) |
+| Slot actions | Click empty slot → assign; click task → detail / status (existing) |
+
+**Assign flow (0093):** Opens simplified modal — task name, duration, staff + slot prefilled from grid. Creates firm task via `POST /api/schedule/adhoc-task-assign` on `FIRM-GENERAL`. **No** case search, **no** audit link to client case task.
+
+**Realtime:** Assignment INSERT/UPDATE/DELETE (0075) + task status UPDATE (0097) invalidate schedule and My tasks queries. **Implemented** — migration `00056_tasks_realtime.sql`, `useTasksRealtime` hook; 60s poll fallback when disconnected.
+
+---
+
+## 2. Target staff screen — My tasks
+
+**Route:** `/staff/tasks` (default after staff login)
+
+| Zone | Content |
+|------|---------|
+| Tabs | **Not started** · **In progress** · **Done** |
+| Row | Task name · scheduled time (if assigned) · **Start** / **Done** actions |
+| Link | **My calendar** → `/staff/calendar` (day view, same status colours) |
+
+**Data source (v1):** `GET /api/dashboard/staff?view=today` → `firm_tasks` (FIRM-GENERAL / `cases.is_internal` only). Completed firm tasks via `GET /api/dashboard/staff/history?internalOnly=true`. **Implemented in ticket 0095.** No `staff_personal_tasks` UI.
+
+**Actions:**
+
+- **Start** → `PATCH /api/tasks/:id/status` `{ "status": "in_progress" }`
+- **Done** → `{ "status": "completed" }` (direct complete allowed for internal case per 0047)
+
+---
+
+## 3. Calendar colour table (status-first, full cell)
+
+Applies to **admin Team Schedule** and **staff My calendar** (0096). Cell **background** is the primary signal; text remains readable. **Implemented** in `src/lib/tasks/team-task-status-colour.ts` (ticket 0096).
+
+| Status | Colour | Token (proposed) | When |
+|--------|--------|------------------|------|
+| Not started | Grey | `status.notStarted` | `status = not_started`, slot in future or today |
+| In progress | Yellow | `status.inProgress` | `status = in_progress` |
+| Completed | Green | `status.completed` | `status = completed` |
+| Overdue | Red | `status.overdue` | `is_overdue = true` or slot end in past and not completed |
+| Blocked | Brown/tan | `status.blocked` | `status = blocked` (existing token) |
+
+**Note:** ADR-0022 amber/green/red **reminder** semantics still apply on **Reminders list** and task board where not superseded by this ticket. Schedule grid adopts **status-first** colours above.
+
+**Urgent case flag:** May add border or icon; does not override completed green.
+
+---
+
+## 4. Navigation map
+
+### Admin
+
+| Section | Items |
+|---------|--------|
+| **Main** | Team Schedule (`/schedule`) · Team (`/team`) |
+| **Advanced** | Dashboard (`/dashboard`) · Cases · Task Board · Reminders · Blocked Tasks · Archive · Settings (application types, letterhead, staff, profile) |
+
+Login redirect: **`/schedule`** (0091).
+
+### Staff
+
+| Section | Items |
+|---------|--------|
+| **Main** | My tasks (`/staff/tasks`) · My calendar (`/staff/calendar`) |
+| **Advanced** | Dashboard (`/staff/dashboard`) · Cases (assigned) · Reminders · My Profile |
+
+Login redirect: **`/staff/tasks`** (0094).
+
+---
+
+## 5. Epic ticket table (0090–0099)
+
+| Ticket | Scope (one line) |
+|--------|------------------|
+| **0090** | ADR-0023 + this doc + tracker stubs |
+| **0091** | Admin nav restructure; login → `/schedule` |
+| **0092** | + Assign task button on schedule header |
+| **0093** | Simplified firm-only assign modal; hide case audit link |
+| **0094** | Staff nav + login → `/staff/tasks` |
+| **0095** | My tasks hub: tabs, Start/Done, firm_tasks API |
+| **0096** | Full-cell status calendar colours (grey/yellow/green/red) |
+| **0097** | Realtime on `tasks` + invalidation hook — **implemented** |
+| **0098** | Admin notification when staff completes firm task — **implemented** |
+| **0099** | Team workload strip on admin schedule — **implemented** |
+
+**Dependency order:** 0090 → 0091 → 0092–0093 (parallel) → 0094 → 0095 → 0096 → 0097 → 0098–0099 (parallel).
+
+---
+
+## 6. Paused work (0080–0086)
+
+| Ticket | Original scope | Pause reason |
+|--------|----------------|--------------|
+| 0080 | Personal tasks UI | Firm adhoc is v1 task model |
+| 0081–0082 | Week/month views | After Team OS core |
+| 0083–0084 | Carry-over / yesterday strip | After Team OS core |
+| 0085–0086 | Tests / polish | Re-scope after 0099 |
+
+**0079 `staff_personal_tasks` + EP-67:** Database and API **shipped**; **no UI** until epic resumes after Team OS.
+
+---
+
+## 7. Manual smoke checklist (full epic)
+
+Run after **0099** on pilot/staging.
+
+### Admin
+
+1. Login → lands on **Team Schedule** (`/schedule`), not dashboard.
+2. **+ Assign task** → create firm task on empty slot → appears on grid with **grey** cell.
+3. Second admin/staff marks task in progress → cell turns **yellow** without full page refresh (0097).
+4. Staff completes task → cell **green**; admin receives notification (0098) — **implemented** (`task_status_changed`).
+5. Overdue firm task shows **red** cell.
+6. **Advanced → Cases** still opens case list; no regression.
+7. Workload strip shows per-person counts for the day (0099) — **implemented**.
+
+### Staff
+
+1. Login → lands on **My tasks** (`/staff/tasks`).
+2. **Not started** tab lists assigned firm tasks; **Start** moves to In progress.
+3. **Done** completes task; row moves to Done tab.
+4. **My calendar** shows same task with matching cell colour.
+5. Toast/sound on new assignment notification (0076).
+
+### Regression
+
+- `POST /api/schedule/adhoc-task-assign` unchanged contract.
+- Case accept, document wizard, task board still reachable from Advanced.
+- `GET /api/personal-tasks` works via API but has no nav entry (0079 paused).
+
+---
+
+## 8. Doc updates per downstream ticket
+
+| Artifact | Tickets |
+|----------|---------|
+| `ui_wireframe_spec.md` | 0091, 0092, 0095, 0096 |
+| `design_system.md` | 0096 |
+| `api_specification.md` | 0098 (notification type) |
+| `USER_WORKFLOWS.md` | 0099 or follow-up polish |

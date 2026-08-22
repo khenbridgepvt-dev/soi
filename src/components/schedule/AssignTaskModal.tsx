@@ -646,6 +646,7 @@ export default function AssignTaskModal({
                     gridTimes={schedule.grid.times}
                     selectedStart={startTime}
                     conflictStart={conflictStart}
+                    viewedDate={date}
                     onSelectSlot={(start) => {
                       setStartTime(start);
                       setConflictMessage(null);

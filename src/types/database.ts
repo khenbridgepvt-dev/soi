@@ -1173,6 +1173,7 @@ export type Database = {
         | "du_alert"
         | "reschedule_request"
         | "reschedule_response"
+        | "task_status_changed"
       online_status: "online" | "break" | "offline"
       reschedule_request_status:
         | "pending"
@@ -1329,6 +1330,7 @@ export const Constants = {
         "du_alert",
         "reschedule_request",
         "reschedule_response",
+        "task_status_changed",
       ],
       online_status: ["online", "break", "offline"],
       reschedule_request_status: ["pending", "approved", "rejected", "cancelled"],

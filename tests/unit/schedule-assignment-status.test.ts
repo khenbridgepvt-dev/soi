@@ -4,6 +4,7 @@ import {
   scheduleAssignmentStatusDotClass,
   scheduleAssignmentStatusLabel,
   scheduleAssignmentStatusSuffix,
+  scheduleAssignmentTeamColour,
 } from '@/lib/schedule/assignment-status';
 
 describe('scheduleAssignmentStatusLabel', () => {
@@ -65,29 +66,41 @@ describe('isScheduleAssignmentDeleted', () => {
   });
 });
 
+describe('scheduleAssignmentTeamColour', () => {
+  it('maps status-first colours for schedule cells', () => {
+    expect(scheduleAssignmentTeamColour({ task_status: 'blocked' })).toBe('blocked');
+    expect(scheduleAssignmentTeamColour({ task_status: 'completed' })).toBe('green');
+    expect(scheduleAssignmentTeamColour({ task_status: 'in_progress' })).toBe('yellow');
+    expect(scheduleAssignmentTeamColour({ task_status: 'not_started' })).toBe('grey');
+    expect(
+      scheduleAssignmentTeamColour({
+        task_status: 'in_progress',
+        is_overdue: true,
+      }),
+    ).toBe('red');
+  });
+});
+
 describe('scheduleAssignmentStatusDotClass', () => {
-  it('maps operational colours for active tasks', () => {
+  it('maps team status dot colours', () => {
     expect(
       scheduleAssignmentStatusDotClass({ task_status: 'blocked' }),
-    ).toBe('bg-error');
+    ).toBe('bg-status-blocked-border');
     expect(
       scheduleAssignmentStatusDotClass({ task_status: 'completed' }),
     ).toBe('bg-status-onTrack-border');
     expect(
-      scheduleAssignmentStatusDotClass({ task_status: 'in_progress', is_urgent: true }),
-    ).toBe('bg-error');
-    expect(
       scheduleAssignmentStatusDotClass({ task_status: 'in_progress' }),
     ).toBe('bg-[#B86E00]');
+    expect(
+      scheduleAssignmentStatusDotClass({ task_status: 'not_started' }),
+    ).toBe('bg-text-muted');
     expect(
       scheduleAssignmentStatusDotClass({
         task_status: 'in_progress',
         reminder_date: '2026-08-10',
       }, '2026-08-17'),
-    ).toBe('bg-error');
-    expect(
-      scheduleAssignmentStatusDotClass({ task_status: 'not_started' }),
-    ).toBe('bg-status-onTrack-border');
+    ).toBe('bg-[#B86E00]');
   });
 });
 

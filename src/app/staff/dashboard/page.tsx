@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default async function StaffDashboardPage() {
   const { session } = await requireSessionWithRoles(['staff', 'senior'], {
     fallbackPath: '/staff/dashboard',
-    wrongRoleRedirect: '/dashboard',
+    wrongRoleRedirect: '/schedule',
   });
   const supabase = await createClient();
 

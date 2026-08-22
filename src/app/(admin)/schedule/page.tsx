@@ -9,8 +9,8 @@ export const metadata: Metadata = {
 /** S-04 · Scheduling Grid */
 export default async function SchedulePage() {
   const sessionWithRole = await requireSessionWithRoles(['admin'], {
-    fallbackPath: '/dashboard',
-    wrongRoleRedirect: '/staff/dashboard',
+    fallbackPath: '/schedule',
+    wrongRoleRedirect: '/staff/tasks',
   });
 
   return <ScheduleGridView userId={sessionWithRole.session.user.id} />;

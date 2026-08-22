@@ -288,6 +288,43 @@ export function buildTaskOverdueNotificationRows(input: {
   ];
 }
 
+export function formatFirmTaskCompletedNotificationBody(input: {
+  staffName: string;
+  taskName: string;
+  slotStartTime?: string | null;
+  slotEndTime?: string | null;
+}): string {
+  const base = `${input.staffName} completed ${input.taskName}`;
+
+  if (input.slotStartTime && input.slotEndTime) {
+    return `${base} · ${input.slotStartTime}–${input.slotEndTime}`;
+  }
+
+  return base;
+}
+
+export function buildFirmTaskCompletedNotificationRows(input: {
+  adminIds: string[];
+  staffName: string;
+  taskName: string;
+  taskId: string;
+  caseId: string;
+  slotStartTime?: string | null;
+  slotEndTime?: string | null;
+}): NotificationRow[] {
+  const body = formatFirmTaskCompletedNotificationBody(input);
+
+  return input.adminIds.map((userId) => ({
+    user_id: userId,
+    type: 'task_status_changed',
+    title: 'Team task completed',
+    body,
+    is_urgent: false,
+    case_id: input.caseId,
+    task_id: input.taskId,
+  }));
+}
+
 export function buildDuAlertNotificationRows(input: {
   userId: string;
   taskId: string;

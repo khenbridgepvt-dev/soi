@@ -428,7 +428,7 @@ Admin: Leave Management (S-13) → Pending tab → Review → Approve/Reject
 ### S-04 · Scheduling Grid
 
 **Scope:** MVP  
-**Purpose:** Calendar-style view for admins to see all staff schedules and assign tasks to available time slots.
+**Purpose:** Calendar-style view for admins to see all staff schedules and assign tasks to available time slots. **Primary admin entry** after login (ADR-0023 Team Task OS).
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -466,6 +466,8 @@ Admin: Leave Management (S-13) → Pending tab → Review → Approve/Reject
 | Component | Detail |
 |-----------|--------|
 | **Date Selector** | Prev/Next day arrows + "Today" button. Clicking opens a date picker calendar. |
+| **+ Assign task** | Primary header CTA (Team Task OS). Opens **Assign team task** modal: name, optional description, duration, read-only slot — no case picker (ticket 0093). |
+| **Team workload strip** | Horizontal strip below header (ticket 0099): per staff — **in progress** (yellow), **done today** (green), **overdue** (red) counts for the viewed day. Updates with date picker and schedule refetch/Realtime. Optional link to `/team`. |
 | **Column per Staff** | One column per active staff member. Header shows: name, working hours. |
 | **Time Rows** | Hourly rows from earliest staff start time to latest staff end time. |
 | **Task Block** | Spans multiple rows proportional to duration. Shows: **task name** (primary), client or time range, duration. Internal/ad-hoc (`case_is_internal`): **task name · start–end** only — no case ref/client (ticket 0045). Status dot + label when applicable: `URGENT`, `BLOCKED`, `COMPLETED`, `DELETED` (ticket 0039/0040). Deleted case slots stay booked; admin click opens tombstone (S-06). Internal slots are non-clickable. |
@@ -906,7 +908,24 @@ Admin: Leave Management (S-13) → Pending tab → Review → Approve/Reject
 ### S-10 · Staff Dashboard
 
 **Scope:** MVP  
-**Purpose:** Landing page for staff. Shows prioritised task list with clear "next action" highlighting.
+**Purpose:** Advanced landing for staff client-case priority list (moved under Advanced nav in ADR-0023). Primary staff entry is **My tasks** (S-10b).
+
+### S-10b · My Tasks (Team Task OS)
+
+**Scope:** Team OS v1 (ticket 0095)  
+**Route:** `/staff/tasks` (default staff login)
+
+| Component | Detail |
+|-----------|--------|
+| **Tabs** | Not started · In progress · Done (firm tasks only) |
+| **Row** | Task name, optional description snippet, scheduled time, status left bar (grey/yellow/green prep for 0096) |
+| **Actions** | ✓ Done · ◉ Start — 44px touch targets; no case link for firm tasks |
+| **Done tab** | Paginated completed firm tasks via `GET /api/dashboard/staff/history?internalOnly=true` |
+| **Metrics** | Today count, Overdue (firm tasks) |
+| **Link** | My calendar → S-11 |
+
+**Scope:** MVP  
+**Purpose:** Legacy staff dashboard — prioritised **client** task list with clear "next action" highlighting. Firm tasks live on S-10b.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐

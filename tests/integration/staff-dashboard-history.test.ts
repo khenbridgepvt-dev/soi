@@ -39,7 +39,7 @@ describe('staff dashboard history (ticket 0051)', () => {
     await client.auth.signOut();
   });
 
-  it('returns completed firm and client tasks', async () => {
+  it('returns completed firm tasks when internalOnly is set', async () => {
     const { client: admin } = await signInAsRole('admin');
 
     const firmResult = await createAdhocTaskAssign(admin, {
@@ -83,13 +83,23 @@ describe('staff dashboard history (ticket 0051)', () => {
     await admin.auth.signOut();
 
     const { client: staff } = await signInAsRole('staff');
-    const history = await fetchStaffDashboardHistory(staff, ASHA_ID, { limit: 10 });
+    const history = await fetchStaffDashboardHistory(staff, ASHA_ID, {
+      limit: 10,
+      internalOnly: true,
+    });
 
     expect(history.items.some((task) => task.name === 'Archive inbox' && task.case_is_internal)).toBe(
       true,
     );
     expect(
       history.items.some(
+        (task) => task.name === 'History client task' && !task.case_is_internal,
+      ),
+    ).toBe(false);
+
+    const allHistory = await fetchStaffDashboardHistory(staff, ASHA_ID, { limit: 10 });
+    expect(
+      allHistory.items.some(
         (task) => task.name === 'History client task' && !task.case_is_internal,
       ),
     ).toBe(true);

@@ -2,14 +2,8 @@ import AppShell from '@/components/layout/AppShell';
 import QueryProvider from '@/components/providers/QueryProvider';
 import { getAppDisplayName } from '@/lib/app/display-name';
 import { requireSessionWithRoles } from '@/lib/auth/require-login';
+import { STAFF_NAV_SECTIONS } from '@/lib/nav/staff';
 import { createClient } from '@/lib/supabase/server';
-
-const STAFF_NAV = [
-  { href: '/staff/dashboard', label: 'Dashboard' },
-  { href: '/staff/calendar', label: 'My Calendar' },
-  { href: '/staff/reminders', label: 'Reminders' },
-  { href: '/staff/profile', label: 'My Profile' },
-];
 
 export default async function StaffLayout({
   children,
@@ -17,8 +11,8 @@ export default async function StaffLayout({
   children: React.ReactNode;
 }>) {
   const sessionWithRole = await requireSessionWithRoles(['staff', 'senior'], {
-    fallbackPath: '/staff/dashboard',
-    wrongRoleRedirect: '/dashboard',
+    fallbackPath: '/staff/tasks',
+    wrongRoleRedirect: '/schedule',
   });
   const appName = getAppDisplayName();
   const supabase = await createClient();
@@ -38,9 +32,9 @@ export default async function StaffLayout({
     <QueryProvider>
       <AppShell
         appName={appName}
-        dashboardHref="/staff/dashboard"
+        dashboardHref="/staff/tasks"
         casesBasePath="/staff/cases"
-        navSections={[{ items: STAFF_NAV }]}
+        navSections={STAFF_NAV_SECTIONS}
         userEmail={sessionWithRole.session.user.email}
         userId={sessionWithRole.session.user.id}
         onlineStatus={onlineStatus}

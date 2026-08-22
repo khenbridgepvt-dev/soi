@@ -46,4 +46,8 @@ export const queryKeys = {
     all: ['reminders'] as const,
     list: (filter: string) => ['reminders', filter] as const,
   },
+  staffTasks: {
+    dashboard: () => ['staffTasks', 'dashboard'] as const,
+    history: () => ['staffTasks', 'history'] as const,
+  },
 };

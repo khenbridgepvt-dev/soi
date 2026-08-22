@@ -77,10 +77,10 @@ describe('internal case guards (ticket 0047)', () => {
     const { client: staff } = await signInAsRole('staff');
     const dashboard = await fetchStaffDashboard(staff, ASHA_ID, 'all');
 
-    expect(dashboard.firm_tasks).toEqual([]);
-    expect(dashboard.priority_list.some((task) => task.name === 'Clear emails')).toBe(true);
+    expect(dashboard.firm_tasks.some((task) => task.name === 'Clear emails')).toBe(true);
+    expect(dashboard.priority_list.some((task) => task.name === 'Clear emails')).toBe(false);
 
-    const firmTask = dashboard.priority_list.find((task) => task.id === result.data.task_id);
+    const firmTask = dashboard.firm_tasks.find((task) => task.id === result.data.task_id);
     expect(firmTask?.case_is_internal).toBe(true);
     expect(firmTask?.description).toContain('Process shared inbox');
 

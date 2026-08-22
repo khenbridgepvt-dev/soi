@@ -10,8 +10,8 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }>) {
   const sessionWithRole = await requireSessionWithRoles(['admin'], {
-    fallbackPath: '/dashboard',
-    wrongRoleRedirect: '/staff/dashboard',
+    fallbackPath: '/schedule',
+    wrongRoleRedirect: '/staff/tasks',
   });
 
   return (

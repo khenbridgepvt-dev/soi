@@ -28,12 +28,12 @@ export type RouteDecisionInput = {
   isActive: boolean;
 };
 
-/** Role-appropriate dashboard landing path (TC-008 / TC-009). */
+/** Role-appropriate landing path after login (TC-008 / TC-009). */
 export function getDashboardPathForRole(role: AppRole): string {
   if (role === 'admin') {
-    return '/dashboard';
+    return '/schedule';
   }
-  return '/staff/dashboard';
+  return '/staff/tasks';
 }
 
 function normalizePath(pathname: string): string {
@@ -98,11 +98,11 @@ export function getRouteDecision(input: RouteDecisionInput): RouteDecision {
   }
 
   if (role === 'admin' && isStaffPath(path)) {
-    return { action: 'redirect', url: '/dashboard' };
+    return { action: 'redirect', url: '/schedule' };
   }
 
   if ((role === 'staff' || role === 'senior') && isAdminPath(path)) {
-    return { action: 'redirect', url: '/staff/dashboard' };
+    return { action: 'redirect', url: '/staff/tasks' };
   }
 
   return { action: 'allow' };

@@ -15,7 +15,7 @@ export default async function StaffCalendarPage() {
 
   const { role, session } = sessionWithRole;
   if (role !== 'staff' && role !== 'senior') {
-    redirect('/dashboard');
+    redirect('/schedule');
   }
 
   return <StaffDayCalendarView staffId={session.user.id} role={role} />;

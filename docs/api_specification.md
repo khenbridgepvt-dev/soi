@@ -916,6 +916,7 @@ Creates generic firm work on the hidden internal case (`FIRM-GENERAL`, ADR-0019)
 **Server-Side Effects (on `completed`):**
 1. Set `completed_at = now()`, `completed_by = auth.uid()`
 2. Check if all tasks (default + custom) for the case are now `completed` → if so, set `cases.status = 'completed'`, `cases.completed_at = now()`
+3. **Firm task (0098):** When staff/senior completes a task on the internal case (`FIRM-GENERAL`), fan out `task_status_changed` notifications to all active admins. Admin completions do not fan out. Client case completions do not fan out.
 
 **Response — `200 OK`:**
 
@@ -925,10 +926,13 @@ Creates generic firm work on the hidden internal case (`FIRM-GENERAL`, ADR-0019)
     "id": "uuid",
     "status": "in_progress",
     "updated_at": "2026-07-04T16:00:00.000Z",
-    "case_completed": false
+    "case_completed": false,
+    "notifications_sent": 0
   }
 }
 ```
+
+`notifications_sent` is included when firm-task completion fanout runs (may be `0` on notification failure).
 
 **Errors:**
 

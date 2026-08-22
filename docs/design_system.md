@@ -300,9 +300,23 @@ Board maps red → `overdue` / `urgent` tokens; blocked keeps ⊘ stripe (§4.2)
 ### S-11 · Staff day calendar
 
 - Single column time grid; same `SlotBlock` and task block tokens as S-04.
-- Booked pills use unified operational colours (green / amber / red — ADR-0022, ticket 0074).
+- Booked pills use **Team Task OS status-first full-cell colours** (grey / yellow / green / red — ADR-0023, ticket 0096); reminder-based colours remain on Reminders list and Advanced task board.
 - Current time: 2px horizontal rule `#C41E24` at 50% opacity, no animation.
 - Next-action task block: ring `0 0 0 2px #0F2B5B`.
+
+### §7.9 Team Task OS status colours (schedule + My tasks)
+
+Full **cell background** on S-04 / S-11 booked slots and matching list rows on `/staff/tasks`. Mapper: `src/lib/tasks/team-task-status-colour.ts`.
+
+| Status | Colour | Classes (summary) |
+|--------|--------|-------------------|
+| Not started | Grey | `!bg-page` + `border-border` |
+| In progress | Yellow | `!bg-[#FFF8E6]` + `#B86E00` border |
+| Completed | Green | `!bg-status-onTrack` |
+| Overdue | Red | `!bg-error-bg` |
+| Blocked | Brown/tan | `!bg-status-blocked-bg` |
+
+Precedence: completed → blocked → overdue (flag or slot end passed on viewed date) → in progress → not started. Reminders list and task board keep ADR-0022 operational colours via `task-colour.ts`.
 
 ---
 

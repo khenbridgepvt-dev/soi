@@ -2,6 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { INTERNAL_CASE_ID } from '@/lib/cases/internal-case';
+import {
+  formatCustomTaskAssignSuccessMessage,
+  getCustomTaskAssignModalTitle,
+  getCustomTaskAssignSubmitLabel,
+  showsCustomTaskAssignAuditSection,
+  type CustomTaskAssignVariant,
+} from '@/lib/schedule/custom-task-assign-ui';
 import { useInvalidateAfterMutation } from '@/lib/query/useInvalidateAfterMutation';
 import type { AssignableCaseGroup } from '@/lib/tasks/fetch-assignable-tasks';
 import {
@@ -26,6 +33,7 @@ export type CustomTaskAssignPrefill = {
 type CustomTaskAssignModalProps = {
   open: boolean;
   prefill: CustomTaskAssignPrefill | null;
+  variant?: CustomTaskAssignVariant;
   onClose: () => void;
   onAssigned: (message: string) => void;
 };
@@ -49,10 +57,12 @@ function durationToParts(totalMinutes: number): { hours: number; minutes: number
 export default function CustomTaskAssignModal({
   open,
   prefill,
+  variant = 'team',
   onClose,
   onAssigned,
 }: CustomTaskAssignModalProps) {
   const invalidate = useInvalidateAfterMutation();
+  const showAuditSection = showsCustomTaskAssignAuditSection(variant);
   const [caseGroups, setCaseGroups] = useState<AssignableCaseGroup[]>([]);
   const [auditExpanded, setAuditExpanded] = useState(false);
   const [caseSearch, setCaseSearch] = useState('');
@@ -90,6 +100,10 @@ export default function CustomTaskAssignModal({
 
     resetForm(prefill?.durationMinutes ?? MIN_ASSIGNMENT_MINUTES);
 
+    if (!showAuditSection) {
+      return;
+    }
+
     async function loadCases() {
       try {
         const response = await fetch('/api/tasks/assignable');
@@ -101,7 +115,7 @@ export default function CustomTaskAssignModal({
     }
 
     void loadCases();
-  }, [open, prefill?.durationMinutes, resetForm]);
+  }, [open, prefill?.durationMinutes, resetForm, showAuditSection]);
 
   const filteredCaseGroups = useMemo(() => {
     const normalized = caseSearch.trim().toLowerCase();
@@ -136,7 +150,7 @@ export default function CustomTaskAssignModal({
     Boolean(endTime) &&
     !durationInvalid &&
     !submitting &&
-    (!auditExpanded || !selectedCaseId || Boolean(linkedTaskId));
+    (!showAuditSection || !auditExpanded || !selectedCaseId || Boolean(linkedTaskId));
 
   async function handleSubmit() {
     if (!canSubmit || !prefill || !endTime) {
@@ -159,7 +173,7 @@ export default function CustomTaskAssignModal({
       return;
     }
 
-    if (auditExpanded && selectedCaseId && !linkedTaskId) {
+    if (showAuditSection && auditExpanded && selectedCaseId && !linkedTaskId) {
       setBannerError('Select a case task to record the audit link, or collapse the section.');
       return;
     }
@@ -177,7 +191,8 @@ export default function CustomTaskAssignModal({
           date: prefill.date,
           start_time: prefill.startTime,
           duration_minutes: durationMinutes,
-          linked_task_id: auditExpanded && linkedTaskId ? linkedTaskId : undefined,
+          linked_task_id:
+            showAuditSection && auditExpanded && linkedTaskId ? linkedTaskId : undefined,
         }),
       });
 
@@ -203,7 +218,7 @@ export default function CustomTaskAssignModal({
 
       const staffName = json.data.staff_name ?? prefill.staffName;
       const assignedTime = json.data.start_time ?? prefill.startTime;
-      onAssigned(`Ad-hoc task assigned to ${staffName} at ${assignedTime}.`);
+      onAssigned(formatCustomTaskAssignSuccessMessage(variant, staffName, assignedTime));
       onClose();
     } catch {
       setBannerError('Failed to create and assign ad-hoc task.');
@@ -227,14 +242,16 @@ export default function CustomTaskAssignModal({
         <div className="flex items-start justify-between border-b border-border px-5 py-4">
           <div>
             <h2 id="custom-task-assign-title" className="text-lg font-semibold text-text">
-              Add custom task &amp; assign
+              {getCustomTaskAssignModalTitle(variant)}
             </h2>
             <p className="mt-1 text-sm text-text-secondary">
               {prefill.staffName} · {formatLongDate(prefill.date)} · {prefill.startTime}
             </p>
-            <p className="text-sm text-text-secondary">
-              Generic firm work — not tied to a client case unless you add an audit link below.
-            </p>
+            {variant === 'advanced' && (
+              <p className="text-sm text-text-secondary">
+                Generic firm work — not tied to a client case unless you add an audit link below.
+              </p>
+            )}
           </div>
           <button
             type="button"
@@ -281,7 +298,11 @@ export default function CustomTaskAssignModal({
                 value={description}
                 rows={3}
                 onChange={(event) => setDescription(event.target.value)}
-                placeholder="Optional details for the calendar and audit note"
+                placeholder={
+                  variant === 'team'
+                    ? 'Optional details for the calendar'
+                    : 'Optional details for the calendar and audit note'
+                }
                 className={`w-full rounded-md border bg-surface px-3 py-2 text-sm ${descriptionError ? 'border-error' : 'border-border'}`}
               />
               {descriptionError && (
@@ -332,101 +353,103 @@ export default function CustomTaskAssignModal({
               </div>
             </div>
 
-            <div className="rounded-md border border-border">
-              <button
-                type="button"
-                onClick={() => {
-                  setAuditExpanded((value) => !value);
-                  if (auditExpanded) {
-                    setSelectedCaseId('');
-                    setLinkedTaskId('');
-                    setCaseSearch('');
-                  }
-                }}
-                className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-medium text-text hover:bg-page"
-                aria-expanded={auditExpanded}
-              >
-                <span>Record on case task (optional)</span>
-                <span aria-hidden="true">{auditExpanded ? '▾' : '▸'}</span>
-              </button>
+            {showAuditSection && (
+              <div className="rounded-md border border-border">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuditExpanded((value) => !value);
+                    if (auditExpanded) {
+                      setSelectedCaseId('');
+                      setLinkedTaskId('');
+                      setCaseSearch('');
+                    }
+                  }}
+                  className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-medium text-text hover:bg-page"
+                  aria-expanded={auditExpanded}
+                >
+                  <span>Record on case task (optional)</span>
+                  <span aria-hidden="true">{auditExpanded ? '▾' : '▸'}</span>
+                </button>
 
-              {auditExpanded && (
-                <div className="space-y-4 border-t border-border px-4 py-4">
-                  <p className="text-sm text-text-secondary">
-                    Append a one-line audit note to an existing case task. The calendar entry still
-                    lives on firm general work.
-                  </p>
+                {auditExpanded && (
+                  <div className="space-y-4 border-t border-border px-4 py-4">
+                    <p className="text-sm text-text-secondary">
+                      Append a one-line audit note to an existing case task. The calendar entry still
+                      lives on firm general work.
+                    </p>
 
-                  <div>
-                    <label
-                      className="mb-1 block text-sm font-medium text-text"
-                      htmlFor="custom-assign-case-search"
-                    >
-                      Find case
-                    </label>
-                    <input
-                      id="custom-assign-case-search"
-                      type="search"
-                      value={caseSearch}
-                      onChange={(event) => setCaseSearch(event.target.value)}
-                      placeholder="Search by reference or client name…"
-                      className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
-                    />
-                  </div>
-
-                  <div>
-                    <label
-                      className="mb-1 block text-sm font-medium text-text"
-                      htmlFor="custom-assign-case"
-                    >
-                      Case
-                    </label>
-                    <select
-                      id="custom-assign-case"
-                      value={selectedCaseId}
-                      onChange={(event) => {
-                        setSelectedCaseId(event.target.value);
-                        setLinkedTaskId('');
-                      }}
-                      className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
-                    >
-                      <option value="">Select an active case…</option>
-                      {filteredCaseGroups.map((group) => (
-                        <option key={group.case_id} value={group.case_id}>
-                          {group.reference ? `${group.reference} — ` : ''}
-                          {group.client_name}
-                          {` · ${group.application_type_name}`}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {selectedCase && (
                     <div>
                       <label
                         className="mb-1 block text-sm font-medium text-text"
-                        htmlFor="custom-assign-linked-task"
+                        htmlFor="custom-assign-case-search"
                       >
-                        Case task
+                        Find case
+                      </label>
+                      <input
+                        id="custom-assign-case-search"
+                        type="search"
+                        value={caseSearch}
+                        onChange={(event) => setCaseSearch(event.target.value)}
+                        placeholder="Search by reference or client name…"
+                        className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label
+                        className="mb-1 block text-sm font-medium text-text"
+                        htmlFor="custom-assign-case"
+                      >
+                        Case
                       </label>
                       <select
-                        id="custom-assign-linked-task"
-                        value={linkedTaskId}
-                        onChange={(event) => setLinkedTaskId(event.target.value)}
+                        id="custom-assign-case"
+                        value={selectedCaseId}
+                        onChange={(event) => {
+                          setSelectedCaseId(event.target.value);
+                          setLinkedTaskId('');
+                        }}
                         className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
                       >
-                        <option value="">Select a task…</option>
-                        {selectedCase.tasks.map((task) => (
-                          <option key={task.id} value={task.id}>
-                            {task.abbreviation} — {task.name}
+                        <option value="">Select an active case…</option>
+                        {filteredCaseGroups.map((group) => (
+                          <option key={group.case_id} value={group.case_id}>
+                            {group.reference ? `${group.reference} — ` : ''}
+                            {group.client_name}
+                            {` · ${group.application_type_name}`}
                           </option>
                         ))}
                       </select>
                     </div>
-                  )}
-                </div>
-              )}
-            </div>
+
+                    {selectedCase && (
+                      <div>
+                        <label
+                          className="mb-1 block text-sm font-medium text-text"
+                          htmlFor="custom-assign-linked-task"
+                        >
+                          Case task
+                        </label>
+                        <select
+                          id="custom-assign-linked-task"
+                          value={linkedTaskId}
+                          onChange={(event) => setLinkedTaskId(event.target.value)}
+                          className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
+                        >
+                          <option value="">Select a task…</option>
+                          {selectedCase.tasks.map((task) => (
+                            <option key={task.id} value={task.id}>
+                              {task.abbreviation} — {task.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -445,7 +468,7 @@ export default function CustomTaskAssignModal({
             onClick={handleSubmit}
             className="min-h-[44px] rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50"
           >
-            {submitting ? 'Creating…' : 'Create & assign'}
+            {getCustomTaskAssignSubmitLabel(variant, submitting)}
           </button>
         </div>
       </div>

@@ -3,36 +3,16 @@
 import Link from 'next/link';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import TaskActionStrip from '@/components/staff/TaskActionStrip';
 import type { StaffDashboardPayload, StaffDashboardTask } from '@/lib/dashboard/fetch-staff-dashboard';
 import type { StaffDashboardHistoryPayload } from '@/lib/dashboard/fetch-staff-dashboard-history';
 import { useInvalidateAfterMutation } from '@/lib/query/useInvalidateAfterMutation';
 import { queryKeys } from '@/lib/query/keys';
-
-type ApiError = {
-  error?: { code?: string; message?: string };
-};
-
-function formatSchedule(task: StaffDashboardTask, todayLabel = 'today'): string | null {
-  if (!task.current_assignment) {
-    return null;
-  }
-
-  const { date, start_time: start, end_time: end } = task.current_assignment;
-  const startLabel = start.slice(0, 5);
-  const endLabel = end.slice(0, 5);
-  const dayLabel = task.is_today ? todayLabel : date;
-
-  return `Scheduled: ${startLabel}–${endLabel} ${dayLabel}`;
-}
-
-function descriptionSnippet(description: string | null | undefined, max = 80): string | null {
-  const value = description?.trim();
-  if (!value) {
-    return null;
-  }
-
-  return value.length > max ? `${value.slice(0, max - 1)}…` : value;
-}
+import {
+  descriptionSnippet,
+  formatCompletedAt,
+  formatFirmTaskSchedule,
+} from '@/lib/tasks/firm-tasks';
 
 function statusLabel(task: StaffDashboardTask): string {
   if (task.status === 'blocked') {
@@ -62,6 +42,15 @@ function statusBarClass(task: StaffDashboardTask): string {
   return 'border-status-onTrack bg-status-onTrack';
 }
 
+type ApiError = {
+  error?: { code?: string; message?: string };
+};
+
+function formatSchedule(task: StaffDashboardTask, todayLabel = 'today'): string | null {
+  const value = formatFirmTaskSchedule(task, todayLabel);
+  return value ? `Scheduled: ${value}` : null;
+}
+
 function SummaryMetric({
   label,
   value,
@@ -84,92 +73,6 @@ function SummaryMetric({
         {value}
       </p>
       <p className="mt-1 text-xs text-text-muted">{label}</p>
-    </div>
-  );
-}
-
-const actionButtonClass =
-  'inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md border border-border bg-surface px-3 text-base text-primary hover:bg-page disabled:opacity-50';
-
-function TaskActionStrip({
-  task,
-  onStatusChanged,
-}: {
-  task: StaffDashboardTask;
-  onStatusChanged: () => void;
-}) {
-  const [loading, setLoading] = useState<'completed' | 'in_progress' | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  if (task.status === 'blocked' || task.status === 'completed') {
-    return null;
-  }
-
-  async function patchStatus(status: 'in_progress' | 'completed') {
-    setLoading(status);
-    setError(null);
-
-    try {
-      const response = await fetch(`/api/tasks/${task.id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      });
-
-      const json = (await response.json()) as ApiError;
-      if (!response.ok) {
-        setError(json.error?.message ?? 'Failed to update task status.');
-        return;
-      }
-
-      onStatusChanged();
-    } catch {
-      setError('Failed to update task status.');
-    } finally {
-      setLoading(null);
-    }
-  }
-
-  const showComplete = task.status === 'not_started' || task.status === 'in_progress';
-  const showInProgress = task.status === 'not_started';
-  const showOpenCase = !task.case_is_internal;
-
-  return (
-    <div className="flex shrink-0 flex-col items-end gap-1">
-      <div className="flex items-center gap-1">
-        {showComplete && (
-          <button
-            type="button"
-            onClick={() => patchStatus('completed')}
-            disabled={loading !== null}
-            aria-label="Mark task complete"
-            className={actionButtonClass}
-          >
-            {loading === 'completed' ? '…' : '✓'}
-          </button>
-        )}
-        {showInProgress && (
-          <button
-            type="button"
-            onClick={() => patchStatus('in_progress')}
-            disabled={loading !== null}
-            aria-label="Mark task in progress"
-            className={actionButtonClass}
-          >
-            {loading === 'in_progress' ? '…' : '◉'}
-          </button>
-        )}
-        {showOpenCase && (
-          <Link
-            href={`/staff/cases/${task.case_id}?task=${task.id}`}
-            aria-label="Open case"
-            className={actionButtonClass}
-          >
-            📁
-          </Link>
-        )}
-      </div>
-      {error && <p className="max-w-[12rem] text-right text-xs text-error">{error}</p>}
     </div>
   );
 }
@@ -251,18 +154,6 @@ function UnifiedPriorityRow({
       <TaskActionStrip task={task} onStatusChanged={onStatusChanged} />
     </div>
   );
-}
-
-function formatCompletedAt(iso: string | null | undefined): string | null {
-  if (!iso) {
-    return null;
-  }
-
-  return new Date(iso).toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
 }
 
 function historyRowLabel(task: StaffDashboardTask): string {

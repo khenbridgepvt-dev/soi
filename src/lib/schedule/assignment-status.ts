@@ -1,18 +1,14 @@
-/** Shared schedule pill status labels (S-04, S-11) — design_system §4.2, ADR-0008, ADR-0022. */
+/** Shared schedule pill status labels (S-04, S-11) — Team Task OS status-first colours (ADR-0023). */
 
 import {
-  resolveTaskOperationalColour,
-  taskColourDotClasses,
-  type TaskOperationalColour,
-} from '@/lib/tasks/task-colour';
+  resolveTeamTaskStatusColour,
+  teamTaskStatusDotClasses,
+  type TeamTaskStatusColourInput,
+} from '@/lib/tasks/team-task-status-colour';
 import { todayUTCISODate } from '@/lib/tasks/task-reminder-state';
 
-export type ScheduleAssignmentStatusInput = {
-  task_status?: string;
+export type ScheduleAssignmentStatusInput = TeamTaskStatusColourInput & {
   is_urgent?: boolean;
-  case_deleted?: boolean;
-  task_deleted?: boolean;
-  is_overdue?: boolean;
   reminder_date?: string | null;
   deadline_date?: string | null;
   remind_days_before?: number | null;
@@ -24,25 +20,25 @@ export function isScheduleAssignmentDeleted(
   return assignment.case_deleted === true || assignment.task_deleted === true;
 }
 
-export function scheduleAssignmentOperationalColour(
+export function scheduleAssignmentTeamColour(
   assignment: ScheduleAssignmentStatusInput,
-  today: string = todayUTCISODate(),
-): TaskOperationalColour {
+  viewedDate: string = todayUTCISODate(),
+  now?: Date,
+): ReturnType<typeof resolveTeamTaskStatusColour> {
   if (isScheduleAssignmentDeleted(assignment)) {
-    return 'neutral';
+    return 'deleted';
   }
 
-  return resolveTaskOperationalColour(
-    {
-      status: assignment.task_status ?? 'not_started',
-      is_overdue: assignment.is_overdue ?? false,
-      reminder_date: assignment.reminder_date ?? null,
-      deadline_date: assignment.deadline_date ?? null,
-      remind_days_before: assignment.remind_days_before ?? null,
-      case_urgent: assignment.is_urgent ?? false,
-    },
-    today,
-  );
+  return resolveTeamTaskStatusColour({
+    task_status: assignment.task_status,
+    is_overdue: assignment.is_overdue,
+    case_deleted: assignment.case_deleted,
+    task_deleted: assignment.task_deleted,
+    assignmentDate: assignment.assignmentDate ?? viewedDate,
+    end_time: assignment.end_time,
+    viewedDate,
+    now,
+  });
 }
 
 export function scheduleAssignmentStatusLabel(
@@ -69,13 +65,12 @@ export function scheduleAssignmentStatusLabel(
 
 export function scheduleAssignmentStatusDotClass(
   assignment: ScheduleAssignmentStatusInput,
-  today: string = todayUTCISODate(),
+  viewedDate: string = todayUTCISODate(),
+  now?: Date,
 ): string {
-  if (isScheduleAssignmentDeleted(assignment)) {
-    return 'bg-text-muted';
-  }
-
-  return taskColourDotClasses(scheduleAssignmentOperationalColour(assignment, today));
+  return teamTaskStatusDotClasses(
+    scheduleAssignmentTeamColour(assignment, viewedDate, now),
+  );
 }
 
 export function scheduleAssignmentStatusSuffix(

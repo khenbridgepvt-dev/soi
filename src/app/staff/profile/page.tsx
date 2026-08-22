@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default async function StaffProfilePage() {
   await requireSessionWithRoles(['staff', 'senior'], {
     fallbackPath: '/staff/profile',
-    wrongRoleRedirect: '/dashboard',
+    wrongRoleRedirect: '/schedule',
   });
 
   return (

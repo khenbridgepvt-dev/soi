@@ -6,6 +6,11 @@ import {
   ADMIN_NAV_MAIN,
   ADMIN_NAV_SECTIONS,
 } from '@/lib/nav/admin';
+import {
+  STAFF_NAV_ADVANCED,
+  STAFF_NAV_MAIN,
+  STAFF_NAV_SECTIONS,
+} from '@/lib/nav/staff';
 
 describe('getAppDisplayName', () => {
   afterEach(() => {
@@ -39,23 +44,55 @@ describe('ADMIN_NAV_SECTIONS', () => {
 
   it('lists main items in the requested order', () => {
     expect(ADMIN_NAV_MAIN.map((item) => item.label)).toEqual([
-      'Dashboard',
-      'Cases',
-      'Schedule',
-      'Task Board',
-      'Reminders',
+      'Team Schedule',
       'Team',
-      'Blocked Tasks',
+    ]);
+    expect(ADMIN_NAV_MAIN.map((item) => item.href)).toEqual([
+      '/schedule',
+      '/team',
     ]);
   });
 
-  it('lists advanced settings including covering letterhead', () => {
+  it('lists advanced items including dashboard and settings', () => {
     expect(ADMIN_NAV_ADVANCED.map((item) => item.href)).toEqual([
+      '/dashboard',
+      '/cases',
+      '/task-board',
+      '/reminders',
+      '/blocked',
       '/archive',
       '/settings/application-types',
       '/settings/covering-letterhead',
       '/settings/staff',
       '/settings/profile',
+    ]);
+  });
+});
+
+describe('STAFF_NAV_SECTIONS', () => {
+  it('orders main navigation before advanced settings', () => {
+    expect(STAFF_NAV_SECTIONS).toHaveLength(2);
+    expect(STAFF_NAV_SECTIONS[0]?.label).toBe('Main');
+    expect(STAFF_NAV_SECTIONS[1]?.label).toBe('Advanced');
+  });
+
+  it('lists main items in the requested order', () => {
+    expect(STAFF_NAV_MAIN.map((item) => item.label)).toEqual([
+      'My tasks',
+      'My calendar',
+    ]);
+    expect(STAFF_NAV_MAIN.map((item) => item.href)).toEqual([
+      '/staff/tasks',
+      '/staff/calendar',
+    ]);
+  });
+
+  it('lists advanced items including dashboard and profile', () => {
+    expect(STAFF_NAV_ADVANCED.map((item) => item.href)).toEqual([
+      '/staff/dashboard',
+      '/staff/cases',
+      '/staff/reminders',
+      '/staff/profile',
     ]);
   });
 });

@@ -1,7 +1,11 @@
 import { requireApiAuth } from '@/lib/api/auth';
 import { apiError } from '@/lib/api/response';
+import { INTERNAL_CASE_ID } from '@/lib/cases/internal-case';
+import { fanoutFirmTaskCompletedAdminNotification } from '@/lib/notifications';
+import { shouldFanoutFirmTaskCompletedAdminNotification } from '@/lib/tasks/firm-task-complete-notification';
 import { mapTaskStatusRpcError } from '@/lib/tasks/status-errors';
 import { checkTaskPrerequisites } from '@/lib/utils/prerequisites';
+import { shortTime } from '@/lib/utils/dates';
 import {
   canTransitionTaskStatus,
   getTransitionError,
@@ -39,7 +43,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   const { data: task, error: fetchError } = await supabase
     .from('tasks')
-    .select('id, case_id, sequence, status, is_custom, assigned_to, senior_approval')
+    .select('id, case_id, sequence, status, is_custom, assigned_to, senior_approval, name')
     .eq('id', id)
     .maybeSingle();
 
@@ -56,6 +60,8 @@ export async function PATCH(request: Request, context: RouteContext) {
       return apiError(403, 'FORBIDDEN', 'You do not have permission to update this task.');
     }
   }
+
+  const previousStatus = task.status as TaskStatus;
 
   if (!canTransitionTaskStatus(task.status, newStatus)) {
     return apiError(400, 'INVALID_STATE_TRANSITION', getTransitionError(task.status, newStatus));
@@ -100,12 +106,52 @@ export async function PATCH(request: Request, context: RouteContext) {
     case_completed: boolean;
   };
 
+  let notificationsSent = 0;
+
+  if (
+    shouldFanoutFirmTaskCompletedAdminNotification({
+      newStatus,
+      previousStatus,
+      callerRole: role,
+      caseId: task.case_id,
+    })
+  ) {
+    try {
+      const { data: staffProfile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', userId)
+        .maybeSingle();
+
+      const { data: assignment } = await supabase
+        .from('task_assignments')
+        .select('start_time, end_time')
+        .eq('task_id', id)
+        .eq('is_released', false)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      notificationsSent = await fanoutFirmTaskCompletedAdminNotification({
+        taskId: id,
+        caseId: INTERNAL_CASE_ID,
+        taskName: task.name,
+        staffName: staffProfile?.full_name ?? 'Staff',
+        slotStartTime: assignment ? shortTime(assignment.start_time) : null,
+        slotEndTime: assignment ? shortTime(assignment.end_time) : null,
+      });
+    } catch {
+      notificationsSent = 0;
+    }
+  }
+
   return Response.json({
     data: {
       id: result.id,
       status: result.status,
       updated_at: result.updated_at,
       case_completed: result.case_completed,
+      notifications_sent: notificationsSent,
     },
   });
 }

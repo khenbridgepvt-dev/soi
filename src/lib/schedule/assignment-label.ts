@@ -1,9 +1,9 @@
 /** Schedule pill labels (S-04, S-11) — ticket 0045 name-first display. */
 
+import { scheduleAssignmentTeamColour } from '@/lib/schedule/assignment-status';
 import {
-  scheduleAssignmentOperationalColour,
-} from '@/lib/schedule/assignment-status';
-import { taskColourBorderClasses } from '@/lib/tasks/task-colour';
+  teamTaskStatusCellClasses,
+} from '@/lib/tasks/team-task-status-colour';
 import { todayUTCISODate } from '@/lib/tasks/task-reminder-state';
 
 export type ScheduleAssignmentLabelInput = {
@@ -111,17 +111,30 @@ export function isScheduleAssignmentNavigable(assignment: ScheduleAssignmentNavI
 
 export function scheduleAssignmentPillClassName(
   assignment: ScheduleAssignmentNavInput,
-  extra?: string,
-  today: string = todayUTCISODate(),
+  options?: {
+    extra?: string;
+    viewedDate?: string;
+    now?: Date;
+  },
 ): string | undefined {
-  const colourClasses = taskColourBorderClasses(
-    scheduleAssignmentOperationalColour(assignment, today),
+  const viewedDate = options?.viewedDate ?? todayUTCISODate();
+  const colour = scheduleAssignmentTeamColour(
+    {
+      task_status: assignment.task_status,
+      is_overdue: assignment.is_overdue,
+      case_deleted: assignment.case_deleted,
+      task_deleted: assignment.task_deleted,
+      assignmentDate: viewedDate,
+      end_time: assignment.end_time,
+    },
+    viewedDate,
+    options?.now,
   );
 
   const classes = [
-    extra,
-    colourClasses,
-    assignment.case_is_internal ? 'opacity-90' : undefined,
+    teamTaskStatusCellClasses(colour),
+    options?.extra,
+    assignment.case_is_internal ? undefined : undefined,
   ].filter(Boolean);
 
   return classes.length > 0 ? classes.join(' ') : undefined;

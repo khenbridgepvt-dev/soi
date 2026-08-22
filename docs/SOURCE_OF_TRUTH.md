@@ -45,7 +45,8 @@ Quick index for agents and developers. **Read this first** instead of re-auditin
 | **Auth redirects** | Ticket [0050](../tracker/issues/0050-auth-redirect-hardening.md) | `/login?next=`; layout guards; API 401 |
 | **Staff task history** | Ticket [0051](../tracker/issues/0051-staff-task-history-pagination.md), EP-43 addendum | `GET /api/dashboard/staff/history`; lazy History section on S-10 |
 | **Document preparation** | ADR-0021, ticket [0053](../tracker/issues/0053-case-document-preparation-adr-and-docs.md), `docs/templates/`, `src/lib/documents/` | Epic 0054–0061 (registry, wizard, DOCX/PDF); hide on `FIRM-GENERAL` |
-| **Reminders & calendar clarity** | ADR-0022, ticket [0070](../tracker/issues/0070-reminders-calendar-clarity-adr.md), [REMINDERS_AND_CALENDAR.md](./REMINDERS_AND_CALENDAR.md) | Epic 0071–0086 (reminders, colours, Realtime schedule, reschedule, personal tasks, week/month) |
+| **Reminders & calendar clarity** | ADR-0022, ticket [0070](../tracker/issues/0070-reminders-calendar-clarity-adr.md), [REMINDERS_AND_CALENDAR.md](./REMINDERS_AND_CALENDAR.md) | Epic 0071–0079 shipped; **0080–0086 paused** (see Team Task OS) |
+| **Team Task OS (primary product path)** | ADR-0023, [TEAM_TASK_OS.md](./TEAM_TASK_OS.md), ticket [0090](../tracker/issues/0090-team-task-os-adr.md) | Epic 0091–0099: admin `/schedule`, staff `/staff/tasks`, firm adhoc v1, status colours, Realtime on `tasks` |
 | **Client data / cache** | ADR-0016, ticket [0032](../tracker/issues/0032-reactive-data-layer.md) | `src/lib/query/` (`keys.ts`, `invalidate.ts`) |
 | **References** | ADR-0009, `src/lib/utils/reference.ts` | `accept_lead` RPC |
 | **Tests** | `docs/test_plan.md` | `tests/unit/`, `tests/integration/` |
@@ -84,8 +85,17 @@ Quick index for agents and developers. **Read this first** instead of re-auditin
 | [0074](../tracker/issues/0074-calendar-colour-tokens.md) | 2026-08-17 | Unified operational colour tokens (board, schedule, reminders) |
 | [0075](../tracker/issues/0075-schedule-realtime.md) | 2026-08-17 | Realtime `task_assignments` + schedule query invalidation |
 | [0076](../tracker/issues/0076-notification-toast-sound.md) | 2026-08-17 | Notification toast + sound; profile mute via EP-64 |
+| [0090](../tracker/issues/0090-team-task-os-adr.md) | 2026-08-22 | ADR-0023 + `TEAM_TASK_OS.md`; Team Task OS epic 0091–0099; pause reminders UI 0080–0086 |
+| [0091](../tracker/issues/0091-admin-nav-landing.md) | 2026-08-22 | Admin Main nav Team Schedule + Team; login → `/schedule`; case CRM under Advanced |
+| [0092](../tracker/issues/0092-schedule-assign-cta.md) | 2026-08-22 | Schedule header + Assign task CTA → `CustomTaskAssignModal` with date/staff/slot defaults |
+| [0093](../tracker/issues/0093-simplified-assign-modal.md) | 2026-08-22 | Team assign modal (`variant="team"`): no case audit; Assign team task flow |
+| [0094](../tracker/issues/0094-staff-nav-landing.md) | 2026-08-22 | Staff Main nav My tasks + My calendar; login → `/staff/tasks`; placeholder page |
+| [0095](../tracker/issues/0095-staff-my-tasks-hub.md) | 2026-08-22 | My Tasks hub: `firm_tasks` fetch, tabs, Start/Done, history `internalOnly` |
+| [0096](../tracker/issues/0096-status-calendar-colours.md) | 2026-08-22 | Status-first full-cell colours on schedule + My tasks list |
 
 MVP modules (tickets 0002–0030) are implemented per the [implementation map](../tracker/issues/0001-mvp-implementation-map.md).
+
+**Current product path:** Team Task OS (0091–0099) — see [TEAM_TASK_OS.md](./TEAM_TASK_OS.md). Case CRM remains under Advanced nav; not removed.
 
 ---
 

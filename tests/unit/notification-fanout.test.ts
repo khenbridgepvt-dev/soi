@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildDuAlertNotificationRows,
+  buildFirmTaskCompletedNotificationRows,
   buildLeadRejectedNotificationRows,
   buildNewTaskAssignmentNotificationRows,
   buildRescheduleRequestNotificationRows,
@@ -245,6 +246,44 @@ describe('buildRescheduleResponseNotificationRows', () => {
 
     expect(rows[0].type).toBe('reschedule_response');
     expect(rows[0].title).toBe('Reschedule approved');
+  });
+});
+
+describe('buildFirmTaskCompletedNotificationRows', () => {
+  it('builds one task_status_changed row per admin with slot time', () => {
+    const rows = buildFirmTaskCompletedNotificationRows({
+      adminIds: ['admin-a', 'admin-b'],
+      staffName: 'Asha',
+      taskName: 'Client intake',
+      taskId: 'task-1',
+      caseId: 'case-internal',
+      slotStartTime: '11:00',
+      slotEndTime: '12:00',
+    });
+
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toMatchObject({
+      user_id: 'admin-a',
+      type: 'task_status_changed',
+      title: 'Team task completed',
+      is_urgent: false,
+      case_id: 'case-internal',
+      task_id: 'task-1',
+    });
+    expect(rows[0].body).toBe('Asha completed Client intake · 11:00–12:00');
+    expect(rows[1].user_id).toBe('admin-b');
+  });
+
+  it('omits slot time when unknown', () => {
+    const rows = buildFirmTaskCompletedNotificationRows({
+      adminIds: ['admin-a'],
+      staffName: 'Asha',
+      taskName: 'Client intake',
+      taskId: 'task-1',
+      caseId: 'case-internal',
+    });
+
+    expect(rows[0].body).toBe('Asha completed Client intake');
   });
 });
 

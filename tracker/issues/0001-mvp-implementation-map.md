@@ -94,8 +94,40 @@ The MVP is **operational as a free-tier pilot**: all ten MVP modules (M1–M10) 
 - **0077 reschedule request API:** Staff POST proposed slot; admin notification fanout — [Reschedule request API](./0077-reschedule-request-api.md)
 - **0078 reschedule approve/reject:** Admin EP-66 + notification centre actions + staff outcome — [Reschedule approve/reject](./0078-reschedule-approve-reject.md)
 - **0079 staff personal tasks DB:** `staff_personal_tasks` table + RLS + EP-67 CRUD — [Staff personal tasks DB + RLS](./0079-staff-personal-tasks-db.md)
+- **0090 Team Task OS ADR:** ADR-0023 + `TEAM_TASK_OS.md`; epic 0091–0099 planning; pause 0080–0086 — [Team Task OS ADR and IA planning docs](./0090-team-task-os-adr.md)
+- **0091 admin nav + schedule landing:** Main nav Team Schedule + Team; Advanced holds Dashboard/Cases/etc.; admin login → `/schedule` — [Admin nav restructure and schedule landing](./0091-admin-nav-landing.md)
+- **0092 schedule Assign task CTA:** Header + Assign task opens `CustomTaskAssignModal` with schedule defaults — [Schedule header Assign task CTA](./0092-schedule-assign-cta.md)
+- **0093 simplified firm assign modal:** `variant="team"` hides case audit UI; name + duration + slot only — [Simplified firm-only assign modal](./0093-simplified-assign-modal.md)
+- **0094 staff nav + tasks landing:** Main My tasks + My calendar; login → `/staff/tasks`; placeholder page — [Staff nav restructure and tasks landing](./0094-staff-nav-landing.md)
+- **0095 staff My tasks hub:** `firm_tasks` data layer + tabbed `MyTasksView` with Start/Done — [Staff My tasks hub](./0095-staff-my-tasks-hub.md)
+- **0096 status-first calendar colours:** `team-task-status-colour.ts`; full-cell schedule + list rows — [Status-first full-cell calendar colours](./0096-status-calendar-colours.md)
+- **0097 tasks Realtime:** migration `00056_tasks_realtime.sql`; `useTasksRealtime` + invalidation helper — [Realtime on tasks table](./0097-tasks-realtime.md)
+- **0098 firm task complete notify:** `task_status_changed` fanout to admins on staff Done — [Admin notification on firm task complete](./0098-status-notifications.md)
+- **0099 team workload strip:** per-staff in progress / done / overdue counts on schedule — [Team workload strip on schedule](./0099-team-workload-strip.md)
 
-## Planned (reminders & calendar epic 0080–0086)
+## Planned (Team Task OS epic 0091–0099) — **primary product path**
+
+See [TEAM_TASK_OS.md](../../docs/TEAM_TASK_OS.md) and [ADR-0023](../../docs/adr/0023-team-task-os-ui-pivot.md).
+
+| Ticket | Scope |
+|--------|--------|
+| **0091** | Admin nav restructure; login → `/schedule` |
+| **0092** | Schedule header + Assign task CTA |
+| **0093** | Simplified firm-only assign modal |
+| **0094** | Staff nav; login → `/staff/tasks` |
+| **0095** | My tasks hub (tabs, Start/Done) |
+| **0096** | Full-cell status calendar colours |
+| **0097** | Realtime on `tasks` — **shipped** |
+| **0098** | Admin notify on firm task complete — **shipped** |
+| **0099** | Team workload strip — **shipped** |
+
+**Team Task OS epic 0090–0099 complete** (ADR-0023).
+
+**Dependency order:** 0090 → 0091 → 0092–0093 → 0094 → 0095 → 0096 → 0097 → 0098–0099.
+
+## Paused (reminders & calendar epic 0080–0086)
+
+Paused until Team Task OS 0091–0099 ships (ADR-0023). API/DB from 0071–0079 remains; UI deferred.
 
 - **0080–0086** See [REMINDERS_AND_CALENDAR.md](../../docs/REMINDERS_AND_CALENDAR.md) §10 epic table (personal tasks UI, week/month views, carry-over)
 

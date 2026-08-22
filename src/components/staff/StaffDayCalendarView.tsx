@@ -18,6 +18,7 @@ import {
 } from '@/lib/schedule/assignment-label';
 import { REFETCH_INTERVAL_MS, queryKeys } from '@/lib/query/keys';
 import { useScheduleRealtime } from '@/lib/hooks/use-schedule-realtime';
+import { useTasksRealtime } from '@/lib/hooks/use-tasks-realtime';
 import {
   CALENDAR_ROW_HEIGHT,
   currentTimeLabel,
@@ -116,6 +117,7 @@ export default function StaffDayCalendarView({
   const isToday = date === todayISODate();
 
   useScheduleRealtime({ viewedDate: date, userId: staffId, role });
+  useTasksRealtime({ userId: staffId, role });
 
   const {
     data: payload,
@@ -247,10 +249,10 @@ export default function StaffDayCalendarView({
                 state="booked"
                 className={
                   assignment
-                    ? scheduleAssignmentPillClassName(
-                        assignment,
-                        isDeleted ? 'opacity-80' : undefined,
-                      )
+                    ? scheduleAssignmentPillClassName(assignment, {
+                        viewedDate: date,
+                        extra: isDeleted ? 'opacity-80' : undefined,
+                      })
                     : undefined
                 }
                 label={
@@ -272,7 +274,7 @@ export default function StaffDayCalendarView({
                   <span className="flex w-full flex-col items-start gap-0.5 text-left">
                     <span className="flex items-center gap-1 truncate">
                       <span
-                        className={`inline-block h-2 w-2 shrink-0 rounded-full ${scheduleAssignmentStatusDotClass(assignment)}`}
+                        className={`inline-block h-2 w-2 shrink-0 rounded-full ${scheduleAssignmentStatusDotClass(assignment, date)}`}
                         aria-hidden
                       />
                       <span className="truncate font-semibold">

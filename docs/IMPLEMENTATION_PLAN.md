@@ -283,16 +283,28 @@ Tier legend: **cheap** = budget model is fine · **STRONG** = use Fable/frontier
 | 0077 reschedule request API | cheap | ADR-0022 · api_spec addendum | 1 |
 | 0078 reschedule approve/reject | cheap | EP-13 reuse · notification actions | 1 |
 | 0079 staff personal tasks DB + RLS | cheap | ADR-0022 · database_schema | 1 |
-| 0080 staff personal tasks UI | cheap | ADR-0022 · staff dashboard / calendar entry | 1–2 |
-| 0081 schedule week view | cheap⚠ | ui_wireframe S-04/S-11 · schedule fetch | 1–2 |
-| 0082 schedule month view | cheap⚠ | ui_wireframe S-04/S-11 | 1–2 |
-| 0083 carry-over on today calendar | cheap | ADR-0022 §9 · schedule query layer | 1 |
-| 0084 admin yesterday pending strip | cheap | ADR-0022 §9 · admin dashboard/schedule | 1 |
-| 0085 reminders epic integration tests | cheap | test_plan addendum · Realtime harness | 1 |
-| 0086 reminders epic polish + workflows | cheap (checklist) | USER_WORKFLOWS · nav · manual smoke | 1 |
+| 0080 staff personal tasks UI | **paused** | ADR-0022 · deferred until Team OS 0091–0099 (ADR-0023) | — |
+| 0081 schedule week view | **paused** | ADR-0022 · deferred until Team OS 0091–0099 | — |
+| 0082 schedule month view | **paused** | ADR-0022 · deferred until Team OS 0091–0099 | — |
+| 0083 carry-over on today calendar | **paused** | ADR-0022 §9 · deferred until Team OS 0091–0099 | — |
+| 0084 admin yesterday pending strip | **paused** | ADR-0022 §9 · deferred until Team OS 0091–0099 | — |
+| 0085 reminders epic integration tests | **paused** | test_plan addendum · deferred until Team OS 0091–0099 | — |
+| 0086 reminders epic polish + workflows | **paused** | USER_WORKFLOWS · deferred until Team OS 0091–0099 | — |
+| 0090 Team Task OS ADR + IA docs | cheap | ADR-0023 · `TEAM_TASK_OS.md` · tracker 0091–0099 | 1 |
+| 0091 admin nav + schedule landing | cheap | ADR-0023 · `admin.ts` Main/Advanced · login redirect | 1 |
+| 0092 schedule Assign task CTA | cheap | ADR-0023 · `ScheduleGridView` header | 1 |
+| 0093 simplified firm assign modal | cheap | ADR-0023 · adhoc-task-assign only · hide case audit | 1–2 |
+| 0094 staff nav + tasks landing | cheap | ADR-0023 · staff shell · login redirect | 1 |
+| 0095 staff My tasks hub | cheap⚠ | ADR-0023 · firm_tasks · EP-12 status actions | 1–2 |
+| 0096 status-first full-cell colours | cheap | ADR-0023 · `assignment-status.ts` · design_system | 1 |
+| 0097 Realtime on `tasks` | cheap⚠ | ADR-0023 · migration + invalidation hook | 1–2 |
+| 0098 admin notify on firm task complete | cheap | ADR-0023 · fanout · notification_type | 1 |
+| 0099 team workload strip | cheap | ADR-0023 · schedule header aggregate | 1 |
 
-Estimated total: **42–49 sessions** (MVP table) + **~18–22 sessions** for document prep (0053–0061) + **~16–20 sessions** for reminders epic (0071–0086). Recommended first ticket for a cheap model: **0002 scaffold** (0003 can run in parallel in a second session).
+Estimated total: **42–49 sessions** (MVP table) + **~18–22 sessions** for document prep (0053–0061) + **~12–16 sessions** for reminders infra (0071–0079) + **~10–14 sessions** for Team Task OS (0091–0099). Reminders UI epic 0080–0086 is **paused** until Team OS ships (ADR-0023). Recommended first ticket for a cheap model: **0002 scaffold** (0003 can run in parallel in a second session).
 
 **Post-MVP note (0032):** Task board, schedule, and admin dashboard use 60s `refetchInterval` polling because ADR-0003 defers Realtime board updates to Phase 2. Polling covers other users' mutations and cron-driven `is_overdue` changes without adding Realtime complexity.
 
 **Post-MVP note (0075):** Ticket 0075 adds **targeted** Realtime on `task_assignments` for schedule/calendar views only; task board polling remains until a later consolidation ticket.
+
+**Post-MVP note (0090):** Team Task OS (ADR-0023) is the **primary product path** — admin lands on `/schedule`, staff on `/staff/tasks`; case CRM moves to Advanced nav. Epic 0091–0099; reminders UI 0080–0086 paused.

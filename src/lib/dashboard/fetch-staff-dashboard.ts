@@ -285,7 +285,24 @@ export async function fetchStaffDashboard(
 
   const mapped = activeRows.map((row) => mapTaskRow(row, assignmentByTask, today));
 
-  const visible = mapped.filter((task) =>
+  const clientTasks = mapped.filter((task) => !task.case_is_internal);
+  const firmActive = mapped
+    .filter(
+      (task) =>
+        task.case_is_internal &&
+        (task.status === 'not_started' || task.status === 'in_progress'),
+    )
+    .sort((left, right) => {
+      const leftTime = left.current_assignment?.start_time ?? '99:99';
+      const rightTime = right.current_assignment?.start_time ?? '99:99';
+      if (leftTime !== rightTime) {
+        return leftTime.localeCompare(rightTime);
+      }
+
+      return left.name.localeCompare(right.name);
+    });
+
+  const visible = clientTasks.filter((task) =>
     matchesView(
       {
         status: task.status,
@@ -323,7 +340,7 @@ export async function fetchStaffDashboard(
     blocked_count: blockedCount,
     due_this_week_count: dueThisWeekCount,
     priority_list,
-    firm_tasks: [],
+    firm_tasks: firmActive.map(toDashboardTask),
     firm_tasks_history: [],
   };
 }

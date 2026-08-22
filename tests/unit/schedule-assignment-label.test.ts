@@ -75,37 +75,55 @@ describe('formatScheduleAssignmentAriaLabel', () => {
   });
 });
 
-describe('scheduleAssignmentPillClassName (ticket 0048 / 0074)', () => {
-  it('applies on-track green styling for completed assignments', () => {
+describe('scheduleAssignmentPillClassName (ticket 0096 Team OS)', () => {
+  it('applies full green cell for completed assignments', () => {
     expect(
       scheduleAssignmentPillClassName({
         ...caseAssignment,
         task_status: 'completed',
       }),
-    ).toContain('bg-status-onTrack');
+    ).toContain('!bg-status-onTrack');
   });
 
-  it('applies amber styling for in_progress assignments (ADR-0022)', () => {
+  it('applies full yellow cell for in_progress assignments', () => {
     expect(
       scheduleAssignmentPillClassName({
         ...caseAssignment,
         task_status: 'in_progress',
       }),
-    ).toContain('bg-status-approaching');
+    ).toContain('!bg-[#FFF8E6]');
   });
 
-  it('applies red styling when reminder is due', () => {
+  it('applies grey cell for not_started regardless of reminder fields', () => {
     expect(
       scheduleAssignmentPillClassName(
         {
           ...caseAssignment,
-          task_status: 'in_progress',
+          task_status: 'not_started',
           reminder_date: '2026-08-10',
         },
-        undefined,
-        '2026-08-17',
+        {
+          viewedDate: '2026-08-17',
+          now: new Date('2026-08-17T10:00:00'),
+        },
       ),
-    ).toContain('bg-error-bg');
+    ).toContain('!bg-page');
+  });
+
+  it('applies red cell when slot end passed on viewed date', () => {
+    expect(
+      scheduleAssignmentPillClassName(
+        {
+          ...caseAssignment,
+          task_status: 'not_started',
+          end_time: '11:00',
+        },
+        {
+          viewedDate: '2026-08-22',
+          now: new Date('2026-08-22T12:00:00'),
+        },
+      ),
+    ).toContain('!bg-error-bg');
   });
 });
 
