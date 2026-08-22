@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildDuAlertNotificationRows,
+  buildFirmTaskAssignedNotificationRows,
   buildFirmTaskCompletedNotificationRows,
   buildLeadRejectedNotificationRows,
   buildNewTaskAssignmentNotificationRows,
@@ -246,6 +247,31 @@ describe('buildRescheduleResponseNotificationRows', () => {
 
     expect(rows[0].type).toBe('reschedule_response');
     expect(rows[0].title).toBe('Reschedule approved');
+  });
+});
+
+describe('buildFirmTaskAssignedNotificationRows', () => {
+  it('builds a team task assigned row without case reference noise', () => {
+    const rows = buildFirmTaskAssignedNotificationRows({
+      userId: 'staff-a',
+      taskId: 'task-1',
+      caseId: 'case-internal',
+      taskName: 'Team standup',
+      startTime: '11:00',
+      endTime: '12:00',
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      user_id: 'staff-a',
+      type: 'task_status_changed',
+      title: 'Team task assigned',
+      is_urgent: false,
+      task_id: 'task-1',
+      case_id: 'case-internal',
+    });
+    expect(rows[0].body).toBe('Team standup · 11:00–12:00');
+    expect(rows[0].body).not.toContain('FIRM-GENERAL');
   });
 });
 

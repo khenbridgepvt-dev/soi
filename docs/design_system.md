@@ -312,7 +312,7 @@ Full **cell background** on S-04 / S-11 booked slots and matching list rows on `
 |--------|--------|-------------------|
 | Not started | Grey | `!bg-page` + `border-border` |
 | In progress | Yellow | `!bg-[#FFF8E6]` + `#B86E00` border |
-| Completed | Green | `!bg-status-onTrack` |
+| Completed | Green | `!bg-status-onTrack-bg` |
 | Overdue | Red | `!bg-error-bg` |
 | Blocked | Brown/tan | `!bg-status-blocked-bg` |
 

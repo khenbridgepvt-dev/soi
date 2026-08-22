@@ -76,7 +76,7 @@ export function resolveTeamTaskStatusColour(
 export function teamTaskStatusCellClasses(colour: TeamTaskStatusColour): string {
   switch (colour) {
     case 'green':
-      return '!border-status-onTrack-border !bg-status-onTrack text-text';
+      return '!border-status-onTrack-border !bg-status-onTrack-bg text-text';
     case 'yellow':
       return '!border-[#B86E00] !bg-[#FFF8E6] text-text';
     case 'red':

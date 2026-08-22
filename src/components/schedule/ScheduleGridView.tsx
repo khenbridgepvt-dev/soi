@@ -1,16 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import AssignTaskModal, {
-  type AssignTaskModalPrefill,
-} from '@/components/schedule/AssignTaskModal';
 import CustomTaskAssignModal, {
   type CustomTaskAssignPrefill,
 } from '@/components/schedule/CustomTaskAssignModal';
 import TeamWorkloadStrip from '@/components/schedule/TeamWorkloadStrip';
-import SlotActionMenu from '@/components/schedule/SlotActionMenu';
 import ScheduleLegend from '@/components/schedule/ScheduleLegend';
 import SlotBlock, { type SlotBlockState } from '@/components/schedule/SlotBlock';
 import Toast from '@/components/ui/Toast';
@@ -100,23 +96,6 @@ type ApiError = {
   error?: { message?: string };
 };
 
-type SelectedSlot = {
-  staffId: string;
-  staffName: string;
-  start: string;
-  end: string;
-};
-
-type ModalState = {
-  open: boolean;
-  prefill: AssignTaskModalPrefill | null;
-};
-
-type SlotActionState = {
-  open: boolean;
-  slot: SelectedSlot | null;
-};
-
 type CustomTaskModalState = {
   open: boolean;
   prefill: CustomTaskAssignPrefill | null;
@@ -152,9 +131,6 @@ async function fetchScheduleDay(date: string): Promise<SchedulePayload> {
 export default function ScheduleGridView({ userId }: { userId: string }) {
   const router = useRouter();
   const [date, setDate] = useState(() => todayISODate());
-  const [selected, setSelected] = useState<SelectedSlot | null>(null);
-  const [slotAction, setSlotAction] = useState<SlotActionState>({ open: false, slot: null });
-  const [modal, setModal] = useState<ModalState>({ open: false, prefill: null });
   const [customTaskModal, setCustomTaskModal] = useState<CustomTaskModalState>({
     open: false,
     prefill: null,
@@ -183,12 +159,13 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
         ? 'Unable to connect. Check your internet connection.'
         : null;
 
-  useEffect(() => {
-    setSelected(null);
-  }, [date]);
-
   const timeline = payload?.grid.times ?? [];
   const staff = useMemo(() => payload?.staff ?? [], [payload]);
+
+  const staffOptions = useMemo(
+    () => staff.map((member) => ({ id: member.id, full_name: member.full_name })),
+    [staff],
+  );
 
   const workloadSummaries = useMemo(
     () => buildTeamWorkloadSummaries(staff, date),
@@ -199,8 +176,6 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
 
   function openCustomTaskAssign(prefill: CustomTaskAssignPrefill) {
     setCustomTaskModal({ open: true, prefill });
-    setSelected(null);
-    setSlotAction({ open: false, slot: null });
   }
 
   function handleHeaderAssignTask() {
@@ -298,11 +273,8 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
         return;
       }
 
-      const isSelected =
-        selected?.staffId === member.id && selected.start === slot.start;
-
       const state: SlotBlockState =
-        slot.state === 'available' ? (isSelected ? 'selected' : 'available') : 'off_hours';
+        slot.state === 'available' ? 'available' : 'off_hours';
 
       cells.push(
         <div
@@ -319,16 +291,14 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
             }
             onClick={
               slot.state === 'available'
-                ? () => {
-                    const nextSelection = {
+                ? () =>
+                    openCustomTaskAssign({
                       staffId: member.id,
                       staffName: member.full_name,
-                      start: slot.start,
-                      end: slot.end,
-                    };
-                    setSelected(nextSelection);
-                    setSlotAction({ open: true, slot: nextSelection });
-                  }
+                      date,
+                      startTime: slot.start,
+                      durationMinutes: minutesBetween(slot.start, slot.end),
+                    })
                 : undefined
             }
             style={{ height: ROW_HEIGHT - PILL_GAP }}
@@ -405,11 +375,6 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
 
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <ScheduleLegend />
-        {selected && (
-          <p className="rounded-md border border-primary bg-slot-available-bg px-3 py-1.5 text-xs text-primary">
-            Selected {selected.staffName} at {selected.start}.
-          </p>
-        )}
       </div>
 
       {bannerError && (
@@ -490,75 +455,17 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
         </>
       )}
 
-      <SlotActionMenu
-        open={slotAction.open}
-        staffName={slotAction.slot?.staffName ?? ''}
-        startTime={slotAction.slot?.start ?? ''}
-        dateLabel={formatLongDate(date)}
-        onClose={() => {
-          setSlotAction({ open: false, slot: null });
-          setSelected(null);
-        }}
-        onAssignExisting={() => {
-          const slot = slotAction.slot;
-          if (!slot) {
-            return;
-          }
-
-          setSlotAction({ open: false, slot: null });
-          setModal({
-            open: true,
-            prefill: {
-              staffId: slot.staffId,
-              date,
-              startTime: slot.start,
-            },
-          });
-        }}
-        onAddCustomTask={() => {
-          const slot = slotAction.slot;
-          if (!slot) {
-            return;
-          }
-
-          setSlotAction({ open: false, slot: null });
-          openCustomTaskAssign({
-            staffId: slot.staffId,
-            staffName: slot.staffName,
-            date,
-            startTime: slot.start,
-            durationMinutes: minutesBetween(slot.start, slot.end),
-          });
-        }}
-      />
-
-      <AssignTaskModal
-        open={modal.open}
-        prefill={modal.prefill}
-        onClose={() => {
-          setModal({ open: false, prefill: null });
-          setSelected(null);
-        }}
-        onAssigned={(message) => {
-          setToastMessage(message);
-          setModal({ open: false, prefill: null });
-          setSelected(null);
-          void refetch();
-        }}
-      />
-
       <CustomTaskAssignModal
         variant="team"
         open={customTaskModal.open}
         prefill={customTaskModal.prefill}
+        staffOptions={staffOptions}
         onClose={() => {
           setCustomTaskModal({ open: false, prefill: null });
-          setSelected(null);
         }}
         onAssigned={(message) => {
           setToastMessage(message);
           setCustomTaskModal({ open: false, prefill: null });
-          setSelected(null);
           void refetch();
         }}
       />

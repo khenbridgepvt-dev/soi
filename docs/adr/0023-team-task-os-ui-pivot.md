@@ -112,6 +112,16 @@ ADR-0022 (reminders epic) added valuable infrastructure but deepened case-adjace
 - **Negative:** ADR-0022 colour semantics (amber for approaching) partially superseded by status-first grey/yellow/green/red on schedule — document in TEAM_TASK_OS.md.
 - **Follow-up:** 0091 → 0099 per [TEAM_TASK_OS.md](../TEAM_TASK_OS.md).
 
+## v1.1 addendum (pilot UX — tickets 0100–0105)
+
+| Fix | Decision |
+|-----|----------|
+| Schedule columns | Staff/senior only — exclude admin from grid and assign prefill |
+| Assign modal | Required **Assign to** picker; header CTA must not default to admin |
+| Empty slot | Direct **Assign team task** modal — no slot action menu on Team Schedule |
+| Completed colour | `!bg-status-onTrack-bg` (Tailwind nested token) |
+| Staff notify on assign | `task_status_changed` title **Team task assigned** — mirrors 0098 complete fanout |
+
 ## Out of scope (Team OS v1)
 
 - `staff_personal_tasks` UI (0079 API only)

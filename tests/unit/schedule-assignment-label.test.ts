@@ -82,7 +82,7 @@ describe('scheduleAssignmentPillClassName (ticket 0096 Team OS)', () => {
         ...caseAssignment,
         task_status: 'completed',
       }),
-    ).toContain('!bg-status-onTrack');
+    ).toContain('!bg-status-onTrack-bg');
   });
 
   it('applies full yellow cell for in_progress assignments', () => {

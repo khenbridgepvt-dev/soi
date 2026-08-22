@@ -3,6 +3,7 @@ import type { Database } from '@/types/database';
 import { createServiceClient } from '@/lib/supabase/service';
 import {
   buildDuAlertNotificationRows,
+  buildFirmTaskAssignedNotificationRows,
   buildFirmTaskCompletedNotificationRows,
   buildRevisionStaffNotificationRows,
   buildSeniorRevisionAdminAlertRows,
@@ -318,6 +319,20 @@ export async function fanoutTaskOverdueNotification(input: {
   service?: SupabaseClient<Database>;
 }): Promise<number> {
   const rows = buildTaskOverdueNotificationRows(input);
+  return insertNotificationRows(rows, input.service);
+}
+
+/** ADR-0023 / ticket 0105: notify staff when assigned a firm (internal) task. */
+export async function fanoutFirmTaskAssignedStaffNotification(input: {
+  userId: string;
+  taskId: string;
+  caseId: string;
+  taskName: string;
+  startTime: string;
+  endTime: string;
+  service?: SupabaseClient<Database>;
+}): Promise<number> {
+  const rows = buildFirmTaskAssignedNotificationRows(input);
   return insertNotificationRows(rows, input.service);
 }
 

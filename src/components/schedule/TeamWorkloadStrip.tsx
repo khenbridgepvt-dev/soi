@@ -18,7 +18,7 @@ function CountPill({
     tone === 'yellow'
       ? 'bg-[#FFF8E6] text-[#B86E00]'
       : tone === 'green'
-        ? 'bg-status-onTrack text-text'
+        ? 'bg-status-onTrack-bg text-text'
         : 'bg-error-bg text-error';
 
   return (

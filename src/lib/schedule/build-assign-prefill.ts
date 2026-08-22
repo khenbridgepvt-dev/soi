@@ -4,6 +4,7 @@ import { MIN_ASSIGNMENT_MINUTES } from '@/lib/utils/availability';
 export type ScheduleAssignStaffInput = {
   id: string;
   full_name: string;
+  role?: 'admin' | 'staff' | 'senior';
   is_on_leave: boolean;
   working_hours: { start: string; end: string } | null;
   available_slots: { start: string; end: string }[];
@@ -21,11 +22,20 @@ export type ScheduleAssignPrefill = {
 const DEFAULT_START_TIME = '09:00';
 const DEFAULT_DURATION_MINUTES = 30;
 
+function isScheduleRole(role: ScheduleAssignStaffInput['role']): boolean {
+  return role === 'staff' || role === 'senior';
+}
+
 function isActiveStaff(member: ScheduleAssignStaffInput): boolean {
   return (
     !member.is_on_leave &&
     (member.working_hours !== null || member.available_slots.length > 0)
   );
+}
+
+/** Staff/senior who can receive a team schedule assignment. */
+export function isAssignableScheduleStaff(member: ScheduleAssignStaffInput): boolean {
+  return isScheduleRole(member.role) && isActiveStaff(member);
 }
 
 function findFirstAvailableSlot(
@@ -49,15 +59,12 @@ export function buildScheduleAssignPrefill(
   staff: ScheduleAssignStaffInput[],
   date: string,
 ): ScheduleAssignPrefill | null {
-  if (staff.length === 0) {
+  const assignable = staff.filter(isAssignableScheduleStaff);
+  if (assignable.length === 0) {
     return null;
   }
 
-  const member = staff.find(isActiveStaff) ?? staff[0];
-  if (!member) {
-    return null;
-  }
-
+  const member = assignable[0];
   const slot = findFirstAvailableSlot(member);
   const startTime = slot?.start ?? member.working_hours?.start ?? DEFAULT_START_TIME;
   const rawDuration = slot ? minutesBetween(slot.start, slot.end) : DEFAULT_DURATION_MINUTES;

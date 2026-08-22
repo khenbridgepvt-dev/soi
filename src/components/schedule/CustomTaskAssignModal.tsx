@@ -30,10 +30,16 @@ export type CustomTaskAssignPrefill = {
   durationMinutes: number;
 };
 
+export type CustomTaskAssignStaffOption = {
+  id: string;
+  full_name: string;
+};
+
 type CustomTaskAssignModalProps = {
   open: boolean;
   prefill: CustomTaskAssignPrefill | null;
   variant?: CustomTaskAssignVariant;
+  staffOptions?: CustomTaskAssignStaffOption[];
   onClose: () => void;
   onAssigned: (message: string) => void;
 };
@@ -58,11 +64,14 @@ export default function CustomTaskAssignModal({
   open,
   prefill,
   variant = 'team',
+  staffOptions = [],
   onClose,
   onAssigned,
 }: CustomTaskAssignModalProps) {
   const invalidate = useInvalidateAfterMutation();
   const showAuditSection = showsCustomTaskAssignAuditSection(variant);
+  const showStaffPicker = variant === 'team' && staffOptions.length > 0;
+  const [selectedStaffId, setSelectedStaffId] = useState('');
   const [caseGroups, setCaseGroups] = useState<AssignableCaseGroup[]>([]);
   const [auditExpanded, setAuditExpanded] = useState(false);
   const [caseSearch, setCaseSearch] = useState('');
@@ -77,28 +86,32 @@ export default function CustomTaskAssignModal({
   const [submitting, setSubmitting] = useState(false);
   const [bannerError, setBannerError] = useState<string | null>(null);
 
-  const resetForm = useCallback((durationMinutes = MIN_ASSIGNMENT_MINUTES) => {
-    const parts = durationToParts(durationMinutes);
-    setAuditExpanded(false);
-    setCaseSearch('');
-    setSelectedCaseId('');
-    setLinkedTaskId('');
-    setName('');
-    setDescription('');
-    setNameError(null);
-    setDescriptionError(null);
-    setHours(parts.hours);
-    setMinutes(parts.minutes);
-    setSubmitting(false);
-    setBannerError(null);
-  }, []);
+  const resetForm = useCallback(
+    (durationMinutes = MIN_ASSIGNMENT_MINUTES, staffId = '') => {
+      const parts = durationToParts(durationMinutes);
+      setAuditExpanded(false);
+      setCaseSearch('');
+      setSelectedCaseId('');
+      setLinkedTaskId('');
+      setName('');
+      setDescription('');
+      setNameError(null);
+      setDescriptionError(null);
+      setHours(parts.hours);
+      setMinutes(parts.minutes);
+      setSelectedStaffId(staffId);
+      setSubmitting(false);
+      setBannerError(null);
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!open) {
       return;
     }
 
-    resetForm(prefill?.durationMinutes ?? MIN_ASSIGNMENT_MINUTES);
+    resetForm(prefill?.durationMinutes ?? MIN_ASSIGNMENT_MINUTES, prefill?.staffId ?? '');
 
     if (!showAuditSection) {
       return;
@@ -115,7 +128,7 @@ export default function CustomTaskAssignModal({
     }
 
     void loadCases();
-  }, [open, prefill?.durationMinutes, resetForm, showAuditSection]);
+  }, [open, prefill?.durationMinutes, prefill?.staffId, resetForm, showAuditSection]);
 
   const filteredCaseGroups = useMemo(() => {
     const normalized = caseSearch.trim().toLowerCase();
@@ -134,6 +147,14 @@ export default function CustomTaskAssignModal({
     [caseGroups, selectedCaseId],
   );
 
+  const selectedStaff = useMemo(
+    () => staffOptions.find((option) => option.id === selectedStaffId) ?? null,
+    [staffOptions, selectedStaffId],
+  );
+
+  const resolvedStaffId = showStaffPicker ? selectedStaffId : prefill?.staffId ?? '';
+  const resolvedStaffName = selectedStaff?.full_name ?? prefill?.staffName ?? 'Staff';
+
   const durationMinutes = partsToDuration(hours, minutes);
   const endTimeResult = prefill?.startTime
     ? calculateEndTime(prefill.startTime, durationMinutes)
@@ -145,7 +166,7 @@ export default function CustomTaskAssignModal({
     !endTimeResult?.ok;
 
   const canSubmit =
-    Boolean(prefill?.staffId) &&
+    Boolean(resolvedStaffId) &&
     Boolean(prefill?.startTime) &&
     Boolean(endTime) &&
     !durationInvalid &&
@@ -187,7 +208,7 @@ export default function CustomTaskAssignModal({
         body: JSON.stringify({
           name: nameResult.value,
           description: descriptionResult.value ?? undefined,
-          staff_id: prefill.staffId,
+          staff_id: resolvedStaffId,
           date: prefill.date,
           start_time: prefill.startTime,
           duration_minutes: durationMinutes,
@@ -216,7 +237,7 @@ export default function CustomTaskAssignModal({
       void invalidate('customTask');
       void invalidate('assign', { caseId: INTERNAL_CASE_ID });
 
-      const staffName = json.data.staff_name ?? prefill.staffName;
+      const staffName = json.data.staff_name ?? resolvedStaffName;
       const assignedTime = json.data.start_time ?? prefill.startTime;
       onAssigned(formatCustomTaskAssignSuccessMessage(variant, staffName, assignedTime));
       onClose();
@@ -245,7 +266,9 @@ export default function CustomTaskAssignModal({
               {getCustomTaskAssignModalTitle(variant)}
             </h2>
             <p className="mt-1 text-sm text-text-secondary">
-              {prefill.staffName} · {formatLongDate(prefill.date)} · {prefill.startTime}
+              {showStaffPicker
+                ? `${formatLongDate(prefill.date)} · ${prefill.startTime}`
+                : `${prefill.staffName} · ${formatLongDate(prefill.date)} · ${prefill.startTime}`}
             </p>
             {variant === 'advanced' && (
               <p className="text-sm text-text-secondary">
@@ -272,6 +295,29 @@ export default function CustomTaskAssignModal({
           )}
 
           <div className="space-y-4">
+            {showStaffPicker && (
+              <div>
+                <label
+                  className="mb-1 block text-sm font-medium text-text"
+                  htmlFor="custom-task-staff"
+                >
+                  Assign to *
+                </label>
+                <select
+                  id="custom-task-staff"
+                  value={selectedStaffId}
+                  onChange={(event) => setSelectedStaffId(event.target.value)}
+                  className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
+                >
+                  {staffOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.full_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div>
               <label className="mb-1 block text-sm font-medium text-text" htmlFor="custom-task-name">
                 Task name *

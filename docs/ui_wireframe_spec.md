@@ -466,9 +466,9 @@ Admin: Leave Management (S-13) → Pending tab → Review → Approve/Reject
 | Component | Detail |
 |-----------|--------|
 | **Date Selector** | Prev/Next day arrows + "Today" button. Clicking opens a date picker calendar. |
-| **+ Assign task** | Primary header CTA (Team Task OS). Opens **Assign team task** modal: name, optional description, duration, read-only slot — no case picker (ticket 0093). |
+| **+ Assign task** | Primary header CTA (Team Task OS). Opens **Assign team task** modal with **Assign to** staff picker (0102), name, optional description, duration, read-only slot — no case picker (ticket 0093). |
 | **Team workload strip** | Horizontal strip below header (ticket 0099): per staff — **in progress** (yellow), **done today** (green), **overdue** (red) counts for the viewed day. Updates with date picker and schedule refetch/Realtime. Optional link to `/team`. |
-| **Column per Staff** | One column per active staff member. Header shows: name, working hours. |
+| **Column per Staff** | One column per active **staff or senior** member (0101 — admins excluded). Header shows: name, working hours. |
 | **Time Rows** | Hourly rows from earliest staff start time to latest staff end time. |
 | **Task Block** | Spans multiple rows proportional to duration. Shows: **task name** (primary), client or time range, duration. Internal/ad-hoc (`case_is_internal`): **task name · start–end** only — no case ref/client (ticket 0045). Status dot + label when applicable: `URGENT`, `BLOCKED`, `COMPLETED`, `DELETED` (ticket 0039/0040). Deleted case slots stay booked; admin click opens tombstone (S-06). Internal slots are non-clickable. |
 | **Available Slot** | Clickable. Light green/tinted background. Cursor changes to "+" on hover. |
@@ -479,7 +479,7 @@ Admin: Leave Management (S-13) → Pending tab → Review → Approve/Reject
 
 | Action | Behaviour |
 |--------|-----------|
-| Click available slot | Opens **slot action menu**: assign existing task (S-09) or add custom task & assign (ticket 0034) |
+| Click available slot | Opens **Assign team task** modal directly (0103) — no slot action menu on Team Schedule |
 | Assign existing (menu) | Opens S-09 pre-filled with staff member, date, and start time; case-first task picker (ticket 0033) |
 | Add custom task & assign (menu) | Single-screen modal (ticket 0044): task name, optional description, duration (prefilled from slot); optional collapsed **Record on case task** for audit note. Creates ad-hoc task on internal case (EP-11b addendum) and assigns slot (EP-13). Pills show **task name**; internal slots omit ref/client (ticket 0045). |
 | Click task block | Navigate to Case Detail (S-06) for that task's case |

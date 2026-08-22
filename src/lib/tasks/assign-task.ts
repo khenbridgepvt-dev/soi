@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
+  fanoutFirmTaskAssignedStaffNotification,
   fanoutNewTaskAssignmentNotification,
   fanoutTaskReassignedNotification,
 } from '@/lib/notifications';
@@ -175,7 +176,7 @@ export async function assignTask(
 
   const { data: caseRow, error: caseError } = await client
     .from('cases')
-    .select('id, status, reference, client_first_name, client_last_name, is_urgent')
+    .select('id, status, reference, client_first_name, client_last_name, is_urgent, is_internal')
     .eq('id', task.case_id)
     .maybeSingle();
 
@@ -342,18 +343,30 @@ export async function assignTask(
 
   try {
     if (!options.skipNotification) {
-      notificationSent =
-        (await fanoutNewTaskAssignmentNotification({
-          userId: input.staff_id,
-          taskId,
-          caseId: caseRow.id,
-          taskName: task.name,
-          caseReference,
-          startTime: input.start_time,
-          endTime: endResult.end,
-          durationMinutes: input.duration_minutes,
-          isUrgent: caseRow.is_urgent || task.status === 'blocked',
-        })) > 0;
+      if (caseRow.is_internal) {
+        notificationSent =
+          (await fanoutFirmTaskAssignedStaffNotification({
+            userId: input.staff_id,
+            taskId,
+            caseId: caseRow.id,
+            taskName: task.name,
+            startTime: input.start_time,
+            endTime: endResult.end,
+          })) > 0;
+      } else {
+        notificationSent =
+          (await fanoutNewTaskAssignmentNotification({
+            userId: input.staff_id,
+            taskId,
+            caseId: caseRow.id,
+            taskName: task.name,
+            caseReference,
+            startTime: input.start_time,
+            endTime: endResult.end,
+            durationMinutes: input.duration_minutes,
+            isUrgent: caseRow.is_urgent || task.status === 'blocked',
+          })) > 0;
+      }
 
       if (
         options.mode === 'reassign' &&

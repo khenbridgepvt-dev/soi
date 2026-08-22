@@ -979,7 +979,7 @@ Creates generic firm work on the hidden internal case (`FIRM-GENERAL`, ADR-0019)
 5. Insert `task_assignment` record
 6. Update `tasks.assigned_to = staff_id` (set to the staff_id from the **most recent non-released assignment** for this task)
 7. If task was `is_overdue = true` and the new assignment's `date + end_time` is in the future, reset `tasks.is_overdue = false`
-8. Create notification for staff (type: `new_task`)
+8. Create notification for staff: type `new_task` on **client** cases; on **internal** (`FIRM-GENERAL`) cases use `task_status_changed` with title **Team task assigned** and body `{taskName} · {start}–{end}` (0105 — no case reference in body)
 
 **Response — `201 Created`:**
 

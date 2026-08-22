@@ -96,7 +96,7 @@ describe('isTeamTaskSlotEndOverdue', () => {
 
 describe('teamTaskStatusCellClasses', () => {
   it('returns full-fill classes for each colour', () => {
-    expect(teamTaskStatusCellClasses('green')).toContain('!bg-status-onTrack');
+    expect(teamTaskStatusCellClasses('green')).toContain('!bg-status-onTrack-bg');
     expect(teamTaskStatusCellClasses('yellow')).toContain('!bg-[#FFF8E6]');
     expect(teamTaskStatusCellClasses('grey')).toContain('!bg-page');
   });

@@ -20,9 +20,9 @@ Case CRM (cases, 13-task checklist, documents, leads) stays in the product under
 | Workload strip | Per staff member: in progress / done today / overdue (0099) — **implemented** |
 | Grid | TLS day grid (S-04) — one column per staff member |
 | Cells | **Full background colour** by task status (see §3) |
-| Slot actions | Click empty slot → assign; click task → detail / status (existing) |
+| Slot actions | Click empty slot → **Assign team task** modal directly (0103); click booked task → detail where applicable |
 
-**Assign flow (0093):** Opens simplified modal — task name, duration, staff + slot prefilled from grid. Creates firm task via `POST /api/schedule/adhoc-task-assign` on `FIRM-GENERAL`. **No** case search, **no** audit link to client case task.
+**Assign flow (0093, 0102):** Opens simplified modal — **Assign to** staff picker, task name, duration, slot prefilled from grid or header CTA. Creates firm task via `POST /api/schedule/adhoc-task-assign` on `FIRM-GENERAL`. Schedule grid columns are **staff/senior only** (0101). **No** case search, **no** audit link to client case task.
 
 **Realtime:** Assignment INSERT/UPDATE/DELETE (0075) + task status UPDATE (0097) invalidate schedule and My tasks queries. **Implemented** — migration `00056_tasks_realtime.sql`, `useTasksRealtime` hook; 60s poll fallback when disconnected.
 
@@ -139,13 +139,23 @@ Run after **0099** on pilot/staging.
 2. **Not started** tab lists assigned firm tasks; **Start** moves to In progress.
 3. **Done** completes task; row moves to Done tab.
 4. **My calendar** shows same task with matching cell colour.
-5. Toast/sound on new assignment notification (0076).
+5. Toast/sound on new assignment notification (0076, 0105 — title **Team task assigned**).
 
 ### Regression
 
 - `POST /api/schedule/adhoc-task-assign` unchanged contract.
 - Case accept, document wizard, task board still reachable from Advanced.
 - `GET /api/personal-tasks` works via API but has no nav entry (0079 paused).
+
+---
+
+### v1.1 smoke addendum (0100–0105)
+
+1. **+ Assign task** defaults to first **staff/senior** column — not admin.
+2. Modal shows **Assign to** dropdown; change staff before submit.
+3. Click empty slot → team assign modal (no slot action menu).
+4. Complete a firm task → cell **green** (`status-onTrack-bg`).
+5. Staff receives **Team task assigned** toast/sound on assign.
 
 ---
 

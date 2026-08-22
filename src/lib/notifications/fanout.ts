@@ -303,6 +303,27 @@ export function formatFirmTaskCompletedNotificationBody(input: {
   return base;
 }
 
+export function buildFirmTaskAssignedNotificationRows(input: {
+  userId: string;
+  taskId: string;
+  caseId: string;
+  taskName: string;
+  startTime: string;
+  endTime: string;
+}): NotificationRow[] {
+  return [
+    {
+      user_id: input.userId,
+      type: 'task_status_changed',
+      title: 'Team task assigned',
+      body: `${input.taskName} · ${input.startTime}–${input.endTime}`,
+      is_urgent: false,
+      case_id: input.caseId,
+      task_id: input.taskId,
+    },
+  ];
+}
+
 export function buildFirmTaskCompletedNotificationRows(input: {
   adminIds: string[];
   staffName: string;

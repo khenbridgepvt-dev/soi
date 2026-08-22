@@ -65,7 +65,7 @@ describe('firmTaskStatusBarClass', () => {
     ).toContain('!bg-[#FFF8E6]');
     expect(
       firmTaskStatusBarClass(task({ status: 'completed' }), '2026-08-22', beforeSlotEnd),
-    ).toContain('!bg-status-onTrack');
+    ).toContain('!bg-status-onTrack-bg');
   });
 });
 

@@ -104,6 +104,7 @@ The MVP is **operational as a free-tier pilot**: all ten MVP modules (M1–M10) 
 - **0097 tasks Realtime:** migration `00056_tasks_realtime.sql`; `useTasksRealtime` + invalidation helper — [Realtime on tasks table](./0097-tasks-realtime.md)
 - **0098 firm task complete notify:** `task_status_changed` fanout to admins on staff Done — [Admin notification on firm task complete](./0098-status-notifications.md)
 - **0099 team workload strip:** per-staff in progress / done / overdue counts on schedule — [Team workload strip on schedule](./0099-team-workload-strip.md)
+- **0100 Team Task OS v1.1:** pilot UX fixes 0101–0105 — [Team Task OS v1.1 epic](./0100-team-os-v11-epic.md)
 
 ## Planned (Team Task OS epic 0091–0099) — **primary product path**
 
@@ -124,6 +125,18 @@ See [TEAM_TASK_OS.md](../../docs/TEAM_TASK_OS.md) and [ADR-0023](../../docs/adr/
 **Team Task OS epic 0090–0099 complete** (ADR-0023).
 
 **Dependency order:** 0090 → 0091 → 0092–0093 → 0094 → 0095 → 0096 → 0097 → 0098–0099.
+
+## Team Task OS v1.1 (0100–0105) — **shipped**
+
+Pilot UX fixes after 0099. See [0100-team-os-v11-epic.md](./0100-team-os-v11-epic.md).
+
+| Ticket | Scope |
+|--------|--------|
+| **0101** | Staff/senior-only schedule columns + assign prefill — **shipped** |
+| **0102** | Staff picker in team assign modal — **shipped** |
+| **0103** | Empty slot → custom task modal — **shipped** |
+| **0104** | Green Tailwind fix + dual schedule legend — **shipped** |
+| **0105** | Staff notification on firm task assign — **shipped** |
 
 ## Paused (reminders & calendar epic 0080–0086)
 

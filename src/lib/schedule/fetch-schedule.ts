@@ -74,6 +74,7 @@ type ProfileRow = {
   id: string;
   full_name: string;
   online_status: Database['public']['Enums']['online_status'];
+  role: Database['public']['Enums']['user_role'];
 };
 
 type CaseRelation = {
@@ -217,12 +218,14 @@ export async function fetchSchedule(
 ): Promise<SchedulePayload> {
   let profileQuery = client
     .from('profiles')
-    .select('id, full_name, online_status')
+    .select('id, full_name, online_status, role')
     .eq('is_active', true)
     .order('full_name', { ascending: true });
 
   if (options.staffId) {
     profileQuery = profileQuery.eq('id', options.staffId);
+  } else {
+    profileQuery = profileQuery.in('role', ['staff', 'senior']);
   }
 
   const { data: profiles, error: profileError } = await profileQuery;
