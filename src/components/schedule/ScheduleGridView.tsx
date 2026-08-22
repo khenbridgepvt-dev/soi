@@ -26,6 +26,7 @@ import {
   scheduleAssignmentPillClassName,
 } from '@/lib/schedule/assignment-label';
 import { REFETCH_INTERVAL_MS, queryKeys } from '@/lib/query/keys';
+import { useScheduleRealtime } from '@/lib/hooks/use-schedule-realtime';
 import { addDays, formatLongDate, minutesBetween, todayISODate } from '@/lib/utils/dates';
 
 /** 36px pill (DS-1) + 4px vertical gap between pills (design_system §6). */
@@ -143,7 +144,7 @@ async function fetchScheduleDay(date: string): Promise<SchedulePayload> {
   return json.data;
 }
 
-export default function ScheduleGridView() {
+export default function ScheduleGridView({ userId }: { userId: string }) {
   const router = useRouter();
   const [date, setDate] = useState(() => todayISODate());
   const [selected, setSelected] = useState<SelectedSlot | null>(null);
@@ -154,6 +155,8 @@ export default function ScheduleGridView() {
     prefill: null,
   });
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  useScheduleRealtime({ viewedDate: date, userId, role: 'admin' });
 
   const {
     data: payload,

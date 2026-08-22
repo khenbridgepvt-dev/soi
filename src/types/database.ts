@@ -549,6 +549,7 @@ export type Database = {
           full_name: string
           id: string
           is_active: boolean
+          notification_sound_muted: boolean
           online_status: Database["public"]["Enums"]["online_status"]
           role: Database["public"]["Enums"]["user_role"]
           timezone: string | null
@@ -560,6 +561,7 @@ export type Database = {
           full_name: string
           id: string
           is_active?: boolean
+          notification_sound_muted?: boolean
           online_status?: Database["public"]["Enums"]["online_status"]
           role?: Database["public"]["Enums"]["user_role"]
           timezone?: string | null
@@ -571,6 +573,7 @@ export type Database = {
           full_name?: string
           id?: string
           is_active?: boolean
+          notification_sound_muted?: boolean
           online_status?: Database["public"]["Enums"]["online_status"]
           role?: Database["public"]["Enums"]["user_role"]
           timezone?: string | null
@@ -598,6 +601,184 @@ export type Database = {
           year_month?: string
         }
         Relationships: []
+      }
+      reschedule_requests: {
+        Row: {
+          assignment_id: string
+          created_at: string
+          id: string
+          proposed_date: string
+          proposed_duration_minutes: number
+          proposed_start_time: string
+          reason: string | null
+          rejection_reason: string | null
+          requested_by: string
+          resolved_at: string | null
+          resolved_by: string | null
+          status: Database["public"]["Enums"]["reschedule_request_status"]
+          task_id: string
+        }
+        Insert: {
+          assignment_id: string
+          created_at?: string
+          id?: string
+          proposed_date: string
+          proposed_duration_minutes: number
+          proposed_start_time: string
+          reason?: string | null
+          rejection_reason?: string | null
+          requested_by: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: Database["public"]["Enums"]["reschedule_request_status"]
+          task_id: string
+        }
+        Update: {
+          assignment_id?: string
+          created_at?: string
+          id?: string
+          proposed_date?: string
+          proposed_duration_minutes?: number
+          proposed_start_time?: string
+          reason?: string | null
+          rejection_reason?: string | null
+          requested_by?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: Database["public"]["Enums"]["reschedule_request_status"]
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reschedule_requests_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "task_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reschedule_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reschedule_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_staff_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reschedule_requests_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reschedule_requests_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_staff_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reschedule_requests_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_personal_tasks: {
+        Row: {
+          case_id: string | null
+          created_at: string
+          created_by: string
+          deadline_date: string | null
+          deleted_at: string | null
+          deleted_by: string | null
+          id: string
+          is_deleted: boolean
+          notes: string | null
+          reminder_date: string | null
+          reminder_note: string | null
+          remind_days_before: number | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          case_id?: string | null
+          created_at?: string
+          created_by: string
+          deadline_date?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          id?: string
+          is_deleted?: boolean
+          notes?: string | null
+          reminder_date?: string | null
+          reminder_note?: string | null
+          remind_days_before?: number | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          case_id?: string | null
+          created_at?: string
+          created_by?: string
+          deadline_date?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          id?: string
+          is_deleted?: boolean
+          notes?: string | null
+          reminder_date?: string | null
+          reminder_note?: string | null
+          remind_days_before?: number | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_personal_tasks_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_personal_tasks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_personal_tasks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_staff_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_personal_tasks_deleted_by_fkey"
+            columns: ["deleted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_personal_tasks_deleted_by_fkey"
+            columns: ["deleted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_staff_view"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       staff_timetables: {
         Row: {
@@ -745,6 +926,7 @@ export type Database = {
           completed_at: string | null
           completed_by: string | null
           created_at: string
+          deadline_date: string | null
           deleted_at: string | null
           deleted_by: string | null
           description: string | null
@@ -758,6 +940,9 @@ export type Database = {
           notes: string | null
           priority_position: number | null
           revision_notes: string | null
+          remind_days_before: number | null
+          reminder_date: string | null
+          reminder_note: string | null
           senior_approval:
             | Database["public"]["Enums"]["senior_review_outcome"]
             | null
@@ -774,6 +959,7 @@ export type Database = {
           completed_at?: string | null
           completed_by?: string | null
           created_at?: string
+          deadline_date?: string | null
           deleted_at?: string | null
           deleted_by?: string | null
           description?: string | null
@@ -787,6 +973,9 @@ export type Database = {
           notes?: string | null
           priority_position?: number | null
           revision_notes?: string | null
+          remind_days_before?: number | null
+          reminder_date?: string | null
+          reminder_note?: string | null
           senior_approval?:
             | Database["public"]["Enums"]["senior_review_outcome"]
             | null
@@ -803,6 +992,7 @@ export type Database = {
           completed_at?: string | null
           completed_by?: string | null
           created_at?: string
+          deadline_date?: string | null
           deleted_at?: string | null
           deleted_by?: string | null
           description?: string | null
@@ -816,6 +1006,9 @@ export type Database = {
           notes?: string | null
           priority_position?: number | null
           revision_notes?: string | null
+          remind_days_before?: number | null
+          reminder_date?: string | null
+          reminder_note?: string | null
           senior_approval?:
             | Database["public"]["Enums"]["senior_review_outcome"]
             | null
@@ -978,7 +1171,14 @@ export type Database = {
         | "leave_requested"
         | "senior_revision_alert"
         | "du_alert"
+        | "reschedule_request"
+        | "reschedule_response"
       online_status: "online" | "break" | "offline"
+      reschedule_request_status:
+        | "pending"
+        | "approved"
+        | "rejected"
+        | "cancelled"
       senior_review_outcome: "pending" | "approved" | "revisions_required"
       task_status: "not_started" | "in_progress" | "completed" | "blocked"
       user_role: "admin" | "senior" | "staff"
@@ -1127,8 +1327,11 @@ export const Constants = {
         "leave_requested",
         "senior_revision_alert",
         "du_alert",
+        "reschedule_request",
+        "reschedule_response",
       ],
       online_status: ["online", "break", "offline"],
+      reschedule_request_status: ["pending", "approved", "rejected", "cancelled"],
       senior_review_outcome: ["pending", "approved", "revisions_required"],
       task_status: ["not_started", "in_progress", "completed", "blocked"],
       user_role: ["admin", "senior", "staff"],

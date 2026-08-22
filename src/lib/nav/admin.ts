@@ -5,6 +5,7 @@ export const ADMIN_NAV_MAIN: NavItem[] = [
   { href: '/cases', label: 'Cases' },
   { href: '/schedule', label: 'Schedule' },
   { href: '/task-board', label: 'Task Board' },
+  { href: '/reminders', label: 'Reminders' },
   { href: '/team', label: 'Team' },
   { href: '/blocked', label: 'Blocked Tasks' },
 ];

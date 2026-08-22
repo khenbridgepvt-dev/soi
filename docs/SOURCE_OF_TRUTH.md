@@ -45,6 +45,7 @@ Quick index for agents and developers. **Read this first** instead of re-auditin
 | **Auth redirects** | Ticket [0050](../tracker/issues/0050-auth-redirect-hardening.md) | `/login?next=`; layout guards; API 401 |
 | **Staff task history** | Ticket [0051](../tracker/issues/0051-staff-task-history-pagination.md), EP-43 addendum | `GET /api/dashboard/staff/history`; lazy History section on S-10 |
 | **Document preparation** | ADR-0021, ticket [0053](../tracker/issues/0053-case-document-preparation-adr-and-docs.md), `docs/templates/`, `src/lib/documents/` | Epic 0054–0061 (registry, wizard, DOCX/PDF); hide on `FIRM-GENERAL` |
+| **Reminders & calendar clarity** | ADR-0022, ticket [0070](../tracker/issues/0070-reminders-calendar-clarity-adr.md), [REMINDERS_AND_CALENDAR.md](./REMINDERS_AND_CALENDAR.md) | Epic 0071–0086 (reminders, colours, Realtime schedule, reschedule, personal tasks, week/month) |
 | **Client data / cache** | ADR-0016, ticket [0032](../tracker/issues/0032-reactive-data-layer.md) | `src/lib/query/` (`keys.ts`, `invalidate.ts`) |
 | **References** | ADR-0009, `src/lib/utils/reference.ts` | `accept_lead` RPC |
 | **Tests** | `docs/test_plan.md` | `tests/unit/`, `tests/integration/` |
@@ -54,7 +55,7 @@ Quick index for agents and developers. **Read this first** instead of re-auditin
 
 ---
 
-## 3. Post-MVP delivery log (0032–0053)
+## 3. Post-MVP delivery log (0032–0070)
 
 | Ticket | Date | Summary |
 |--------|------|---------|
@@ -77,6 +78,12 @@ Quick index for agents and developers. **Read this first** instead of re-auditin
 | [0050](../tracker/issues/0050-auth-redirect-hardening.md) | 2026-08-07 | Auth redirect hardening; login `next` param; layout guards |
 | [0051](../tracker/issues/0051-staff-task-history-pagination.md) | 2026-08-07 | Paginated completed task history (firm + client); lazy load on S-10 |
 | [0053](../tracker/issues/0053-case-document-preparation-adr-and-docs.md) | 2026-08-08 | ADR-0021 + `docs/templates/` planning (registry, fields, wizard flows); epic 0054–0061 |
+| [0070](../tracker/issues/0070-reminders-calendar-clarity-adr.md) | 2026-08-17 | ADR-0022 + `REMINDERS_AND_CALENDAR.md` planning; epic 0071–0086 |
+| [0072](../tracker/issues/0072-reminder-api-due-queries.md) | 2026-08-17 | Due-state lib; EP-16 PATCH reminders; EP-63 GET `/api/reminders` |
+| [0073](../tracker/issues/0073-reminders-list-ui.md) | 2026-08-17 | Reminders nav + list pages (admin `/reminders`, staff `/staff/reminders`) |
+| [0074](../tracker/issues/0074-calendar-colour-tokens.md) | 2026-08-17 | Unified operational colour tokens (board, schedule, reminders) |
+| [0075](../tracker/issues/0075-schedule-realtime.md) | 2026-08-17 | Realtime `task_assignments` + schedule query invalidation |
+| [0076](../tracker/issues/0076-notification-toast-sound.md) | 2026-08-17 | Notification toast + sound; profile mute via EP-64 |
 
 MVP modules (tickets 0002–0030) are implemented per the [implementation map](../tracker/issues/0001-mvp-implementation-map.md).
 

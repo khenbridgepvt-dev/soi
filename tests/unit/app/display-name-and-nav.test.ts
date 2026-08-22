@@ -43,6 +43,7 @@ describe('ADMIN_NAV_SECTIONS', () => {
       'Cases',
       'Schedule',
       'Task Board',
+      'Reminders',
       'Team',
       'Blocked Tasks',
     ]);

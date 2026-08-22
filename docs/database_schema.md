@@ -176,6 +176,19 @@ ALTER TYPE notification_type ADD VALUE 'overtime_rejected';
 ALTER TYPE notification_type ADD VALUE 'deadline_warning';
 ALTER TYPE notification_type ADD VALUE 'blocked_reminder';
 ALTER TYPE notification_type ADD VALUE 'appointment_alert';
+ALTER TYPE notification_type ADD VALUE 'reschedule_request';
+ALTER TYPE notification_type ADD VALUE 'reschedule_response';
+```
+
+#### `reschedule_request_status`
+
+```sql
+CREATE TYPE reschedule_request_status AS ENUM (
+  'pending',
+  'approved',
+  'rejected',
+  'cancelled'
+);
 ```
 
 #### `extension_status`
@@ -253,6 +266,7 @@ CREATE TYPE case_link_type AS ENUM ('follow_up', 'related', 'dependant_applicati
 | 7 | `timezone` | `text` | YES | `'Europe/London'` | — | IANA timezone identifier (Advanced: auto-detected) |
 | 8 | `created_at` | `timestamptz` | NO | `now()` | — | |
 | 9 | `updated_at` | `timestamptz` | NO | `now()` | — | Auto-updated by trigger |
+| 10 | `notification_sound_muted` | `boolean` | NO | `false` | — | When true, skip notification sound; toast/badge still work (0076) |
 
 **Relationships:**
 - `id` → `auth.users(id)` — 1:1, CASCADE delete
@@ -431,6 +445,12 @@ The task board displays client names as "Vishnu + 2 children". Rather than JOINi
 | 22 | `deleted_by` | `uuid` | YES | `NULL` | FK → `profiles(id)` | Who soft-deleted |
 | 23 | `created_at` | `timestamptz` | NO | `now()` | — | |
 | 24 | `updated_at` | `timestamptz` | NO | `now()` | — | |
+| 25 | `reminder_date` | `date` | YES | `NULL` | — | When reminder surfaces (ADR-0022, ticket 0071) |
+| 26 | `reminder_note` | `text` | YES | `NULL` | CHECK `reminder_note IS NULL OR length(reminder_note) <= 500` | Optional reminder note |
+| 27 | `deadline_date` | `date` | YES | `NULL` | — | Optional hard deadline |
+| 28 | `remind_days_before` | `smallint` | YES | `NULL` | CHECK `remind_days_before IS NULL OR remind_days_before >= 0` | Days before `deadline_date` for approaching state |
+
+**Post-MVP addendum (0071):** Reminder columns are nullable — unset means no reminder. API validation for paired `deadline_date` / `remind_days_before` lands in ticket 0072. RLS unchanged (column-only migration).
 
 **Unique Constraint:**
 
@@ -555,6 +575,72 @@ WHERE (is_released = false);
 - When a task is blocked, all its non-released assignments for future dates are marked `is_released = true`.
 - The scheduling grid reads only `is_released = false` records.
 - `duration_minutes` is stored explicitly because `end_time - start_time` may not equal the admin's intended allocation if there are rounding differences.
+
+---
+
+### T6b · `reschedule_requests` — ADR-0022 (ticket 0077)
+
+**Purpose:** Staff-initiated proposals to move an existing assignment to a new slot. Admin approve/reject in ticket 0078.
+
+| # | Column | Type | Nullable | Default | Constraints | Description |
+|---|--------|------|----------|---------|-------------|-------------|
+| 1 | `id` | `uuid` | NO | `gen_random_uuid()` | PK | |
+| 2 | `task_id` | `uuid` | NO | — | FK → `tasks(id)` ON DELETE CASCADE | Parent task |
+| 3 | `assignment_id` | `uuid` | NO | — | FK → `task_assignments(id)` ON DELETE CASCADE | Current non-released assignment |
+| 4 | `requested_by` | `uuid` | NO | — | FK → `profiles(id)` | Staff who submitted the request |
+| 5 | `proposed_date` | `date` | NO | — | — | Requested schedule date |
+| 6 | `proposed_start_time` | `time` | NO | — | — | Requested start time |
+| 7 | `proposed_duration_minutes` | `integer` | NO | — | CHECK `>= 15` | Requested duration |
+| 8 | `status` | `reschedule_request_status` | NO | `'pending'` | — | `pending`, `approved`, `rejected`, `cancelled` |
+| 9 | `reason` | `text` | YES | `NULL` | Max 500 chars | Optional staff note |
+| 10 | `rejection_reason` | `text` | YES | `NULL` | Max 500 chars | Admin reason on reject (0078) |
+| 11 | `created_at` | `timestamptz` | NO | `now()` | — | |
+| 12 | `resolved_at` | `timestamptz` | YES | `NULL` | — | When admin resolved (0078) |
+| 13 | `resolved_by` | `uuid` | YES | `NULL` | FK → `profiles(id)` | Admin who resolved (0078) |
+
+**Indexes:**
+
+```sql
+CREATE UNIQUE INDEX idx_reschedule_requests_pending_assignment
+  ON reschedule_requests (assignment_id)
+  WHERE status = 'pending';
+```
+
+**RLS:**
+- Staff: `INSERT` and `SELECT` own rows (`requested_by = auth.uid()`)
+- Admin: `SELECT` all; `UPDATE` for approve/reject (migration 00054)
+
+**Business Rules:**
+- At most one `pending` request per assignment.
+- Proposed slot validation mirrors EP-13 assign checks; current task is excluded from conflict detection.
+- Successful create fans out `reschedule_request` notifications to active admins with payload `{ reschedule_request_id, proposed_date, proposed_start_time, proposed_duration_minutes }`.
+- Approve (EP-66): reassign via EP-13; fan out `reschedule_response` to staff. Failed approve leaves request `pending`.
+- Reject (EP-66): set `rejection_reason`; fan out `reschedule_response`; assignment unchanged.
+
+---
+
+### T6c · `staff_personal_tasks` — ADR-0022 (ticket 0079)
+
+**Purpose:** Staff ad-hoc personal tasks outside the 13-task checklist. Scheduling slots in ticket 0080.
+
+**Design:** Separate table (not `tasks.is_personal`) keeps lifecycle checklist queries and RLS simple.
+
+| # | Column | Type | Nullable | Default | Constraints | Description |
+|---|--------|------|----------|---------|-------------|-------------|
+| 1 | `id` | `uuid` | NO | `gen_random_uuid()` | PK | |
+| 2 | `created_by` | `uuid` | NO | — | FK → `profiles(id)` | Creator (staff/senior) |
+| 3 | `title` | `text` | NO | — | 1–200 chars | Task title |
+| 4 | `notes` | `text` | YES | `NULL` | Max 500 chars | Optional detail |
+| 5 | `case_id` | `uuid` | YES | `NULL` | FK → `cases(id)` ON DELETE SET NULL | Optional link |
+| 6–9 | Reminder columns | — | YES | `NULL` | Mirror migration 00050 CHECKs | `reminder_date`, `reminder_note`, `deadline_date`, `remind_days_before` |
+| 10 | `is_deleted` | `boolean` | NO | `false` | — | Soft delete |
+| 11–14 | Audit timestamps | — | — | — | — | `deleted_at`, `deleted_by`, `created_at`, `updated_at` |
+
+**Case link trigger:** `case_id` may be `NULL`, internal `FIRM-GENERAL`, or an active client case in `staff_assigned_active_case_ids()`.
+
+**RLS:** Staff/senior own-row CRUD; admin `SELECT` all.
+
+**API:** EP-67 (UI in 0080).
 
 ---
 
@@ -908,6 +994,7 @@ Every PK and UNIQUE constraint auto-creates a B-tree index. These are not listed
 | `tasks` | `idx_tasks_assigned` | `(assigned_to, status, is_deleted)` | B-tree | — | Staff dashboard: "my tasks" |
 | `tasks` | `idx_tasks_blocked` | `(status)` | B-tree | `WHERE status = 'blocked' AND is_deleted = false` | Blocked tasks pool |
 | `tasks` | `idx_tasks_overdue` | `(is_overdue)` | B-tree | `WHERE is_overdue = true AND is_deleted = false` | Overdue detection and display |
+| `tasks` | `idx_tasks_reminder_date_open` | `(reminder_date)` | B-tree | `WHERE reminder_date IS NOT NULL AND status <> 'completed' AND is_deleted = false` | Reminders list due queries (0071) |
 | `task_assignments` | `idx_ta_staff_date` | `(staff_id, date)` | B-tree | `WHERE is_released = false` | Schedule grid: "show me this staff member's day" |
 | `task_assignments` | `idx_ta_date` | `(date)` | B-tree | `WHERE is_released = false` | Schedule grid: "show me all staff for this day" |
 | `notifications` | `idx_notif_user_unread` | `(user_id, is_read, created_at DESC)` | B-tree | — | Notification centre: unread first, sorted by time |

@@ -13,7 +13,7 @@ describe('invalidateAfterMutation key map (ticket 0032)', () => {
     ctx?: { caseId?: string };
   }> = [
     { type: 'assign', expected: ['schedule', 'taskBoard', 'dashboard', 'case', 'notifications'] },
-    { type: 'taskStatus', expected: ['taskBoard', 'schedule', 'dashboard', 'case'] },
+    { type: 'taskStatus', expected: ['taskBoard', 'schedule', 'dashboard', 'case', 'reminders'] },
     { type: 'block', expected: ['taskBoard', 'blocked', 'schedule', 'dashboard', 'case'] },
     { type: 'unblock', expected: ['taskBoard', 'blocked', 'schedule', 'dashboard', 'case'] },
     { type: 'acceptLead', expected: ['cases', 'dashboard', 'taskBoard'] },
@@ -32,7 +32,7 @@ describe('invalidateAfterMutation key map (ticket 0032)', () => {
     { type: 'deleteCase', expected: ['cases', 'archive', 'dashboard', 'taskBoard', 'schedule'] },
     { type: 'restoreCase', expected: ['archive', 'cases'] },
     { type: 'purgeArchive', expected: ['archive', 'cases'] },
-    { type: 'casePatch', expected: ['case', 'taskBoard', 'cases'] },
+    { type: 'casePatch', expected: ['case', 'taskBoard', 'cases', 'reminders'] },
     { type: 'dependant', expected: ['case'] },
     { type: 'customTask', expected: ['schedule'] },
     {

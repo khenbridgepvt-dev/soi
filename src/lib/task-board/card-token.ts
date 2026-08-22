@@ -1,5 +1,7 @@
 import type { Database } from '@/types/database';
 import { duBoardToken } from '@/lib/scheduled/du-escalation';
+import { resolveTaskOperationalColour } from '@/lib/tasks/task-colour';
+import { todayUTCISODate } from '@/lib/tasks/task-reminder-state';
 import { isValidISODate, todayISODate } from '@/lib/utils/dates';
 
 export type TaskBoardStatusToken =
@@ -21,6 +23,9 @@ export type TaskBoardTokenInput = {
   assignmentDate: string | null;
   assignmentStartTime: string | null;
   assignmentEndTime: string | null;
+  reminderDate?: string | null;
+  deadlineDate?: string | null;
+  remindDaysBefore?: number | null;
   now?: Date;
 };
 
@@ -100,7 +105,8 @@ function isApproachingDeadline(input: TaskBoardTokenInput, today: string): boole
 
 /**
  * Maps a board task + case context to a design-system status token (§4.2).
- * Pure function — all date inputs are ISO strings; `now` is injectable for tests.
+ * Reminder operational colours (ADR-0022) take precedence over legacy on-track green
+ * for `in_progress`; ADR-0007 DU / last_date approaching still applies when amber.
  */
 export function resolveTaskBoardToken(input: TaskBoardTokenInput): TaskBoardStatusToken {
   if (input.status === 'completed') {
@@ -111,12 +117,29 @@ export function resolveTaskBoardToken(input: TaskBoardTokenInput): TaskBoardStat
     return 'blocked';
   }
 
-  if (input.isOverdue) {
+  const today = todayISODate(input.now);
+  const operational = resolveTaskOperationalColour(
+    {
+      status: input.status,
+      is_overdue: input.isOverdue,
+      reminder_date: input.reminderDate ?? null,
+      deadline_date: input.deadlineDate ?? null,
+      remind_days_before: input.remindDaysBefore ?? null,
+      case_urgent: input.isCaseUrgent,
+    },
+    todayUTCISODate(input.now),
+  );
+
+  if (operational === 'red') {
+    if (input.isCaseUrgent && ACTIVE_STATUSES.has(input.status)) {
+      return 'urgent';
+    }
+
     return 'overdue';
   }
 
   if (DU_SEQUENCES.has(input.sequence) && input.appointmentDate) {
-    const duToken = duBoardToken(input.appointmentDate, todayISODate(input.now));
+    const duToken = duBoardToken(input.appointmentDate, today);
     if (duToken === 'urgent' || duToken === 'overdue') {
       return duToken;
     }
@@ -126,12 +149,8 @@ export function resolveTaskBoardToken(input: TaskBoardTokenInput): TaskBoardStat
     return 'urgent';
   }
 
-  if (isApproachingDeadline(input, todayISODate(input.now))) {
+  if (operational === 'amber' || isApproachingDeadline(input, today)) {
     return 'approaching';
-  }
-
-  if (input.status === 'in_progress') {
-    return 'on-track';
   }
 
   return 'standard';

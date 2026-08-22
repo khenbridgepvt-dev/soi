@@ -273,7 +273,26 @@ Tier legend: **cheap** = budget model is fine · **STRONG** = use Fable/frontier
 | 0059 document preparation API | cheap | ADR-0021 · api_spec addendum · regenerate on download | 1–2 |
 | 0060 document wizard UI | cheap⚠ | ADR-0021 · `WIZARD_FLOWS.md` · hide internal case | 2 |
 | 0061 admin letterhead upload | cheap | ADR-0021 · Settings · optional Storage bucket | 1 |
+| 0070 reminders/calendar ADR + docs | cheap | ADR-0022 · `REMINDERS_AND_CALENDAR.md` · ticket 0070 | 1 |
+| 0071 task reminder columns migration | cheap | ADR-0022 · `database_schema.md` addendum | 1 |
+| 0072 reminder API + due queries | cheap | ADR-0022 · `REMINDERS_AND_CALENDAR.md` §1 | 1 |
+| 0073 Reminders nav + list UI | cheap | ADR-0022 · ui_wireframe addendum | 1–2 |
+| 0074 calendar colour system | cheap | ADR-0022 · design_system §7 · `assignment-status.ts` | 1 |
+| 0075 Realtime task_assignments + schedule invalidate | cheap⚠ | ADR-0022 · ADR-0016 · `queryKeys.schedule` | 1–2 |
+| 0076 notification toast + sound + profile mute | cheap | ADR-0022 · NotificationsHost · My Profile | 1 |
+| 0077 reschedule request API | cheap | ADR-0022 · api_spec addendum | 1 |
+| 0078 reschedule approve/reject | cheap | EP-13 reuse · notification actions | 1 |
+| 0079 staff personal tasks DB + RLS | cheap | ADR-0022 · database_schema | 1 |
+| 0080 staff personal tasks UI | cheap | ADR-0022 · staff dashboard / calendar entry | 1–2 |
+| 0081 schedule week view | cheap⚠ | ui_wireframe S-04/S-11 · schedule fetch | 1–2 |
+| 0082 schedule month view | cheap⚠ | ui_wireframe S-04/S-11 | 1–2 |
+| 0083 carry-over on today calendar | cheap | ADR-0022 §9 · schedule query layer | 1 |
+| 0084 admin yesterday pending strip | cheap | ADR-0022 §9 · admin dashboard/schedule | 1 |
+| 0085 reminders epic integration tests | cheap | test_plan addendum · Realtime harness | 1 |
+| 0086 reminders epic polish + workflows | cheap (checklist) | USER_WORKFLOWS · nav · manual smoke | 1 |
 
-Estimated total: **42–49 sessions**. Recommended first ticket for a cheap model: **0002 scaffold** (0003 can run in parallel in a second session).
+Estimated total: **42–49 sessions** (MVP table) + **~18–22 sessions** for document prep (0053–0061) + **~16–20 sessions** for reminders epic (0071–0086). Recommended first ticket for a cheap model: **0002 scaffold** (0003 can run in parallel in a second session).
 
 **Post-MVP note (0032):** Task board, schedule, and admin dashboard use 60s `refetchInterval` polling because ADR-0003 defers Realtime board updates to Phase 2. Polling covers other users' mutations and cron-driven `is_overdue` changes without adding Realtime complexity.
+
+**Post-MVP note (0075):** Ticket 0075 adds **targeted** Realtime on `task_assignments` for schedule/calendar views only; task board polling remains until a later consolidation ticket.

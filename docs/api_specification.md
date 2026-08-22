@@ -218,7 +218,8 @@ GET /api/cases?sort_by=created_at&sort_order=desc
 | 13 | POST | `/api/tasks/:id/assign` | Assign task to staff + time slot | admin |
 | 14 | POST | `/api/tasks/:id/block` | Mark task as blocked | admin, staff (own) |
 | 15 | POST | `/api/tasks/:id/unblock` | Unblock task | admin, staff (own) |
-| 16 | PATCH | `/api/tasks/:id` | Update task notes | admin, staff (own) |
+| 16 | PATCH | `/api/tasks/:id` | Update task notes / reminders | admin, staff, senior (own) |
+| 16b| GET | `/api/reminders` | List task reminders (due / at-risk filters) | admin, staff, senior |
 | 17 | POST | `/api/tasks/:id/senior-review` | Submit senior review outcome (Task 8) | admin, senior |
 | **Staff / Profiles** | | | | |
 | 18 | POST | `/api/staff` | Create staff member (+ Supabase Auth account) | admin |
@@ -241,6 +242,7 @@ GET /api/cases?sort_by=created_at&sort_order=desc
 | 31 | PUT | `/api/leave/allowance/:staffId` | Update leave allowance config | admin |
 | **Notifications** | | | | |
 | 32 | GET | `/api/notifications` | List notifications for current user | all |
+| 64 | GET/PATCH | `/api/profile` | Own profile notification preferences | all |
 | 33 | POST | `/api/notifications/mark-read` | Mark notification(s) as read | all |
 | 34 | POST | `/api/notifications/mark-all-read` | Mark all notifications as read | all |
 | 34b| POST | `/api/notifications/:id/acknowledge`| Acknowledge urgent notification | staff |
@@ -1142,28 +1144,265 @@ Returns non-completed tasks on **active** cases, grouped by case for the S-09 ca
 
 ---
 
-### EP-16 · Update Task Notes
+### EP-16 · Update Task Notes and Reminders
 
 | Field | Value |
 |-------|-------|
 | Method | `PATCH` |
 | Path | `/api/tasks/:id` |
-| Role | `admin`, `staff` (own tasks) |
-| Scope | MVP |
+| Role | `admin`, `staff`, `senior` (own assigned tasks; admin any) |
+| Scope | MVP + ADR-0022 (0072) |
 
-**Request Body:**
+**Request Body:** at least one field required.
 
 ```json
 {
-  "notes": "CoS pending, follow up Friday"
+  "notes": "CoS pending, follow up Friday",
+  "reminder_date": "2026-08-20",
+  "reminder_note": "Follow up CoS",
+  "deadline_date": "2026-08-25",
+  "remind_days_before": 3
 }
 ```
 
 | Field | Type | Required | Validation |
 |-------|------|----------|------------|
-| `notes` | string | Yes | Max 500 chars. Can be empty string to clear. |
+| `notes` | string | No* | Max 500 chars. Empty string clears notes. |
+| `reminder_date` | string \| null | No* | `YYYY-MM-DD` or `null` to clear. Clearing also clears `reminder_note`. |
+| `reminder_note` | string \| null | No* | Max 500 chars. Requires `reminder_date` when non-null. |
+| `deadline_date` | string \| null | No* | `YYYY-MM-DD` or `null`. Clearing also clears `remind_days_before`. |
+| `remind_days_before` | integer \| null | No* | ≥ 0 when set. Requires `deadline_date`. |
 
-**Response — `200 OK`:** `{ "data": { "id": "uuid", "notes": "CoS pending, follow up Friday", "updated_at": "..." } }`
+\*At least one of the above must be present.
+
+**Response — `200 OK`:** `{ "data": { "id", "notes", "reminder_date", "reminder_note", "deadline_date", "remind_days_before", "updated_at" } }`
+
+---
+
+### EP-63 · List Task Reminders
+
+| Field | Value |
+|-------|-------|
+| Method | `GET` |
+| Path | `/api/reminders` |
+| Role | `admin`, `staff`, `senior` |
+| Scope | ADR-0022 (0072) |
+
+**Query:**
+
+| Param | Values | Default |
+|-------|--------|---------|
+| `filter` | `all`, `reminder_due`, `deadline_approaching`, `overdue`, `at_risk` | `all` (returns at-risk rows) |
+| `today` | `YYYY-MM-DD` | UTC today |
+
+**Response — `200 OK`:** `{ "data": [ { "id", "name", "abbreviation", "case_id", "case_reference", "client_first_name", "client_last_name", "reminder_date", "reminder_note", "deadline_date", "remind_days_before", "status", "is_overdue", "case_is_urgent", "assigned_to", "state": { "reminder_due", "deadline_approaching", "overdue", "at_risk", "colour" } } ], "meta": { "filter", "today" } }`
+
+RLS limits rows to cases the caller may access. Due-state rules: `docs/REMINDERS_AND_CALENDAR.md` §1.
+
+---
+
+### EP-64 · Own Profile Preferences
+
+| Field | Value |
+|-------|-------|
+| Method | `GET`, `PATCH` |
+| Path | `/api/profile` |
+| Role | `admin`, `staff`, `senior` (own profile only) |
+| Scope | ADR-0022 (0076) |
+
+**GET Response — `200 OK`:** `{ "data": { "id", "full_name", "email", "notification_sound_muted" } }`
+
+**PATCH Request Body:**
+
+```json
+{
+  "notification_sound_muted": true
+}
+```
+
+| Field | Type | Required | Validation |
+|-------|------|----------|------------|
+| `notification_sound_muted` | boolean | Yes | When `true`, skip notification sound; toast and bell badge still work |
+
+**PATCH Response — `200 OK`:** same shape as GET.
+
+---
+
+### EP-65 · Request Task Reschedule
+
+| Field | Value |
+|-------|-------|
+| Method | `POST` |
+| Path | `/api/tasks/:id/reschedule-request` |
+| Role | `staff`, `senior` (own assignment only) |
+| Scope | ADR-0022 (0077) |
+
+**Request Body:**
+
+```json
+{
+  "assignment_id": "uuid",
+  "date": "2026-08-20",
+  "start_time": "10:00",
+  "duration_minutes": 60,
+  "note": "optional staff note"
+}
+```
+
+| Field | Type | Required | Validation |
+|-------|------|----------|------------|
+| `assignment_id` | uuid | Yes | Must be caller's non-released assignment for this task |
+| `date` | string | Yes | `YYYY-MM-DD`, not in the past |
+| `start_time` | string | Yes | 30-minute slot alignment |
+| `duration_minutes` | integer | Yes | 15–480 (same bounds as EP-13) |
+| `note` | string | No | Max 500 characters |
+
+**Server-Side:**
+1. Verify assignment belongs to caller and is not released
+2. Verify task is not completed or deleted; case is active
+3. Reject if a pending request already exists for this assignment
+4. Validate proposed slot (timetable, conflicts — current task excluded)
+5. Insert `reschedule_requests` row (`status = pending`)
+6. Fan out `reschedule_request` notification to all active admins
+
+**Response — `201 Created`:**
+
+```json
+{
+  "data": {
+    "id": "uuid",
+    "task_id": "uuid",
+    "assignment_id": "uuid",
+    "status": "pending",
+    "proposed_date": "2026-08-20",
+    "proposed_start_time": "10:00",
+    "proposed_duration_minutes": 60,
+    "proposed_end_time": "11:00",
+    "reason": "optional staff note",
+    "notifications_sent": 2
+  }
+}
+```
+
+**Errors:** `400` validation/conflict/duplicate pending; `404` task not found.
+
+---
+
+### EP-66 · Approve or Reject Reschedule Request
+
+| Field | Value |
+|-------|-------|
+| Method | `POST` |
+| Path | `/api/reschedule-requests/:id/approve` or `/api/reschedule-requests/:id/reject` |
+| Role | `admin` |
+| Scope | ADR-0022 (0078) |
+
+**Reject request body (optional):**
+
+```json
+{
+  "rejection_reason": "Slot no longer available"
+}
+```
+
+| Field | Type | Required | Validation |
+|-------|------|----------|------------|
+| `rejection_reason` | string | No | Max 500 characters |
+
+**Approve server-side:**
+1. Load pending `reschedule_requests` row (404 if missing, 409 if already resolved)
+2. Re-validate proposed slot via EP-13 `assignTask` (`mode: reassign`, same staff, `skipNotification: true`)
+3. On slot conflict/unavailability → `400`/`409`/`422`; request **stays pending**
+4. Update request `status = approved`, `resolved_at`, `resolved_by`
+5. Fan out `reschedule_response` to `requested_by`
+
+**Reject server-side:**
+1. Same pending guards
+2. Update `status = rejected`, `rejection_reason`, `resolved_at`, `resolved_by`
+3. Fan out `reschedule_response` to staff
+4. No assignment change
+
+**Approve response — `200 OK`:**
+
+```json
+{
+  "data": {
+    "id": "uuid",
+    "task_id": "uuid",
+    "assignment_id": "uuid",
+    "status": "approved",
+    "proposed_date": "2026-08-20",
+    "proposed_start_time": "10:00",
+    "proposed_duration_minutes": 60,
+    "proposed_end_time": "11:00",
+    "rejection_reason": null,
+    "resolved_at": "2026-08-17T12:00:00.000Z",
+    "resolved_by": "uuid",
+    "assignment": { "assignment_id": "uuid", "date": "2026-08-20", "start_time": "10:00", "end_time": "11:00" },
+    "notification_sent": true
+  }
+}
+```
+
+**Reject response — `200 OK`:** same shape without `assignment`.
+
+**Errors:** `404` not found; `409` already resolved; approve slot errors from EP-13.
+
+Admin notification centre shows **Approve** / **Reject** on unread `reschedule_request` notifications (`payload.reschedule_request_id`).
+
+---
+
+### EP-67 · Staff Personal Tasks
+
+| Field | Value |
+|-------|-------|
+| Method | `GET`, `POST` |
+| Path | `/api/personal-tasks` |
+| Role | `GET`: admin, staff, senior · `POST`: staff, senior |
+| Scope | ADR-0022 (0079) |
+
+**GET query (admin only):**
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `staff_id` | uuid | Filter to one staff member's tasks |
+
+**POST request body:**
+
+```json
+{
+  "title": "Follow up CoS",
+  "notes": "optional",
+  "case_id": null,
+  "reminder_date": "2026-08-20",
+  "reminder_note": "Call client",
+  "deadline_date": "2026-08-25",
+  "remind_days_before": 3
+}
+```
+
+| Field | Type | Required | Validation |
+|-------|------|----------|------------|
+| `title` | string | Yes | 1–200 chars |
+| `notes` | string | No | Max 500 chars |
+| `case_id` | uuid \| null | No | Assigned active client case or `FIRM-GENERAL` internal case |
+| Reminder fields | — | No | Same rules as EP-16 / migration 00050 |
+
+**POST response — `201 Created`:** personal task row.
+
+| Field | Value |
+|-------|-------|
+| Method | `PATCH`, `DELETE` |
+| Path | `/api/personal-tasks/:id` |
+| Role | staff, senior (own rows only) |
+
+**PATCH:** update `title`, `notes`, `case_id`, reminder fields (at least one required).
+
+**DELETE:** soft-delete (`is_deleted = true`); `404` if not found or not own row; `403` if another user's row.
+
+**Errors:** `400` validation/case link; `403` non-owner edit.
+
+> **Reminders list:** union with lifecycle tasks in `GET /api/reminders` is ticket 0080.
 
 ---
 

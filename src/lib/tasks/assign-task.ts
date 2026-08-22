@@ -51,6 +51,8 @@ export type AssignTaskResult = {
 type AssignOptions = {
   /** EP-59 releases all current slots before inserting. */
   mode?: 'assign' | 'reassign';
+  /** EP-66: skip assignee notification when reschedule response is sent separately. */
+  skipNotification?: boolean;
 };
 
 type AssignOutcome =
@@ -339,31 +341,33 @@ export async function assignTask(
   let notificationSent = false;
 
   try {
-    notificationSent =
-      (await fanoutNewTaskAssignmentNotification({
-        userId: input.staff_id,
-        taskId,
-        caseId: caseRow.id,
-        taskName: task.name,
-        caseReference,
-        startTime: input.start_time,
-        endTime: endResult.end,
-        durationMinutes: input.duration_minutes,
-        isUrgent: caseRow.is_urgent || task.status === 'blocked',
-      })) > 0;
+    if (!options.skipNotification) {
+      notificationSent =
+        (await fanoutNewTaskAssignmentNotification({
+          userId: input.staff_id,
+          taskId,
+          caseId: caseRow.id,
+          taskName: task.name,
+          caseReference,
+          startTime: input.start_time,
+          endTime: endResult.end,
+          durationMinutes: input.duration_minutes,
+          isUrgent: caseRow.is_urgent || task.status === 'blocked',
+        })) > 0;
 
-    if (
-      options.mode === 'reassign' &&
-      previousAssignee &&
-      previousAssignee !== input.staff_id
-    ) {
-      await fanoutTaskReassignedNotification({
-        userId: previousAssignee,
-        taskId,
-        caseId: caseRow.id,
-        taskName: task.name,
-        caseReference,
-      });
+      if (
+        options.mode === 'reassign' &&
+        previousAssignee &&
+        previousAssignee !== input.staff_id
+      ) {
+        await fanoutTaskReassignedNotification({
+          userId: previousAssignee,
+          taskId,
+          caseId: caseRow.id,
+          taskName: task.name,
+          caseReference,
+        });
+      }
     }
   } catch {
     notificationSent = false;

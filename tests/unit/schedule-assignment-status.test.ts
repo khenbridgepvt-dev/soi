@@ -66,15 +66,24 @@ describe('isScheduleAssignmentDeleted', () => {
 });
 
 describe('scheduleAssignmentStatusDotClass', () => {
-  it('maps blocked, completed, urgent, and on-track', () => {
+  it('maps operational colours for active tasks', () => {
     expect(
       scheduleAssignmentStatusDotClass({ task_status: 'blocked' }),
-    ).toBe('bg-status-blocked-border');
+    ).toBe('bg-error');
     expect(
       scheduleAssignmentStatusDotClass({ task_status: 'completed' }),
     ).toBe('bg-status-onTrack-border');
     expect(
       scheduleAssignmentStatusDotClass({ task_status: 'in_progress', is_urgent: true }),
+    ).toBe('bg-error');
+    expect(
+      scheduleAssignmentStatusDotClass({ task_status: 'in_progress' }),
+    ).toBe('bg-[#B86E00]');
+    expect(
+      scheduleAssignmentStatusDotClass({
+        task_status: 'in_progress',
+        reminder_date: '2026-08-10',
+      }, '2026-08-17'),
     ).toBe('bg-error');
     expect(
       scheduleAssignmentStatusDotClass({ task_status: 'not_started' }),

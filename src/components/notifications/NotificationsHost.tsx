@@ -1,6 +1,7 @@
 'use client';
 
 import NotificationCentreDrawer from '@/components/notifications/NotificationCentreDrawer';
+import Toast from '@/components/ui/Toast';
 import { useNotifications } from '@/lib/hooks/use-notifications';
 
 type NotificationsHostProps = {
@@ -21,6 +22,12 @@ export default function NotificationsHost({ userId }: NotificationsHostProps) {
     markRead,
     markAllRead,
     acknowledge,
+    approveReschedule,
+    rejectReschedule,
+    actionError,
+    actionInFlight,
+    toastMessage,
+    dismissToast,
   } = useNotifications(userId);
 
   const badgeColour =
@@ -51,12 +58,18 @@ export default function NotificationsHost({ userId }: NotificationsHostProps) {
         loading={loading}
         error={error}
         unreadCount={unreadCount}
+        actionError={actionError}
+        actionInFlight={actionInFlight}
         onClose={() => setOpen(false)}
         onTabChange={setTab}
         onMarkAllRead={markAllRead}
         onMarkRead={markRead}
         onAcknowledge={acknowledge}
+        onApproveReschedule={approveReschedule}
+        onRejectReschedule={rejectReschedule}
       />
+
+      <Toast message={toastMessage} onDismiss={dismissToast} durationMs={5000} />
     </>
   );
 }

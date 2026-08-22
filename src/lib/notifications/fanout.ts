@@ -181,6 +181,81 @@ export function buildLeadRejectedNotificationRows(input: {
   }));
 }
 
+export function buildRescheduleRequestNotificationRows(input: {
+  adminIds: string[];
+  rescheduleRequestId: string;
+  taskId: string;
+  caseId: string;
+  taskName: string;
+  caseReference: string;
+  staffName: string;
+  proposedDate: string;
+  proposedStartTime: string;
+  proposedEndTime: string;
+  proposedDurationMinutes: number;
+  reason: string | null;
+  isOvertime?: boolean;
+}): NotificationRow[] {
+  const slotText = `${input.proposedDate} · ${input.proposedStartTime}–${input.proposedEndTime} (${input.proposedDurationMinutes} min)`;
+  const noteSuffix = input.reason ? ` Note: ${input.reason}` : '';
+  const overtimeSuffix = input.isOvertime ? ' (outside working hours)' : '';
+
+  return input.adminIds.map((userId) => ({
+    user_id: userId,
+    type: 'reschedule_request',
+    title: 'Reschedule requested',
+    body: `${input.staffName} requested ${input.taskName} · ${input.caseReference} → ${slotText}${overtimeSuffix}.${noteSuffix}`,
+    is_urgent: false,
+    case_id: input.caseId,
+    task_id: input.taskId,
+    payload: {
+      reschedule_request_id: input.rescheduleRequestId,
+      proposed_date: input.proposedDate,
+      proposed_start_time: input.proposedStartTime,
+      proposed_duration_minutes: input.proposedDurationMinutes,
+    },
+  }));
+}
+
+export function buildRescheduleResponseNotificationRows(input: {
+  userId: string;
+  taskId: string;
+  caseId: string;
+  taskName: string;
+  caseReference: string;
+  outcome: 'approved' | 'rejected';
+  proposedDate: string;
+  proposedStartTime: string;
+  proposedEndTime: string;
+  rejectionReason?: string | null;
+}): NotificationRow[] {
+  const slotText = `${input.proposedDate} · ${input.proposedStartTime}–${input.proposedEndTime}`;
+  const isApproved = input.outcome === 'approved';
+  const reasonSuffix =
+    !isApproved && input.rejectionReason ? ` Reason: ${input.rejectionReason}` : '';
+
+  return [
+    {
+      user_id: input.userId,
+      type: 'reschedule_response',
+      title: isApproved ? 'Reschedule approved' : 'Reschedule rejected',
+      body: isApproved
+        ? `${input.taskName} · ${input.caseReference} moved to ${slotText}.`
+        : `${input.taskName} · ${input.caseReference} — request for ${slotText} was declined.${reasonSuffix}`,
+      is_urgent: false,
+      case_id: input.caseId,
+      task_id: input.taskId,
+      payload: {
+        outcome: input.outcome,
+        proposed_date: input.proposedDate,
+        proposed_start_time: input.proposedStartTime,
+        proposed_end_time: input.proposedEndTime,
+        rejection_reason: input.rejectionReason ?? null,
+      },
+    },
+  ];
+}
+
 export function notificationDedupeKey(
   userId: string,
   kind: string,

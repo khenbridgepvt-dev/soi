@@ -84,6 +84,20 @@ The MVP is **operational as a free-tier pilot**: all ten MVP modules (M1–M10) 
 - **0059 case documents API:** list/upsert/download routes + server lib — [Case document preparation API](./0059-case-documents-api.md)
 - **0060 case detail document wizard UI:** Prepare documents section + step wizard — [Case detail document preparation UI](./0060-case-detail-document-wizard-ui.md)
 - **0061 admin letterhead upload:** Storage bucket + Settings upload; DOCX export uses custom shell — [Admin letterhead upload (Settings)](./0061-admin-letterhead-upload.md)
+- **0070 reminders/calendar ADR:** ADR-0022 + `REMINDERS_AND_CALENDAR.md` planning — [Reminders and calendar clarity ADR and planning docs](./0070-reminders-calendar-clarity-adr.md)
+- **0071 task reminder columns:** Migration 00050 on `tasks`; partial index; types — [Task reminder columns migration](./0071-task-reminder-columns-migration.md)
+- **0072 reminder API + due queries:** Due-state lib; EP-16 PATCH reminders; EP-63 GET `/api/reminders` — [Reminder API + due-state server lib](./0072-reminder-api-due-queries.md)
+- **0073 reminders list UI:** Admin + staff Reminders pages; filter chips; Open case — [Reminders nav + list pages](./0073-reminders-list-ui.md)
+- **0074 calendar colour tokens:** Unified green/amber/red across board, schedule, reminders — [Calendar colour tokens](./0074-calendar-colour-tokens.md)
+- **0075 schedule Realtime:** `task_assignments` Realtime + schedule query invalidation — [Realtime task_assignments + schedule invalidation](./0075-schedule-realtime.md)
+- **0076 notification toast/sound:** Toast + Web Audio on INSERT; profile mute toggle — [Notification toast + sound + profile mute](./0076-notification-toast-sound.md)
+- **0077 reschedule request API:** Staff POST proposed slot; admin notification fanout — [Reschedule request API](./0077-reschedule-request-api.md)
+- **0078 reschedule approve/reject:** Admin EP-66 + notification centre actions + staff outcome — [Reschedule approve/reject](./0078-reschedule-approve-reject.md)
+- **0079 staff personal tasks DB:** `staff_personal_tasks` table + RLS + EP-67 CRUD — [Staff personal tasks DB + RLS](./0079-staff-personal-tasks-db.md)
+
+## Planned (reminders & calendar epic 0080–0086)
+
+- **0080–0086** See [REMINDERS_AND_CALENDAR.md](../../docs/REMINDERS_AND_CALENDAR.md) §10 epic table (personal tasks UI, week/month views, carry-over)
 
 ## Not yet specified
 

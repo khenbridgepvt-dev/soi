@@ -34,6 +34,10 @@ export type ScheduleAssignment = {
   end_time: string;
   duration_minutes: number;
   is_urgent: boolean;
+  is_overdue: boolean;
+  reminder_date: string | null;
+  deadline_date: string | null;
+  remind_days_before: number | null;
   case_deleted: boolean;
   task_deleted: boolean;
   case_is_internal: boolean;
@@ -88,7 +92,11 @@ type TaskRelation = {
   abbreviation: string;
   status: Database['public']['Enums']['task_status'];
   is_urgent: boolean;
+  is_overdue: boolean;
   is_deleted: boolean;
+  reminder_date: string | null;
+  deadline_date: string | null;
+  remind_days_before: number | null;
   cases: CaseRelation | CaseRelation[] | null;
 };
 
@@ -115,6 +123,10 @@ const ASSIGNMENT_SELECT = `
     abbreviation,
     status,
     is_urgent,
+    is_overdue,
+    reminder_date,
+    deadline_date,
+    remind_days_before,
     is_deleted,
     cases (
       id,
@@ -176,6 +188,10 @@ function mapAssignment(row: AssignmentRow): ScheduleAssignment {
     is_urgent:
       !taskMissing &&
       (task?.is_urgent === true || caseRow?.is_urgent === true),
+    is_overdue: task?.is_overdue === true,
+    reminder_date: task?.reminder_date ?? null,
+    deadline_date: task?.deadline_date ?? null,
+    remind_days_before: task?.remind_days_before ?? null,
     case_deleted: caseRow?.is_deleted === true || taskMissing,
     task_deleted: task?.is_deleted === true || taskMissing,
     case_is_internal: caseRow?.is_internal === true,

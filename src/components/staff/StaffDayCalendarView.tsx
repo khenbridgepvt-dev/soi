@@ -17,6 +17,7 @@ import {
   scheduleAssignmentPillClassName,
 } from '@/lib/schedule/assignment-label';
 import { REFETCH_INTERVAL_MS, queryKeys } from '@/lib/query/keys';
+import { useScheduleRealtime } from '@/lib/hooks/use-schedule-realtime';
 import {
   CALENDAR_ROW_HEIGHT,
   currentTimeLabel,
@@ -89,6 +90,7 @@ type ApiError = {
 
 type StaffDayCalendarViewProps = {
   staffId: string;
+  role?: 'staff' | 'senior';
 };
 
 function formatDuration(minutes: number): string {
@@ -102,13 +104,18 @@ function formatDuration(minutes: number): string {
   return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
 }
 
-export default function StaffDayCalendarView({ staffId }: StaffDayCalendarViewProps) {
+export default function StaffDayCalendarView({
+  staffId,
+  role = 'staff',
+}: StaffDayCalendarViewProps) {
   const router = useRouter();
   const [date, setDate] = useState(() => todayISODate());
   const [bannerError, setBannerError] = useState<string | null>(null);
   const [nowTime, setNowTime] = useState(() => currentTimeLabel());
 
   const isToday = date === todayISODate();
+
+  useScheduleRealtime({ viewedDate: date, userId: staffId, role });
 
   const {
     data: payload,

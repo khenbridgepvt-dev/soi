@@ -1,5 +1,11 @@
 /** Schedule pill labels (S-04, S-11) — ticket 0045 name-first display. */
 
+import {
+  scheduleAssignmentOperationalColour,
+} from '@/lib/schedule/assignment-status';
+import { taskColourBorderClasses } from '@/lib/tasks/task-colour';
+import { todayUTCISODate } from '@/lib/tasks/task-reminder-state';
+
 export type ScheduleAssignmentLabelInput = {
   task_name: string;
   task_abbreviation?: string;
@@ -15,6 +21,11 @@ export type ScheduleAssignmentNavInput = ScheduleAssignmentLabelInput & {
   case_deleted?: boolean;
   task_deleted?: boolean;
   task_status?: string;
+  is_urgent?: boolean;
+  is_overdue?: boolean;
+  reminder_date?: string | null;
+  deadline_date?: string | null;
+  remind_days_before?: number | null;
 };
 
 function formatTimeRange(startTime: string, endTime: string): string {
@@ -101,12 +112,15 @@ export function isScheduleAssignmentNavigable(assignment: ScheduleAssignmentNavI
 export function scheduleAssignmentPillClassName(
   assignment: ScheduleAssignmentNavInput,
   extra?: string,
+  today: string = todayUTCISODate(),
 ): string | undefined {
+  const colourClasses = taskColourBorderClasses(
+    scheduleAssignmentOperationalColour(assignment, today),
+  );
+
   const classes = [
     extra,
-    assignment.task_status === 'completed'
-      ? 'border border-status-onTrack-border bg-status-onTrack'
-      : undefined,
+    colourClasses,
     assignment.case_is_internal ? 'opacity-90' : undefined,
   ].filter(Boolean);
 

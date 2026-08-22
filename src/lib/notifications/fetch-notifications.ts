@@ -13,6 +13,7 @@ export type NotificationRecord = {
   acknowledged_at: string | null;
   case_id: string | null;
   task_id: string | null;
+  payload: Database['public']['Tables']['notifications']['Row']['payload'];
   created_at: string;
 };
 
@@ -55,7 +56,7 @@ export async function fetchNotifications(
   let listQuery = client
     .from('notifications')
     .select(
-      'id, type, title, body, is_urgent, is_read, read_at, acknowledged_at, case_id, task_id, created_at',
+      'id, type, title, body, is_urgent, is_read, read_at, acknowledged_at, case_id, task_id, payload, created_at',
       { count: 'exact' },
     )
     .eq('user_id', userId)

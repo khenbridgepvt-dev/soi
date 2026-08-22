@@ -65,6 +65,9 @@ type RawTaskRow = {
   assigned_to: string | null;
   notes: string | null;
   is_overdue: boolean;
+  reminder_date: string | null;
+  deadline_date: string | null;
+  remind_days_before: number | null;
   cases: CaseRelation | CaseRelation[] | null;
 };
 
@@ -76,6 +79,9 @@ const TASK_BOARD_SELECT = `
   assigned_to,
   notes,
   is_overdue,
+  reminder_date,
+  deadline_date,
+  remind_days_before,
   cases!inner (
     id,
     reference,
@@ -132,6 +138,9 @@ function mapTaskRow(
     assignmentDate: assignment?.date ?? null,
     assignmentStartTime: assignment?.start_time ?? null,
     assignmentEndTime: assignment?.end_time ?? null,
+    reminderDate: row.reminder_date,
+    deadlineDate: row.deadline_date,
+    remindDaysBefore: row.remind_days_before,
     now,
   });
 

@@ -7,6 +7,8 @@ import {
   buildSeniorRevisionAdminAlertRows,
   buildLeadRejectedNotificationRows,
   buildNewTaskAssignmentNotificationRows,
+  buildRescheduleRequestNotificationRows,
+  buildRescheduleResponseNotificationRows,
   buildTaskBlockedAdminNotificationRows,
   buildTaskOverdueNotificationRows,
   buildTaskReassignedNotificationRows,
@@ -220,6 +222,71 @@ export async function fanoutTaskBlockedAdminNotification(input: {
   });
 
   return insertNotificationRows(rows, client);
+}
+
+/** EP-65: notify all active admins when staff request a reschedule. */
+export async function fanoutRescheduleRequestAdminNotification(input: {
+  rescheduleRequestId: string;
+  taskId: string;
+  caseId: string;
+  taskName: string;
+  caseReference: string;
+  staffName: string;
+  proposedDate: string;
+  proposedStartTime: string;
+  proposedEndTime: string;
+  proposedDurationMinutes: number;
+  reason: string | null;
+  isOvertime?: boolean;
+  service?: SupabaseClient<Database>;
+}): Promise<number> {
+  const client = input.service ?? createServiceClient();
+
+  const { data: admins, error } = await client
+    .from('profiles')
+    .select('id')
+    .eq('role', 'admin')
+    .eq('is_active', true);
+
+  if (error || !admins?.length) {
+    return 0;
+  }
+
+  const rows = buildRescheduleRequestNotificationRows({
+    adminIds: admins.map((admin) => admin.id),
+    rescheduleRequestId: input.rescheduleRequestId,
+    taskId: input.taskId,
+    caseId: input.caseId,
+    taskName: input.taskName,
+    caseReference: input.caseReference,
+    staffName: input.staffName,
+    proposedDate: input.proposedDate,
+    proposedStartTime: input.proposedStartTime,
+    proposedEndTime: input.proposedEndTime,
+    proposedDurationMinutes: input.proposedDurationMinutes,
+    reason: input.reason,
+    isOvertime: input.isOvertime,
+  });
+
+  return insertNotificationRows(rows, client);
+}
+
+/** EP-66: notify staff when an admin approves or rejects their reschedule request. */
+export async function fanoutRescheduleResponseNotification(input: {
+  userId: string;
+  taskId: string;
+  caseId: string;
+  taskName: string;
+  caseReference: string;
+  outcome: 'approved' | 'rejected';
+  proposedDate: string;
+  proposedStartTime: string;
+  proposedEndTime: string;
+  rejectionReason?: string | null;
+  service?: SupabaseClient<Database>;
+}): Promise<number> {
+  const rows = buildRescheduleResponseNotificationRows(input);
+  return insertNotificationRows(rows, input.service);
 }
 
 /** EP-06: notify other admins when a lead is rejected. */

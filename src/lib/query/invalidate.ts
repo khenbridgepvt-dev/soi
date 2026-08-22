@@ -77,6 +77,9 @@ export async function invalidateAfterMutation(
     return queryClient.invalidateQueries({ queryKey: queryKeys.notifications() });
   };
 
+  const invalidateReminders = () =>
+    queryClient.invalidateQueries({ queryKey: queryKeys.reminders.all });
+
   switch (type) {
     case 'assign':
       await Promise.all([
@@ -95,6 +98,7 @@ export async function invalidateAfterMutation(
         invalidateDashboardAdmin(),
         invalidateDashboardStaff(),
         invalidateCaseDetail(),
+        invalidateReminders(),
       ]);
       break;
     case 'block':
@@ -137,6 +141,7 @@ export async function invalidateAfterMutation(
         invalidateCaseDetail(),
         invalidateTaskBoard(),
         invalidateCasesLists(),
+        invalidateReminders(),
       ]);
       break;
     case 'dependant':
@@ -177,7 +182,7 @@ export function invalidatedKeyPrefixesForMutation(
     case 'assign':
       return ['schedule', 'taskBoard', 'dashboard', 'case', 'notifications'];
     case 'taskStatus':
-      return ['taskBoard', 'schedule', 'dashboard', 'case'];
+      return ['taskBoard', 'schedule', 'dashboard', 'case', 'reminders'];
     case 'block':
     case 'unblock':
       return ['taskBoard', 'blocked', 'schedule', 'dashboard', 'case'];
@@ -194,7 +199,7 @@ export function invalidatedKeyPrefixesForMutation(
     case 'purgeArchive':
       return ['archive', 'cases'];
     case 'casePatch':
-      return ['case', 'taskBoard', 'cases'];
+      return ['case', 'taskBoard', 'cases', 'reminders'];
     case 'dependant':
     case 'seniorReview':
       return ['case'];

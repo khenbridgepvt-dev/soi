@@ -25,6 +25,29 @@ describe('resolveTaskBoardToken', () => {
     );
   });
 
+  it('returns overdue when reminder_date is due (ADR-0022)', () => {
+    expect(
+      resolveTaskBoardToken({
+        ...base,
+        status: 'in_progress',
+        reminderDate: '2026-07-10',
+        now: new Date('2026-07-15T12:00:00Z'),
+      }),
+    ).toBe('overdue');
+  });
+
+  it('returns approaching when deadline is in remind_days_before window', () => {
+    expect(
+      resolveTaskBoardToken({
+        ...base,
+        status: 'not_started',
+        deadlineDate: '2026-07-20',
+        remindDaysBefore: 3,
+        now: new Date('2026-07-17T12:00:00Z'),
+      }),
+    ).toBe('approaching');
+  });
+
   it('returns urgent for urgent active tasks (ADR-0008)', () => {
     expect(
       resolveTaskBoardToken({
@@ -103,8 +126,8 @@ describe('resolveTaskBoardToken', () => {
     ).toBe('overdue');
   });
 
-  it('returns on-track for in_progress tasks without escalation', () => {
-    expect(resolveTaskBoardToken({ ...base, status: 'in_progress' })).toBe('on-track');
+  it('returns approaching for in_progress tasks without escalation (ADR-0022)', () => {
+    expect(resolveTaskBoardToken({ ...base, status: 'in_progress' })).toBe('approaching');
   });
 
   it('returns standard for not_started tasks without escalation', () => {

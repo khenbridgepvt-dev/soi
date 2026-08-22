@@ -75,7 +75,7 @@ describe('formatScheduleAssignmentAriaLabel', () => {
   });
 });
 
-describe('scheduleAssignmentPillClassName (ticket 0048)', () => {
+describe('scheduleAssignmentPillClassName (ticket 0048 / 0074)', () => {
   it('applies on-track green styling for completed assignments', () => {
     expect(
       scheduleAssignmentPillClassName({
@@ -83,6 +83,29 @@ describe('scheduleAssignmentPillClassName (ticket 0048)', () => {
         task_status: 'completed',
       }),
     ).toContain('bg-status-onTrack');
+  });
+
+  it('applies amber styling for in_progress assignments (ADR-0022)', () => {
+    expect(
+      scheduleAssignmentPillClassName({
+        ...caseAssignment,
+        task_status: 'in_progress',
+      }),
+    ).toContain('bg-status-approaching');
+  });
+
+  it('applies red styling when reminder is due', () => {
+    expect(
+      scheduleAssignmentPillClassName(
+        {
+          ...caseAssignment,
+          task_status: 'in_progress',
+          reminder_date: '2026-08-10',
+        },
+        undefined,
+        '2026-08-17',
+      ),
+    ).toContain('bg-error-bg');
   });
 });
 

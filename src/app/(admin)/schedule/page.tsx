@@ -1,11 +1,17 @@
 import type { Metadata } from 'next';
 import ScheduleGridView from '@/components/schedule/ScheduleGridView';
+import { requireSessionWithRoles } from '@/lib/auth/require-login';
 
 export const metadata: Metadata = {
   title: 'Scheduling Grid',
 };
 
 /** S-04 · Scheduling Grid */
-export default function SchedulePage() {
-  return <ScheduleGridView />;
+export default async function SchedulePage() {
+  const sessionWithRole = await requireSessionWithRoles(['admin'], {
+    fallbackPath: '/dashboard',
+    wrongRoleRedirect: '/staff/dashboard',
+  });
+
+  return <ScheduleGridView userId={sessionWithRole.session.user.id} />;
 }

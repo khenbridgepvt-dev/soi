@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/server';
 const STAFF_NAV = [
   { href: '/staff/dashboard', label: 'Dashboard' },
   { href: '/staff/calendar', label: 'My Calendar' },
+  { href: '/staff/reminders', label: 'Reminders' },
   { href: '/staff/profile', label: 'My Profile' },
 ];
 

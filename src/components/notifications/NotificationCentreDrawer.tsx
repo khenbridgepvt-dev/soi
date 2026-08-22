@@ -2,7 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState } from 'react';
 import type { NotificationRecord } from '@/lib/notifications/fetch-notifications';
+import {
+  parseRescheduleRequestPayload,
+  shouldShowRescheduleActions,
+} from '@/lib/notifications/reschedule-notification-ui';
 import { formatRelativeTime } from '@/lib/utils/dates';
 
 type NotificationCentreDrawerProps = {
@@ -16,7 +21,15 @@ type NotificationCentreDrawerProps = {
   onMarkAllRead: () => void;
   onMarkRead: (id: string) => void;
   onAcknowledge: (id: string) => void;
+  onApproveReschedule: (rescheduleRequestId: string, notificationId: string) => Promise<boolean>;
+  onRejectReschedule: (
+    rescheduleRequestId: string,
+    notificationId: string,
+    rejectionReason: string | null,
+  ) => Promise<boolean>;
   unreadCount: number;
+  actionError: string | null;
+  actionInFlight: string | null;
 };
 
 function notificationIcon(notification: NotificationRecord): string {
@@ -24,7 +37,11 @@ function notificationIcon(notification: NotificationRecord): string {
     return '🔴';
   }
 
-  if (notification.type === 'task_blocked' || notification.type === 'task_overdue') {
+  if (
+    notification.type === 'task_blocked' ||
+    notification.type === 'task_overdue' ||
+    notification.type === 'reschedule_request'
+  ) {
     return '🟡';
   }
 
@@ -49,6 +66,93 @@ function caseHref(pathname: string, caseId: string, taskId: string | null): stri
   return `${base}/${caseId}${query}`;
 }
 
+function RescheduleActions({
+  notification,
+  actionInFlight,
+  onApproveReschedule,
+  onRejectReschedule,
+}: {
+  notification: NotificationRecord;
+  actionInFlight: string | null;
+  onApproveReschedule: NotificationCentreDrawerProps['onApproveReschedule'];
+  onRejectReschedule: NotificationCentreDrawerProps['onRejectReschedule'];
+}) {
+  const payload = parseRescheduleRequestPayload(notification.payload);
+  const [showReject, setShowReject] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+  const busy = actionInFlight === notification.id;
+
+  if (!payload) {
+    return null;
+  }
+
+  return (
+    <div className="mt-2 flex w-full flex-col gap-2">
+      {!showReject ? (
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void onApproveReschedule(payload.reschedule_request_id, notification.id)}
+            className="rounded-md border border-status-onTrack-border bg-status-onTrack-bg px-2 py-1 text-xs font-medium text-status-onTrack-border hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Approve
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => setShowReject(true)}
+            className="rounded-md border border-error bg-error-bg px-2 py-1 text-xs font-medium text-error hover:bg-error-bg/80 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Reject
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <label className="block text-xs text-text-secondary">
+            Rejection reason (optional)
+            <textarea
+              value={rejectReason}
+              onChange={(event) => setRejectReason(event.target.value)}
+              rows={2}
+              maxLength={500}
+              className="mt-1 w-full rounded-md border border-border bg-surface px-2 py-1 text-xs text-text"
+              placeholder="Explain why this slot cannot be used"
+            />
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() =>
+                void onRejectReschedule(
+                  payload.reschedule_request_id,
+                  notification.id,
+                  rejectReason.trim() || null,
+                )
+              }
+              className="rounded-md border border-error bg-error-bg px-2 py-1 text-xs font-medium text-error hover:bg-error-bg/80 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Confirm reject
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                setShowReject(false);
+                setRejectReason('');
+              }}
+              className="rounded-md border border-border px-2 py-1 text-xs text-text-secondary hover:bg-page"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function NotificationCentreDrawer({
   open,
   tab,
@@ -60,9 +164,14 @@ export default function NotificationCentreDrawer({
   onMarkAllRead,
   onMarkRead,
   onAcknowledge,
+  onApproveReschedule,
+  onRejectReschedule,
   unreadCount,
+  actionError,
+  actionInFlight,
 }: NotificationCentreDrawerProps) {
   const pathname = usePathname();
+  const isAdmin = !pathname.startsWith('/staff');
 
   if (!open) {
     return null;
@@ -114,6 +223,10 @@ export default function NotificationCentreDrawer({
           </button>
         </div>
 
+        {actionError && (
+          <p className="border-b border-border bg-error-bg px-4 py-2 text-sm text-error">{actionError}</p>
+        )}
+
         <div className="flex-1 overflow-y-auto">
           {loading && (
             <p className="px-4 py-8 text-center text-sm text-text-secondary">Loading…</p>
@@ -155,6 +268,15 @@ export default function NotificationCentreDrawer({
                     {formatRelativeTime(notification.created_at)}
                   </span>
                 </div>
+
+                {shouldShowRescheduleActions(isAdmin, notification) && (
+                  <RescheduleActions
+                    notification={notification}
+                    actionInFlight={actionInFlight}
+                    onApproveReschedule={onApproveReschedule}
+                    onRejectReschedule={onRejectReschedule}
+                  />
+                )}
 
                 <div className="mt-2 flex flex-wrap gap-2">
                   {notification.case_id && (

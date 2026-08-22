@@ -221,6 +221,19 @@ Always pair with dot or text — e.g. online dot 8px `#1B7F4B` before name.
 - Read: bg `#FFFFFF`, no bar.
 - Timestamp: 12px muted, right-aligned or below body.
 
+### 7.8 Operational colour system (ADR-0022, ticket 0074)
+
+Unified **green / amber / red / neutral** across S-03 board, S-04/S-11 schedule pills, and S-32 Reminders. Code: `src/lib/tasks/task-colour.ts`.
+
+| Colour | Meaning |
+|--------|---------|
+| **Green** | `completed` |
+| **Red** | `blocked`, case `is_urgent`, reminder due, past deadline, `is_overdue` |
+| **Amber** | `in_progress`, deadline approaching (`remind_days_before` window) |
+| **Neutral** | `not_started` without risk |
+
+Board maps red → `overdue` / `urgent` tokens; blocked keeps ⊘ stripe (§4.2). ADR-0007 DU / `last_date` approaching still yields `approaching` when not red. Cross-ref: [REMINDERS_AND_CALENDAR.md](./REMINDERS_AND_CALENDAR.md) §3.
+
 ---
 
 ## 8. Motion
@@ -287,6 +300,7 @@ Always pair with dot or text — e.g. online dot 8px `#1B7F4B` before name.
 ### S-11 · Staff day calendar
 
 - Single column time grid; same `SlotBlock` and task block tokens as S-04.
+- Booked pills use unified operational colours (green / amber / red — ADR-0022, ticket 0074).
 - Current time: 2px horizontal rule `#C41E24` at 50% opacity, no animation.
 - Next-action task block: ring `0 0 0 2px #0F2B5B`.
 

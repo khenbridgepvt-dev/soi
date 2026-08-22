@@ -18,5 +18,5 @@ export default async function StaffCalendarPage() {
     redirect('/dashboard');
   }
 
-  return <StaffDayCalendarView staffId={session.user.id} />;
+  return <StaffDayCalendarView staffId={session.user.id} role={role} />;
 }

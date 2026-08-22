@@ -4,6 +4,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { NotificationRecord } from '@/lib/notifications/fetch-notifications';
 import { useRealtime } from '@/lib/hooks/use-realtime';
 import {
+  formatNotificationToast,
+  shouldPlayNotificationSound,
+  shouldShowNotificationToast,
+} from '@/lib/notifications/notification-toast';
+import { playNotificationSound } from '@/lib/notifications/play-notification-sound';
+import {
   registerNotificationRefetch,
   unregisterNotificationRefetch,
 } from '@/lib/query/notification-refetch';
@@ -68,7 +74,14 @@ export function useNotifications(userId?: string) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<NotificationTab>('unread');
   const [state, setState] = useState<NotificationState>(INITIAL_STATE);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionInFlight, setActionInFlight] = useState<string | null>(null);
   const fetchGeneration = useRef(0);
+  const openRef = useRef(open);
+  const soundMutedRef = useRef(false);
+
+  openRef.current = open;
 
   const loadNotifications = useCallback(
     async (activeTab: NotificationTab) => {
@@ -137,6 +150,35 @@ export function useNotifications(userId?: string) {
       return;
     }
 
+    let cancelled = false;
+
+    async function loadPreferences() {
+      try {
+        const response = await fetch('/api/profile');
+        const json = (await response.json()) as {
+          data?: { notification_sound_muted: boolean };
+        };
+
+        if (!cancelled && response.ok && json.data) {
+          soundMutedRef.current = json.data.notification_sound_muted;
+        }
+      } catch {
+        // Keep default (sound on) when preferences cannot be loaded.
+      }
+    }
+
+    void loadPreferences();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  useEffect(() => {
+    if (!userId) {
+      return;
+    }
+
     registerNotificationRefetch(() => loadNotifications(tab));
     return () => unregisterNotificationRefetch();
   }, [userId, tab, loadNotifications]);
@@ -155,6 +197,14 @@ export function useNotifications(userId?: string) {
             ? current.urgentUnreadCount
             : current.urgentUnreadCount + 1,
       }));
+
+      if (shouldShowNotificationToast({ notification, drawerOpen: openRef.current })) {
+        setToastMessage(formatNotificationToast(notification));
+      }
+
+      if (shouldPlayNotificationSound({ notification, soundMuted: soundMutedRef.current })) {
+        void playNotificationSound({ muted: soundMutedRef.current });
+      }
     },
     [tab],
   );
@@ -249,15 +299,73 @@ export function useNotifications(userId?: string) {
     [tab],
   );
 
+  const resolveReschedule = useCallback(
+    async (
+      endpoint: 'approve' | 'reject',
+      rescheduleRequestId: string,
+      notificationId: string,
+      rejectionReason?: string | null,
+    ) => {
+      setActionError(null);
+      setActionInFlight(notificationId);
+
+      try {
+        const response = await fetch(`/api/reschedule-requests/${rescheduleRequestId}/${endpoint}`, {
+          method: 'POST',
+          headers: endpoint === 'reject' ? { 'Content-Type': 'application/json' } : undefined,
+          body:
+            endpoint === 'reject'
+              ? JSON.stringify({ rejection_reason: rejectionReason ?? null })
+              : undefined,
+        });
+
+        const json = (await response.json()) as { error?: { message?: string } };
+
+        if (!response.ok) {
+          setActionError(json.error?.message ?? 'Failed to resolve reschedule request.');
+          return false;
+        }
+
+        await markRead(notificationId);
+        await loadNotifications(tab);
+        return true;
+      } catch {
+        setActionError('Unable to connect. Check your internet connection.');
+        return false;
+      } finally {
+        setActionInFlight(null);
+      }
+    },
+    [loadNotifications, markRead, tab],
+  );
+
+  const approveReschedule = useCallback(
+    async (rescheduleRequestId: string, notificationId: string) =>
+      resolveReschedule('approve', rescheduleRequestId, notificationId),
+    [resolveReschedule],
+  );
+
+  const rejectReschedule = useCallback(
+    async (rescheduleRequestId: string, notificationId: string, rejectionReason: string | null) =>
+      resolveReschedule('reject', rescheduleRequestId, notificationId, rejectionReason),
+    [resolveReschedule],
+  );
+
   return {
     open,
     setOpen,
     tab,
     setTab,
     ...state,
+    toastMessage,
+    dismissToast: () => setToastMessage(null),
+    actionError,
+    actionInFlight,
     reload: () => loadNotifications(tab),
     markRead,
     markAllRead,
     acknowledge,
+    approveReschedule,
+    rejectReschedule,
   };
 }

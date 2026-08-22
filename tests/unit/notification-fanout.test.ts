@@ -3,6 +3,8 @@ import {
   buildDuAlertNotificationRows,
   buildLeadRejectedNotificationRows,
   buildNewTaskAssignmentNotificationRows,
+  buildRescheduleRequestNotificationRows,
+  buildRescheduleResponseNotificationRows,
   buildRevisionStaffNotificationRows,
   buildSeniorRevisionAdminAlertRows,
   buildTaskBlockedAdminNotificationRows,
@@ -202,6 +204,47 @@ describe('buildTaskOverdueNotificationRows', () => {
     expect((rows[0].payload as { dedupe_key: string }).dedupe_key).toBe(
       notificationDedupeKey('staff-a', 'task_overdue', ['task-1']),
     );
+  });
+});
+
+describe('buildRescheduleRequestNotificationRows', () => {
+  it('builds one reschedule_request row per admin', () => {
+    const rows = buildRescheduleRequestNotificationRows({
+      adminIds: ['admin-a'],
+      rescheduleRequestId: 'req-1',
+      taskId: 'task-1',
+      caseId: 'case-1',
+      taskName: 'CCL',
+      caseReference: '072601/SKW/VIS',
+      staffName: 'Asha',
+      proposedDate: '2026-08-20',
+      proposedStartTime: '10:00',
+      proposedEndTime: '11:00',
+      proposedDurationMinutes: 60,
+      reason: null,
+    });
+
+    expect(rows[0].type).toBe('reschedule_request');
+    expect(rows[0].body).toContain('10:00–11:00');
+  });
+});
+
+describe('buildRescheduleResponseNotificationRows', () => {
+  it('builds an approved response row', () => {
+    const rows = buildRescheduleResponseNotificationRows({
+      userId: 'staff-a',
+      taskId: 'task-1',
+      caseId: 'case-1',
+      taskName: 'CCL',
+      caseReference: '072601/SKW/VIS',
+      outcome: 'approved',
+      proposedDate: '2026-08-20',
+      proposedStartTime: '10:00',
+      proposedEndTime: '11:00',
+    });
+
+    expect(rows[0].type).toBe('reschedule_response');
+    expect(rows[0].title).toBe('Reschedule approved');
   });
 });
 

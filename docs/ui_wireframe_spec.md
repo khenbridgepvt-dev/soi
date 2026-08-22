@@ -45,6 +45,7 @@ A web application that replaces an Excel-based tracker for a legal/immigration f
 | S-16 | Staff Member Settings | Admin | Page | US-5.1, US-5.2 |
 | S-17 | Blocked Tasks Pool | Admin | Page/Panel | US-5.7 |
 | S-18 | Archive (Soft-Deleted) | Admin | Page | US-10.1 |
+| S-32 | Reminders List | Both | Page | ADR-0022 |
 
 ### Advanced Screens (Phase 2)
 
@@ -103,6 +104,7 @@ These components appear on every page and are specified once here.
 - Cases
 - Team
 - Blocked Tasks
+- Reminders
 - Settings (Application Types, Staff Members)
 - Archive
 
@@ -111,6 +113,7 @@ These components appear on every page and are specified once here.
 **Sidebar Navigation (Staff):**
 - Dashboard
 - My Calendar
+- Reminders
 - My Cases
 - Notifications
 
@@ -1413,6 +1416,35 @@ Admin: Leave Management (S-13) → Pending tab → Review → Approve/Reject
 | [Unblock] | Changes status back to `In Progress`. Toast: "Task unblocked. Reassign a time slot in the scheduling grid." |
 | [Reassign] | Opens S-09 to reassign the task to a new staff member and time slot |
 | Click row | Navigate to Case Detail (S-06) |
+
+---
+
+### S-32 · Reminders List (Admin + Staff)
+
+**Scope:** ADR-0022 (ticket 0073)  
+**Routes:** Admin `/reminders` · Staff `/staff/reminders`
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  REMINDERS                                                           │
+│  [At risk] [Reminder due] [Overdue]                                  │
+├─────────────────────────────────────────────────────────────────────┤
+│  Task          │ Case        │ Client │ Reminder │ Deadline │ Status │
+│  CCL Task 3    │ 062601/FWV  │ …      │ 17 Aug   │ 25 Aug   │ Red    │
+│  ADH Custom    │ Firm task   │ …      │ —        │ —        │ Amber  │
+│  …             │             │        │          │          │ [Open] │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+| Element | Behaviour |
+|---------|-----------|
+| Filter chips | `at_risk` (default), `reminder_due`, `overdue` — maps to `GET /api/reminders?filter=` |
+| Case column | Case reference, or **Firm task** for internal `FIRM-GENERAL` case |
+| Status pill | `row.state.colour` — red / amber / green / neutral via `taskColourPillClasses` (0074) |
+| Reminder note | Secondary text under task name when set |
+| Assigned (admin) | Staff name from `assigned_to` when available |
+| Open case | `/cases/:id` (admin) or `/staff/cases/:id` (staff) |
+| Empty state | “No reminders due — you're up to date.” |
 
 ---
 

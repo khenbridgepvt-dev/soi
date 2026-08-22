@@ -42,4 +42,8 @@ export const queryKeys = {
   applicationTypes: () => ['applicationTypes'] as const,
   coveringLetterhead: () => ['coveringLetterhead'] as const,
   notifications: () => ['notifications'] as const,
+  reminders: {
+    all: ['reminders'] as const,
+    list: (filter: string) => ['reminders', filter] as const,
+  },
 };

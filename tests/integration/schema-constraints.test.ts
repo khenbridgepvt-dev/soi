@@ -101,6 +101,72 @@ describe('schema constraints', () => {
     expect(duplicateError?.code).toBe('23505');
   });
 
+  it('rejects task reminder_note longer than 500 characters', async () => {
+    const email = `reminder-note-${Date.now()}@test.local`;
+    const user = await createTestUser(client, email);
+    testUserIds.push(user.id);
+
+    const appTypeId = await getApplicationTypeId(client, 'SKW');
+
+    const { data: caseRow, error: caseError } = await client
+      .from('cases')
+      .insert({
+        client_first_name: 'Reminder',
+        client_last_name: 'Note',
+        application_type_id: appTypeId,
+        created_by: user.id,
+      })
+      .select('id')
+      .single();
+
+    if (caseError || !caseRow) throw caseError;
+    testCaseIds.push(caseRow.id);
+
+    const { error: taskError } = await client.from('tasks').insert({
+      case_id: caseRow.id,
+      sequence: 1,
+      name: 'CCL (Client Care Letter)',
+      abbreviation: 'CCL',
+      reminder_note: 'x'.repeat(501),
+    });
+
+    expect(taskError).not.toBeNull();
+    expect(taskError?.message.toLowerCase()).toMatch(/reminder_note|check/);
+  });
+
+  it('rejects negative remind_days_before on tasks', async () => {
+    const email = `remind-days-${Date.now()}@test.local`;
+    const user = await createTestUser(client, email);
+    testUserIds.push(user.id);
+
+    const appTypeId = await getApplicationTypeId(client, 'SKW');
+
+    const { data: caseRow, error: caseError } = await client
+      .from('cases')
+      .insert({
+        client_first_name: 'Remind',
+        client_last_name: 'Days',
+        application_type_id: appTypeId,
+        created_by: user.id,
+      })
+      .select('id')
+      .single();
+
+    if (caseError || !caseRow) throw caseError;
+    testCaseIds.push(caseRow.id);
+
+    const { error: taskError } = await client.from('tasks').insert({
+      case_id: caseRow.id,
+      sequence: 1,
+      name: 'CCL (Client Care Letter)',
+      abbreviation: 'CCL',
+      remind_days_before: -1,
+    });
+
+    expect(taskError).not.toBeNull();
+    expect(taskError?.message.toLowerCase()).toMatch(/remind_days_before|check/);
+  });
+
   it('cascades deletes from cases to dependants and tasks', async () => {
     const email = `cascade-${Date.now()}@test.local`;
     const user = await createTestUser(client, email);
