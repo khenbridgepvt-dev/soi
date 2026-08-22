@@ -8,6 +8,7 @@ import {
   formatScheduleEmptySlotHover,
   formatScheduleFilterLabel,
   formatSchedulePageStatusSuffix,
+  isSchedulePillCompactLayout,
   SCHEDULE_PAGE_SUBTITLE,
   SCHEDULE_PAGE_TITLE,
 } from '@/lib/schedule/schedule-page-ui';
@@ -73,5 +74,13 @@ describe('schedule-page-ui', () => {
     expect(
       computeDefaultTaskViewFilter([{ assignments: [{ task_status: 'completed' }] }]),
     ).toBe('all');
+  });
+
+  it('detects compact pill layout for short spans and durations', () => {
+    expect(isSchedulePillCompactLayout(1, 30)).toBe(true);
+    expect(isSchedulePillCompactLayout(1, 60)).toBe(true);
+    expect(isSchedulePillCompactLayout(2, 30)).toBe(true);
+    expect(isSchedulePillCompactLayout(2, 60)).toBe(false);
+    expect(isSchedulePillCompactLayout(3, 90)).toBe(false);
   });
 });

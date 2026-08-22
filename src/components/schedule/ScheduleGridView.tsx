@@ -31,6 +31,7 @@ import {
   formatScheduleEmptySlotHover,
   formatScheduleFilterLabel,
   formatSchedulePageStatusSuffix,
+  isSchedulePillCompactLayout,
   SCHEDULE_ASSIGN_TASK_LABEL,
   SCHEDULE_COLUMN_OFF_LABEL,
   SCHEDULE_FILTER_LABEL,
@@ -234,6 +235,9 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
         const span = slot.span;
         const assignment = assignmentsById.get(slot.assignment_id);
         const showDetail = span >= 2;
+        const isCompact =
+          assignment != null &&
+          isSchedulePillCompactLayout(span, assignment.duration_minutes);
         const isDeleted = assignment ? isScheduleAssignmentDeleted(assignment) : false;
         const isInternal = assignment?.case_is_internal === true;
         const matchesFilter =
@@ -277,33 +281,48 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
               }
               style={{ height: span * ROW_HEIGHT - PILL_GAP }}
             >
-              <span className="flex h-full flex-col justify-center gap-0.5 overflow-hidden text-left">
-                <span className="flex items-center gap-1">
-                  {assignment && (
-                    <span
-                      className={`inline-block h-2 w-2 shrink-0 rounded-full ${scheduleAssignmentStatusDotClass(assignment, date)}`}
-                      aria-hidden
-                    />
-                  )}
-                  <span className="truncate text-sm font-semibold">
-                    {assignment
-                      ? formatScheduleAssignmentPrimaryLabel(assignment)
-                      : 'Booked'}
+              {isCompact && assignment ? (
+                <span className="flex h-full min-w-0 items-center gap-1 overflow-hidden text-left">
+                  <span
+                    className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${scheduleAssignmentStatusDotClass(assignment, date)}`}
+                    aria-hidden
+                  />
+                  <span className="min-w-0 truncate text-xs font-semibold leading-none">
+                    {formatScheduleAssignmentPrimaryLabel(assignment)}
                   </span>
-                </span>
-                {assignment && (
-                  <span className="truncate text-xs font-normal">
+                  <span className="ml-auto shrink-0 pl-1 text-[10px] tabular-nums leading-none text-text-secondary">
                     {formatTimeRange(assignment.start_time, assignment.end_time)}
                   </span>
-                )}
-                {showDetail && assignment && (
-                  <span className="truncate text-xs font-normal text-text-muted">
-                    {isInternal
-                      ? statusSuffix.trim()
-                      : `${assignment.client_name ?? '—'}${statusSuffix}`}
+                </span>
+              ) : (
+                <span className="flex h-full flex-col justify-center gap-0.5 overflow-hidden text-left">
+                  <span className="flex items-center gap-1">
+                    {assignment && (
+                      <span
+                        className={`inline-block h-2 w-2 shrink-0 rounded-full ${scheduleAssignmentStatusDotClass(assignment, date)}`}
+                        aria-hidden
+                      />
+                    )}
+                    <span className="truncate text-sm font-semibold">
+                      {assignment
+                        ? formatScheduleAssignmentPrimaryLabel(assignment)
+                        : 'Booked'}
+                    </span>
                   </span>
-                )}
-              </span>
+                  {assignment && (
+                    <span className="truncate text-xs font-normal">
+                      {formatTimeRange(assignment.start_time, assignment.end_time)}
+                    </span>
+                  )}
+                  {showDetail && assignment && (
+                    <span className="truncate text-xs font-normal text-text-muted">
+                      {isInternal
+                        ? statusSuffix.trim()
+                        : `${assignment.client_name ?? '—'}${statusSuffix}`}
+                    </span>
+                  )}
+                </span>
+              )}
             </SlotBlock>
           </div>,
         );

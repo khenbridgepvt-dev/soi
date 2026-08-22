@@ -107,3 +107,8 @@ export function computeDefaultTaskViewFilter(
 
   return hasActive ? 'active' : 'all';
 }
+
+/** Short pills (one grid row / under 40 min) use single-line title + time layout (0115). */
+export function isSchedulePillCompactLayout(span: number, durationMinutes: number): boolean {
+  return span === 1 || durationMinutes < 40;
+}
