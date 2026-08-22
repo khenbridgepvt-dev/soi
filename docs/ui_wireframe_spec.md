@@ -425,39 +425,34 @@ Admin: Leave Management (S-13) → Pending tab → Review → Approve/Reject
 
 ---
 
-### S-04 · Scheduling Grid
+### S-04 · Team schedule
 
 **Scope:** MVP  
-**Purpose:** Calendar-style view for admins to see all staff schedules and assign tasks to available time slots. **Primary admin entry** after login (ADR-0023 Team Task OS).
+**Purpose:** Calendar-style view for admins to see all staff schedules and assign tasks to available time slots. **Primary admin entry** after login (ADR-0023 Team Task OS). Nav label: **Team Schedule**; page title: **Team schedule**.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│  SCHEDULING GRID           [◀ Prev Day] [Today: Mon 7 Jul] [Next ▶]│
+│  TEAM SCHEDULE                              [+ Assign task]         │
+│  Click a free slot or assign a task to add work to the calendar.  │
+│  ◀  Sat 22 Aug 2026  ▶  [Today]     Show: (All)(Active)(Done)     │
+│  ▸ Colour key                                                     │
 ├──────────┬─────────┬─────────┬─────────┬─────────┬─────────────────┤
 │  TIME    │ ASHA    │ BLESS   │ JAYA    │ DEV     │                 │
-│          │ 9-5     │ 10-6    │ 9-5     │ ON LEAVE│                 │
+│          │ 9-5     │ Off     │ 9-5     │ ON LEAVE│                 │
+│          │ 6/8h ·  │ today   │         │         │                 │
+│          │ Active 0│         │         │         │                 │
+│          │ Done 12 │         │         │         │                 │
 ├──────────┼─────────┼─────────┼─────────┼─────────┤                 │
 │ 09:00    │ ░░░░░░░ │ ─ ─ ─ ─│ ░░░░░░░ │ ██████  │                 │
-│          │ CCL     │ (start  │ App     │ LEAVE   │                 │
-│ 10:00    │ Mariya  │  10:00) │ Priya   │         │                 │
-│          │ 2hrs    │ ░░░░░░░ │ 3hrs    │         │                 │
-│ 11:00    │ ▓▓▓▓▓▓▓ │ DU      │         │         │                 │
-│          │ AVAIL   │ Li Chen │         │         │                 │
-│ 12:00    │ ▓▓▓▓▓▓▓ │ 2hrs    │ ▓▓▓▓▓▓▓ │         │                 │
-│          │ AVAIL   │         │ AVAIL   │         │                 │
-│ 13:00    │ ░░░░░░░ │ ▓▓▓▓▓▓▓ │ ░░░░░░░ │         │                 │
-│          │ Review  │ AVAIL   │ Review  │         │                 │
-│ 14:00    │ Rahman  │         │ Anil    │         │                 │
-│          │ 2hrs    │ ▓▓▓▓▓▓▓ │ 1hr     │         │                 │
-│ 15:00    │ ▓▓▓▓▓▓▓ │ AVAIL   │ ▓▓▓▓▓▓▓ │         │                 │
-│          │ AVAIL   │         │ AVAIL   │         │                 │
-│ 16:00    │ ▓▓▓▓▓▓▓ │ ░░░░░░░ │ ▓▓▓▓▓▓▓ │         │                 │
-│          │ AVAIL   │ App     │ AVAIL   │         │                 │
-│ 17:00    │ ─ ─ ─ ─│ Sakura  │ ─ ─ ─ ─│         │                 │
-│          │ (end)   │ 2hrs    │ (end)   │         │                 │
-│ 18:00    │         │ ─ ─ ─ ─│         │         │                 │
+│          │ Clear   │         │ App     │ LEAVE   │                 │
+│          │ emails  │         │ Priya   │         │                 │
+│          │ 09-10   │         │ 09-11   │         │                 │
+│ 10:00    │ Mariya  │ ░░░░░░░ │ 3hrs    │         │                 │
+│          │ 10-12   │ DU      │         │         │                 │
+│ 11:00    │ ▓▓▓▓▓▓▓ │ Li Chen │ ▓▓▓▓▓▓▓ │         │                 │
+│          │ AVAIL   │ 11-13   │ AVAIL   │         │                 │
 ├──────────┴─────────┴─────────┴─────────┴─────────┤                 │
-│  LEGEND: ░ Assigned  ▓ Available  ██ Leave  ─ Off Hours           │
+│  LEGEND: collapsible Colour key (empty slots + task status)       │
 └───────────────────────────────────────────────────────────────────  ┘
 ```
 
@@ -465,15 +460,14 @@ Admin: Leave Management (S-13) → Pending tab → Review → Approve/Reject
 
 | Component | Detail |
 |-----------|--------|
-| **Date Selector** | Prev/Next day arrows + "Today" button. Clicking opens a date picker calendar. |
-| **+ Assign task** | Primary header CTA (Team Task OS). Opens **Assign team task** modal (0112/0113): live summary strip; **Task title** → **Assign to** (searchable) → **Schedule** (date with Today/Tomorrow, start time any minute, duration presets 15/30/60/120 + custom, **Ends at** inline). Off-day error blocks submit; outside-hours amber warning allows submit. Optional notes collapsed by default. Sticky footer **Assign to schedule**. Grid/slot click still prefills date/time. |
-| **Team workload strip** | Horizontal strip below header (ticket 0099): per staff — **in progress** (yellow), **done today** (green), **overdue** (red) counts for the viewed day. Updates with date picker and schedule refetch/Realtime. Optional link to `/team`. |
-| **Column per Staff** | One column per active **staff or senior** member (0101 — admins excluded). Header shows: name, working hours. |
-| **Time Rows** | Hourly rows from earliest staff start time to latest staff end time. |
-| **Task Block** | Spans multiple rows proportional to duration. Shows: **task name** (primary), client or time range, duration. Internal/ad-hoc (`case_is_internal`): **task name · start–end** only — no case ref/client (ticket 0045). Status dot + label when applicable: `URGENT`, `BLOCKED`, `COMPLETED`, `DELETED` (ticket 0039/0040). Deleted case slots stay booked; admin click opens tombstone (S-06). Internal slots are non-clickable. |
-| **Available Slot** | Clickable. Light green/tinted background. Cursor changes to "+" on hover. |
-| **Leave Block** | Full-column block in dark grey with "ON LEAVE" label. Non-interactive. |
-| **Off-Hours** | Dashed border, greyed out. Outside the staff member's configured timetable. |
+| **Sticky toolbar** | Page title, subtitle, **+ Assign task**, date navigator (◀ · long date · ▶ · **Today** chip — no separate date input), **Show:** filter chips (All · Active · Done), collapsible **Colour key** (default collapsed). |
+| **+ Assign task** | Opens **Assign team task** modal (0112/0113). |
+| **Column per staff** | Header: name; working hours or **Off today**; stats line `{booked} / {working}h booked · Active {n} · Done {n} · Overdue {n}` (0114 — replaces separate workload strip + chips). |
+| **Task view filter** | Client-side only (0114): **Active** hides completed pills at 25% opacity; **Done** shows only completed; default **Active** when any non-completed tasks exist. |
+| **Time Rows** | Hourly rows from earliest staff start to latest end. |
+| **Task Block** | Always shows **task title** + **start–end** time on every span (0114). Third line (client / status suffix) when span ≥ 2. Internal/ad-hoc: no case ref/client. Status dot + **Done** suffix when applicable. |
+| **Available Slot** | Hover: **Assign task at {time}**. Click opens assign modal with prefill. |
+| **Off-Hours / Off today** | Dashed/greyed column when no timetable for weekday. |
 
 **Actions:**
 

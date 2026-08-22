@@ -1,23 +1,20 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import CustomTaskAssignModal, {
   type CustomTaskAssignPrefill,
 } from '@/components/schedule/CustomTaskAssignModal';
-import TeamWorkloadStrip from '@/components/schedule/TeamWorkloadStrip';
 import ScheduleLegend from '@/components/schedule/ScheduleLegend';
 import SlotBlock, { type SlotBlockState } from '@/components/schedule/SlotBlock';
 import Toast from '@/components/ui/Toast';
 import {
   isScheduleAssignmentDeleted,
   scheduleAssignmentStatusDotClass,
-  scheduleAssignmentStatusSuffix,
 } from '@/lib/schedule/assignment-status';
 import {
   formatScheduleAssignmentAriaLabel,
-  formatScheduleAssignmentDetailLine,
   formatScheduleAssignmentPrimaryLabel,
   isScheduleAssignmentNavigable,
   scheduleAssignmentPillClassName,
@@ -26,6 +23,23 @@ import { queryKeys, SCHEDULE_REFETCH_INTERVAL_MS } from '@/lib/query/keys';
 import { useScheduleRealtime } from '@/lib/hooks/use-schedule-realtime';
 import { useTasksRealtime } from '@/lib/hooks/use-tasks-realtime';
 import { buildScheduleAssignPrefill } from '@/lib/schedule/build-assign-prefill';
+import {
+  assignmentMatchesTaskViewFilter,
+  computeDefaultTaskViewFilter,
+  formatScheduleColumnStats,
+  formatScheduleEmptyDayMessage,
+  formatScheduleEmptySlotHover,
+  formatScheduleFilterLabel,
+  formatSchedulePageStatusSuffix,
+  SCHEDULE_ASSIGN_TASK_LABEL,
+  SCHEDULE_COLUMN_OFF_LABEL,
+  SCHEDULE_FILTER_LABEL,
+  SCHEDULE_NO_STAFF_MESSAGE,
+  SCHEDULE_PAGE_SUBTITLE,
+  SCHEDULE_PAGE_TITLE,
+  SCHEDULE_TODAY_CHIP_LABEL,
+  type TaskViewFilter,
+} from '@/lib/schedule/schedule-page-ui';
 import { buildTeamWorkloadSummaries } from '@/lib/schedule/team-workload-summary';
 import { addDays, formatLongDate, minutesBetween, todayISODate } from '@/lib/utils/dates';
 
@@ -102,20 +116,15 @@ type CustomTaskModalState = {
   prefill: CustomTaskAssignPrefill | null;
 };
 
+const TASK_VIEW_FILTERS: TaskViewFilter[] = ['all', 'active', 'done'];
+
 function formatHours(minutes: number): string {
   const hours = minutes / 60;
   return Number.isInteger(hours) ? `${hours}` : hours.toFixed(1);
 }
 
-function formatDuration(minutes: number): string {
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-
-  if (hours === 0) {
-    return `${rest}m`;
-  }
-
-  return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
+function formatTimeRange(startTime: string, endTime: string): string {
+  return `${startTime}–${endTime}`;
 }
 
 async function fetchScheduleDay(date: string): Promise<SchedulePayload> {
@@ -132,6 +141,7 @@ async function fetchScheduleDay(date: string): Promise<SchedulePayload> {
 export default function ScheduleGridView({ userId }: { userId: string }) {
   const router = useRouter();
   const [date, setDate] = useState(() => todayISODate());
+  const [taskViewFilter, setTaskViewFilter] = useState<TaskViewFilter>('all');
   const [customTaskModal, setCustomTaskModal] = useState<CustomTaskModalState>({
     open: false,
     prefill: null,
@@ -164,14 +174,28 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
   const timeline = payload?.grid.times ?? [];
   const staff = useMemo(() => payload?.staff ?? [], [payload]);
 
+  const workloadSummaries = useMemo(
+    () => buildTeamWorkloadSummaries(staff, date),
+    [staff, date],
+  );
+
+  const workloadByStaffId = useMemo(
+    () => new Map(workloadSummaries.map((summary) => [summary.staffId, summary])),
+    [workloadSummaries],
+  );
+
+  useEffect(() => {
+    setTaskViewFilter(computeDefaultTaskViewFilter(staff));
+  }, [date, staff]);
+
   const staffOptions = useMemo(
     () => staff.map((member) => ({ id: member.id, full_name: member.full_name })),
     [staff],
   );
 
-  const workloadSummaries = useMemo(
-    () => buildTeamWorkloadSummaries(staff, date),
-    [staff, date],
+  const totalAssignments = useMemo(
+    () => staff.reduce((total, member) => total + member.assignments.length, 0),
+    [staff],
   );
 
   const assignTaskDisabled = isLoading || staff.length === 0;
@@ -203,7 +227,6 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
       const gridRow = index + 2;
 
       if (slot.state === 'booked' && slot.assignment_id) {
-        // Continuation rows are covered by the block placed on the first row.
         if (!slot.is_assignment_start) {
           return;
         }
@@ -213,6 +236,11 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
         const showDetail = span >= 2;
         const isDeleted = assignment ? isScheduleAssignmentDeleted(assignment) : false;
         const isInternal = assignment?.case_is_internal === true;
+        const matchesFilter =
+          !assignment || assignmentMatchesTaskViewFilter(assignment, taskViewFilter);
+        const statusSuffix = assignment
+          ? formatSchedulePageStatusSuffix(assignment)
+          : '';
 
         cells.push(
           <div
@@ -226,7 +254,12 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
                 assignment
                   ? scheduleAssignmentPillClassName(assignment, {
                       viewedDate: date,
-                      extra: isDeleted ? 'opacity-80' : undefined,
+                      extra: [
+                        isDeleted ? 'opacity-80' : undefined,
+                        !matchesFilter ? 'pointer-events-none opacity-25' : undefined,
+                      ]
+                        .filter(Boolean)
+                        .join(' '),
                     })
                   : undefined
               }
@@ -236,7 +269,9 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
                   : undefined
               }
               onClick={
-                assignment && isScheduleAssignmentNavigable(assignment)
+                assignment &&
+                matchesFilter &&
+                isScheduleAssignmentNavigable(assignment)
                   ? () => router.push(`/cases/${assignment.case_id}`)
                   : undefined
               }
@@ -256,19 +291,17 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
                       : 'Booked'}
                   </span>
                 </span>
+                {assignment && (
+                  <span className="truncate text-xs font-normal">
+                    {formatTimeRange(assignment.start_time, assignment.end_time)}
+                  </span>
+                )}
                 {showDetail && assignment && (
-                  <>
-                    <span className="truncate text-xs font-normal">
-                      {isInternal
-                        ? formatScheduleAssignmentDetailLine(assignment, 'admin')
-                        : (assignment.client_name ?? '—')}
-                    </span>
-                    <span className="truncate text-xs font-normal text-text-muted">
-                      {isInternal
-                        ? scheduleAssignmentStatusSuffix(assignment)
-                        : `${formatDuration(assignment.duration_minutes)}${scheduleAssignmentStatusSuffix(assignment)}`}
-                    </span>
-                  </>
+                  <span className="truncate text-xs font-normal text-text-muted">
+                    {isInternal
+                      ? statusSuffix.trim()
+                      : `${assignment.client_name ?? '—'}${statusSuffix}`}
+                  </span>
                 )}
               </span>
             </SlotBlock>
@@ -291,7 +324,7 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
             state={state}
             label={
               slot.state === 'available'
-                ? `Assign ${member.full_name} at ${slot.start}`
+                ? formatScheduleEmptySlotHover(slot.start)
                 : undefined
             }
             onClick={
@@ -319,67 +352,76 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold text-text">Scheduling Grid</h1>
-          <p className="mt-1 text-sm text-text-secondary">
-            Working hours minus booked assignments, in 30-minute slots.
-          </p>
-        </div>
+      <div className="sticky top-0 z-40 mb-3 border-b border-border bg-page pb-3">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-semibold text-text">{SCHEDULE_PAGE_TITLE}</h1>
+            <p className="mt-1 text-sm text-text-secondary">{SCHEDULE_PAGE_SUBTITLE}</p>
+          </div>
 
-        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
           <button
             type="button"
             onClick={handleHeaderAssignTask}
             disabled={assignTaskDisabled}
-            className="min-h-[44px] w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+            className="min-h-[44px] rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
-            + Assign task
+            + {SCHEDULE_ASSIGN_TASK_LABEL}
           </button>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setDate((current) => addDays(current, -1))}
+              className="min-h-[44px] rounded-md border border-border bg-surface px-3 py-2 text-sm text-text hover:bg-page"
+              aria-label="Previous day"
+            >
+              ◀
+            </button>
+            <span className="min-h-[44px] rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text">
+              {formatLongDate(date)}
+            </span>
+            <button
+              type="button"
+              onClick={() => setDate((current) => addDays(current, 1))}
+              className="min-h-[44px] rounded-md border border-border bg-surface px-3 py-2 text-sm text-text hover:bg-page"
+              aria-label="Next day"
+            >
+              ▶
+            </button>
+            <button
+              type="button"
+              onClick={() => setDate(todayISODate())}
+              className="min-h-[44px] rounded-full border border-border bg-surface px-4 py-2 text-sm font-medium text-text hover:bg-page"
+            >
+              {SCHEDULE_TODAY_CHIP_LABEL}
+            </button>
+          </div>
 
           <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setDate((current) => addDays(current, -1))}
-            className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-text hover:bg-page"
-            aria-label="Previous day"
-          >
-            ◀
-          </button>
-          <button
-            type="button"
-            onClick={() => setDate(todayISODate())}
-            className="rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium text-text hover:bg-page"
-          >
-            Today · {formatLongDate(date)}
-          </button>
-          <button
-            type="button"
-            onClick={() => setDate((current) => addDays(current, 1))}
-            className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-text hover:bg-page"
-            aria-label="Next day"
-          >
-            ▶
-          </button>
-          <input
-            type="date"
-            value={date}
-            onChange={(event) => {
-              if (event.target.value) {
-                setDate(event.target.value);
-              }
-            }}
-            aria-label="Jump to date"
-            className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-text"
-          />
+            <span className="text-sm text-text-secondary">{SCHEDULE_FILTER_LABEL}</span>
+            {TASK_VIEW_FILTERS.map((filter) => (
+              <button
+                key={filter}
+                type="button"
+                onClick={() => setTaskViewFilter(filter)}
+                className={`min-h-[36px] rounded-full border px-3 py-1.5 text-xs font-medium ${
+                  taskViewFilter === filter
+                    ? 'border-primary bg-primary text-white'
+                    : 'border-border bg-surface text-text hover:bg-page'
+                }`}
+                aria-pressed={taskViewFilter === filter}
+              >
+                {formatScheduleFilterLabel(filter)}
+              </button>
+            ))}
           </div>
         </div>
-      </div>
 
-      <TeamWorkloadStrip summaries={workloadSummaries} />
-
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <ScheduleLegend />
+        <div className="mt-2">
+          <ScheduleLegend collapsible defaultExpanded={false} />
+        </div>
       </div>
 
       {bannerError && (
@@ -396,53 +438,57 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
         </div>
       ) : staff.length === 0 ? (
         <div className="rounded-lg border border-border bg-surface p-8 text-center text-sm text-text-secondary">
-          No staff members configured. Go to Settings → Staff Members.
+          {SCHEDULE_NO_STAFF_MESSAGE}
         </div>
       ) : timeline.length === 0 ? (
         <div className="rounded-lg border border-border bg-surface p-8 text-center text-sm text-text-secondary">
-          No working hours or assignments for {formatLongDate(date)}.
+          {formatScheduleEmptyDayMessage(date)}
         </div>
       ) : (
         <>
-          <div className="mb-3 flex flex-wrap gap-2">
-            {staff.map((member) => (
-              <span
-                key={member.id}
-                className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs text-text-secondary"
-              >
-                <span className="font-medium text-text">{member.full_name}</span>{' '}
-                {member.working_minutes === 0
-                  ? member.booked_minutes === 0
-                    ? 'Off'
-                    : `Off · ${formatHours(member.booked_minutes)}h booked`
-                  : `${formatHours(member.booked_minutes)} / ${formatHours(member.working_minutes)}h booked`}
-              </span>
-            ))}
-          </div>
+          {totalAssignments === 0 && (
+            <div className="mb-3 rounded-md border border-border bg-surface px-4 py-3 text-sm text-text-secondary">
+              {formatScheduleEmptyDayMessage(date)}
+            </div>
+          )}
 
-          <div className="max-h-[calc(100vh-320px)] overflow-auto rounded-lg border border-border bg-surface">
+          <div className="max-h-[calc(100vh-240px)] overflow-auto rounded-lg border border-border bg-surface">
             <div className="grid" style={{ gridTemplateColumns }}>
               <div
                 className="sticky left-0 top-0 z-30 border-b border-r border-border bg-page"
                 style={{ gridColumn: 1, gridRow: 1 }}
               />
 
-              {staff.map((member, index) => (
-                <div
-                  key={member.id}
-                  className="sticky top-0 z-20 border-b border-l border-border bg-page px-2 py-2 text-center"
-                  style={{ gridColumn: index + 2, gridRow: 1 }}
-                >
-                  <p className="truncate text-sm font-semibold text-text">
-                    {member.full_name}
-                  </p>
-                  <p className="truncate text-xs text-text-muted">
-                    {member.working_hours
-                      ? `${member.working_hours.start}–${member.working_hours.end}`
-                      : 'Off'}
-                  </p>
-                </div>
-              ))}
+              {staff.map((member, index) => {
+                const summary = workloadByStaffId.get(member.id);
+
+                return (
+                  <div
+                    key={member.id}
+                    className="sticky top-0 z-20 border-b border-l border-border bg-page px-2 py-2 text-center"
+                    style={{ gridColumn: index + 2, gridRow: 1 }}
+                  >
+                    <p className="truncate text-sm font-semibold text-text">
+                      {member.full_name}
+                    </p>
+                    <p className="truncate text-xs text-text-muted">
+                      {member.working_hours
+                        ? `${member.working_hours.start}–${member.working_hours.end}`
+                        : SCHEDULE_COLUMN_OFF_LABEL}
+                    </p>
+                    {summary && (
+                      <p className="mt-1 truncate text-xs text-text-muted">
+                        {formatScheduleColumnStats(
+                          summary,
+                          member.booked_minutes,
+                          member.working_minutes,
+                          formatHours,
+                        )}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
 
               {timeline.map((slot, index) => (
                 <div

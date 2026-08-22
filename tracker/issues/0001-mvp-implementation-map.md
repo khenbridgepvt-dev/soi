@@ -113,6 +113,7 @@ The MVP is **operational as a free-tier pilot**: all ten MVP modules (M1–M10) 
 - **0111 flexible firm assign API:** minute-precision firm assign; off-day block; overtime warnings — [Flexible firm assign API](./0111-flexible-firm-assign-api.md)
 - **0112 team assign modal date/time:** editable date + start time in team modal — [Team assign modal date + start time](./0112-team-assign-modal-date-time.md)
 - **0113 team assign modal UX polish:** summary strip, presets, searchable assignee — [Team assign modal UX polish](./0113-team-assign-modal-ux-polish.md)
+- **0114 team schedule page UX polish:** sticky toolbar, column header stats, view filter — [Team schedule page UX polish](./0114-team-schedule-page-ux-polish.md)
 
 ## Planned (Team Task OS epic 0091–0099) — **primary product path**
 
@@ -170,6 +171,12 @@ Production fixes after v1.1. See tickets 0106–0110b.
 | Ticket | Scope |
 |--------|--------|
 | **0113** | Team assign modal UX polish: field order, summary strip, duration presets, searchable assignee, sticky footer — **shipped** |
+
+## Team schedule page UX (0114) — **shipped**
+
+| Ticket | Scope |
+|--------|--------|
+| **0114** | Team schedule page UX: title/copy, sticky toolbar, column header stats, view filter, collapsible legend — **shipped** |
 
 ## Paused (reminders & calendar epic 0080–0086)
 

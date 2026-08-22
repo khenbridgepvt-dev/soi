@@ -3,7 +3,7 @@ import ScheduleGridView from '@/components/schedule/ScheduleGridView';
 import { requireSessionWithRoles } from '@/lib/auth/require-login';
 
 export const metadata: Metadata = {
-  title: 'Scheduling Grid',
+  title: 'Team schedule',
 };
 
 /** S-04 · Scheduling Grid */
