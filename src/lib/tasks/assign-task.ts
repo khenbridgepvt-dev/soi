@@ -382,7 +382,8 @@ export async function assignTask(
         });
       }
     }
-  } catch {
+  } catch (error) {
+    console.error('Notification fanout failed during assign:', error);
     notificationSent = false;
   }
 

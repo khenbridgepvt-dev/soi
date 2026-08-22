@@ -20,6 +20,20 @@ function getAudioContext(): AudioContext | null {
   return audioContext;
 }
 
+/** Call once after a user gesture so notification sounds can play (0110a). */
+export async function unlockNotificationAudioContext(): Promise<void> {
+  const context = getAudioContext();
+  if (!context || context.state !== 'suspended') {
+    return;
+  }
+
+  try {
+    await context.resume();
+  } catch {
+    // Browser may still block until a direct gesture on the audio path.
+  }
+}
+
 /** Short notification tone (<1s) via Web Audio — no bundled asset required. */
 export async function playNotificationSound(options: {
   muted: boolean;

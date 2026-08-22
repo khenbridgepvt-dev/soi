@@ -9,6 +9,7 @@ import {
   shouldShowNotificationToast,
 } from '@/lib/notifications/notification-toast';
 import { playNotificationSound } from '@/lib/notifications/play-notification-sound';
+import { REFETCH_INTERVAL_MS } from '@/lib/query/keys';
 import {
   registerNotificationRefetch,
   unregisterNotificationRefetch,
@@ -80,18 +81,38 @@ export function useNotifications(userId?: string) {
   const fetchGeneration = useRef(0);
   const openRef = useRef(open);
   const soundMutedRef = useRef(false);
+  const notifiedIdsRef = useRef<Set<string>>(new Set());
+  const hasHydratedRef = useRef(false);
 
   openRef.current = open;
 
+  const showNotificationAlerts = useCallback((notification: NotificationRecord) => {
+    if (notifiedIdsRef.current.has(notification.id)) {
+      return;
+    }
+
+    notifiedIdsRef.current.add(notification.id);
+
+    if (shouldShowNotificationToast({ notification, drawerOpen: openRef.current })) {
+      setToastMessage(formatNotificationToast(notification));
+    }
+
+    if (shouldPlayNotificationSound({ notification, soundMuted: soundMutedRef.current })) {
+      void playNotificationSound({ muted: soundMutedRef.current });
+    }
+  }, []);
+
   const loadNotifications = useCallback(
-    async (activeTab: NotificationTab) => {
+    async (activeTab: NotificationTab, options?: { silent?: boolean }) => {
       if (!userId) {
         return;
       }
 
       const generation = ++fetchGeneration.current;
 
-      setState((current) => ({ ...current, loading: true, error: null }));
+      if (!options?.silent) {
+        setState((current) => ({ ...current, loading: true, error: null }));
+      }
 
       const params = new URLSearchParams({ limit: '50' });
       if (activeTab === 'unread') {
@@ -107,12 +128,27 @@ export function useNotifications(userId?: string) {
         }
 
         if (!response.ok || !json.data) {
-          setState((current) => ({
-            ...current,
-            loading: false,
-            error: json.error?.message ?? 'Failed to load notifications.',
-          }));
+          if (!options?.silent) {
+            setState((current) => ({
+              ...current,
+              loading: false,
+              error: json.error?.message ?? 'Failed to load notifications.',
+            }));
+          }
           return;
+        }
+
+        if (!hasHydratedRef.current) {
+          for (const row of json.data) {
+            notifiedIdsRef.current.add(row.id);
+          }
+          hasHydratedRef.current = true;
+        } else {
+          for (const row of json.data) {
+            if (!row.is_read) {
+              showNotificationAlerts(row);
+            }
+          }
         }
 
         setState((current) => ({
@@ -127,14 +163,16 @@ export function useNotifications(userId?: string) {
           return;
         }
 
-        setState((current) => ({
-          ...current,
-          loading: false,
-          error: 'Unable to connect. Check your internet connection.',
-        }));
+        if (!options?.silent) {
+          setState((current) => ({
+            ...current,
+            loading: false,
+            error: 'Unable to connect. Check your internet connection.',
+          }));
+        }
       }
     },
-    [userId],
+    [userId, showNotificationAlerts],
   );
 
   useEffect(() => {
@@ -183,6 +221,18 @@ export function useNotifications(userId?: string) {
     return () => unregisterNotificationRefetch();
   }, [userId, tab, loadNotifications]);
 
+  useEffect(() => {
+    if (!userId) {
+      return;
+    }
+
+    const intervalId = setInterval(() => {
+      void loadNotifications(tab, { silent: true });
+    }, REFETCH_INTERVAL_MS);
+
+    return () => clearInterval(intervalId);
+  }, [userId, tab, loadNotifications]);
+
   const handleInsert = useCallback(
     (notification: NotificationRecord) => {
       setState((current) => ({
@@ -198,15 +248,13 @@ export function useNotifications(userId?: string) {
             : current.urgentUnreadCount + 1,
       }));
 
-      if (shouldShowNotificationToast({ notification, drawerOpen: openRef.current })) {
-        setToastMessage(formatNotificationToast(notification));
-      }
-
-      if (shouldPlayNotificationSound({ notification, soundMuted: soundMutedRef.current })) {
-        void playNotificationSound({ muted: soundMutedRef.current });
+      if (hasHydratedRef.current) {
+        showNotificationAlerts(notification);
+      } else {
+        notifiedIdsRef.current.add(notification.id);
       }
     },
-    [tab],
+    [tab, showNotificationAlerts],
   );
 
   useRealtime({ userId, onNotificationInsert: handleInsert });

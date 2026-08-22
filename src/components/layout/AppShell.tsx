@@ -1,11 +1,13 @@
 'use client';
 
+import { useEffect } from 'react';
 import Header from '@/components/layout/Header';
 import Sidebar from '@/components/layout/Sidebar';
 import {
   AutoSaveStatusProvider,
   useAutoSaveFooterLabel,
 } from '@/components/layout/AutoSaveStatusProvider';
+import { unlockNotificationAudioContext } from '@/lib/notifications/play-notification-sound';
 import OnlineStatusToggle from '@/components/staff/OnlineStatusToggle';
 import type { NavSection } from '@/lib/nav/types';
 import type { Database } from '@/types/database';
@@ -67,6 +69,20 @@ function AppShellFrame({
   showStatusToggle = false,
 }: AppShellProps) {
   const footerLabel = useAutoSaveFooterLabel();
+
+  useEffect(() => {
+    function unlockAudio() {
+      void unlockNotificationAudioContext();
+    }
+
+    document.addEventListener('click', unlockAudio, { once: true });
+    document.addEventListener('keydown', unlockAudio, { once: true });
+
+    return () => {
+      document.removeEventListener('click', unlockAudio);
+      document.removeEventListener('keydown', unlockAudio);
+    };
+  }, []);
 
   return (
     <div className="flex min-h-screen flex-col bg-page">

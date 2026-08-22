@@ -203,6 +203,8 @@ Three channels fire when admin assigns firm work:
 
 **0110b (shipped):** `use-schedule-realtime` calls `refetchActiveTaskViewQueries` (schedule + `staffTasks` + board + reminders). **My Tasks** mounts `useScheduleRealtime` with `ignoreViewedDate: true` so future-date assigns also refetch. Poll: 15s + window focus.
 
-**0110a (planned):** Notification poll backup (60s), Realtime resubscribe on error, AudioContext unlock on first click — toast/ringtone intermittency only; does not change assign API or fanout.
+**0110a (shipped):** Notification poll backup (60s), Realtime resubscribe on channel error, AudioContext unlock on first click in `AppShell`. Toast still suppressed when notification drawer is open; sound skipped when tab hidden (browser policy).
+
+**Layout note:** Schedule **COMPLETED** suffix text only shows when booked cell spans ≥2 rows (~60+ min). Short tasks use green fill + status dot only — not a data bug.
 
 **Code:** `src/lib/query/refetch-views.ts` — `refetchActiveScheduleQueries`, `refetchActiveTaskViewQueries`.

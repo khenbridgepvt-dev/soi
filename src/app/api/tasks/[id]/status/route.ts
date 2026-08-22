@@ -140,7 +140,8 @@ export async function PATCH(request: Request, context: RouteContext) {
         slotStartTime: assignment ? shortTime(assignment.start_time) : null,
         slotEndTime: assignment ? shortTime(assignment.end_time) : null,
       });
-    } catch {
+    } catch (error) {
+      console.error('Notification fanout failed on firm task complete:', error);
       notificationsSent = 0;
     }
   }

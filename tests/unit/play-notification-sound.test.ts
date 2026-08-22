@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { playNotificationSound } from '@/lib/notifications/play-notification-sound';
+import {
+  playNotificationSound,
+} from '@/lib/notifications/play-notification-sound';
 
 describe('playNotificationSound', () => {
   afterEach(() => {
@@ -43,5 +45,29 @@ describe('playNotificationSound', () => {
     await playNotificationSound({ muted: false });
 
     expect(AudioContextMock).not.toHaveBeenCalled();
+  });
+
+  it('resumes a suspended AudioContext on unlock', async () => {
+    vi.resetModules();
+
+    const resume = vi.fn().mockResolvedValue(undefined);
+    const AudioContextMock = vi.fn(() => ({
+      state: 'suspended',
+      currentTime: 0,
+      resume,
+      createOscillator: vi.fn(),
+      createGain: vi.fn(),
+      destination: {},
+    }));
+
+    vi.stubGlobal('window', { AudioContext: AudioContextMock });
+
+    const { unlockNotificationAudioContext } = await import(
+      '@/lib/notifications/play-notification-sound'
+    );
+
+    await unlockNotificationAudioContext();
+
+    expect(resume).toHaveBeenCalled();
   });
 });
