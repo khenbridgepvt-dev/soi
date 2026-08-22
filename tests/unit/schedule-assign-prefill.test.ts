@@ -21,6 +21,11 @@ describe('isAssignableScheduleStaff', () => {
     expect(isAssignableScheduleStaff({ ...baseMember, role: 'senior' })).toBe(true);
     expect(isAssignableScheduleStaff({ ...baseMember, role: 'admin' })).toBe(false);
   });
+
+  it('treats missing role as assignable when member is active', () => {
+    const { role: _role, ...withoutRole } = baseMember;
+    expect(isAssignableScheduleStaff(withoutRole)).toBe(true);
+  });
 });
 
 describe('buildScheduleAssignPrefill', () => {

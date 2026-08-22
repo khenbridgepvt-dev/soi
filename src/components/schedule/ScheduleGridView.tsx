@@ -71,6 +71,7 @@ type ScheduleAssignment = {
 type ScheduleStaff = {
   id: string;
   full_name: string;
+  role: 'admin' | 'staff' | 'senior';
   online_status: 'online' | 'break' | 'offline';
   working_hours: TimeInterval | null;
   is_on_leave: boolean;
@@ -181,6 +182,9 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
   function handleHeaderAssignTask() {
     const prefill = buildScheduleAssignPrefill(staff, date);
     if (!prefill) {
+      setToastMessage(
+        'No staff available to assign. Add a timetable or pick an empty slot on the grid.',
+      );
       return;
     }
 

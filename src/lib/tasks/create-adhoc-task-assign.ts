@@ -6,6 +6,7 @@ import {
   appendTaskAuditNote,
   deriveCustomTaskAbbreviation,
   formatAdhocAuditNoteLine,
+  MAX_CUSTOM_TASKS_MESSAGE,
   validateCustomTaskDescription,
   validateCustomTaskName,
 } from '@/lib/utils/custom-task';
@@ -136,6 +137,16 @@ export async function createAdhocTaskAssign(
     .single();
 
   if (createError || !createdTask) {
+    const detail = createError?.message ?? '';
+    if (detail.includes('Maximum of 5 custom tasks')) {
+      return {
+        ok: false,
+        response: apiError(400, 'VALIDATION_ERROR', MAX_CUSTOM_TASKS_MESSAGE, [
+          { field: 'custom_tasks', message: MAX_CUSTOM_TASKS_MESSAGE },
+        ]),
+      };
+    }
+
     return {
       ok: false,
       response: apiError(500, 'INTERNAL_ERROR', 'Failed to create ad-hoc task.'),

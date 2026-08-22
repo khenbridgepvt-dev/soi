@@ -35,7 +35,10 @@ function isActiveStaff(member: ScheduleAssignStaffInput): boolean {
 
 /** Staff/senior who can receive a team schedule assignment. */
 export function isAssignableScheduleStaff(member: ScheduleAssignStaffInput): boolean {
-  return isScheduleRole(member.role) && isActiveStaff(member);
+  if (member.role !== undefined && !isScheduleRole(member.role)) {
+    return false;
+  }
+  return isActiveStaff(member);
 }
 
 function findFirstAvailableSlot(

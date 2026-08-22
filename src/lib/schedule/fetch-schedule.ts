@@ -46,6 +46,7 @@ export type ScheduleAssignment = {
 export type ScheduleStaff = {
   id: string;
   full_name: string;
+  role: Database['public']['Enums']['user_role'];
   online_status: Database['public']['Enums']['online_status'];
   working_hours: TimeInterval | null;
   /** Always false in MVP — leave management is Phase 2 (ADR-0001). */
@@ -310,6 +311,7 @@ export async function fetchSchedule(
     return {
       id: profile.id,
       full_name: profile.full_name,
+      role: profile.role,
       online_status: profile.online_status,
       working_hours: workingHours,
       is_on_leave: false,
