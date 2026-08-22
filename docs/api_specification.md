@@ -858,7 +858,7 @@ Creates generic firm work on the hidden internal case (`FIRM-GENERAL`, ADR-0019)
 | `description` | string | No | Max 1000 chars |
 | `staff_id` | uuid | Yes | Active staff or senior |
 | `date` | string | Yes | `YYYY-MM-DD`, not in the past |
-| `start_time` | string | Yes | 30-minute aligned `HH:MM` |
+| `start_time` | string | Yes | `HH:MM` — **firm/internal:** any minute (0111). **Client cases (EP-13):** 30-minute aligned |
 | `duration_minutes` | integer | Yes | 15–480 |
 | `linked_task_id` | uuid | No | Active client-case task for audit note |
 
@@ -868,9 +868,19 @@ Creates generic firm work on the hidden internal case (`FIRM-GENERAL`, ADR-0019)
 3. Assign slot via same rules as EP-13.
 4. If `linked_task_id` set: verify task belongs to an active, non-internal case; append one timestamped audit line to `tasks.notes` (`[YYYY-MM-DD HH:mm UTC] Staff — Task — Description`).
 
-**Response — `201 Created`:** EP-13 assign payload plus `case_id` (internal), `linked_task_id`, `linked_case_id`.
+**Response — `201 Created`:** EP-13 assign payload plus `case_id` (internal), `linked_task_id`, `linked_case_id`, optional `warnings[]` when slot extends outside working hours.
 
 **Errors:** EP-13 conflict/unavailable errors; 400 if linked task invalid; 400 `VALIDATION_ERROR` if custom-task limit message returned from DB (client cases only — should not occur on internal case after `00058`); 500 if internal case missing or inactive.
+
+**EP-13 addendum (0111 — firm/internal assign):**
+
+| Rule | Client case | Firm/internal (`FIRM-GENERAL`) |
+|------|-------------|--------------------------------|
+| `start_time` alignment | 30-minute slots (`:00`, `:30`) | Any minute (`HH:MM`) |
+| Off day (no timetable) | 422 `UNPROCESSABLE` | Same |
+| Outside working hours | Assign allowed; `warnings[]` + `is_overtime: true` | Same |
+
+Example `warnings` entry: `"This slot extends outside Asha's working hours (09:00–17:00)."`
 
 ---
 
@@ -995,10 +1005,13 @@ Creates generic firm work on the hidden internal case (`FIRM-GENERAL`, ADR-0019)
     "end_time": "13:00",
     "duration_minutes": 120,
     "is_overtime": false,
-    "notification_sent": true
+    "notification_sent": true,
+    "warnings": []
   }
 }
 ```
+
+`warnings` is omitted when empty. Present when the slot extends outside the staff member's timetable (assign still succeeds).
 
 **Errors:**
 

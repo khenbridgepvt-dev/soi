@@ -22,8 +22,11 @@ import {
   type AssignmentConflictCandidate,
 } from '@/lib/utils/availability';
 import {
+  buildAssignOvertimeWarnings,
+  validateAssignStartTimeAlignment,
+} from '@/lib/tasks/assign-validation';
+import {
   dayKeyForDate,
-  isTimeAlignedTo30Minutes,
   isValidISODate,
   shortTime,
 } from '@/lib/utils/dates';
@@ -47,6 +50,7 @@ export type AssignTaskResult = {
   duration_minutes: number;
   is_overtime: boolean;
   notification_sent: boolean;
+  warnings?: string[];
 };
 
 type AssignOptions = {
@@ -116,15 +120,6 @@ export async function assignTask(
     };
   }
 
-  if (!isTimeAlignedTo30Minutes(input.start_time)) {
-    return {
-      ok: false,
-      response: assignValidationError('start_time must align to 30-minute slots.', [
-        { field: 'start_time', message: 'start_time must align to 30-minute slots.' },
-      ]),
-    };
-  }
-
   if (
     input.duration_minutes < MIN_ASSIGNMENT_MINUTES ||
     input.duration_minutes > MAX_ASSIGNMENT_MINUTES
@@ -188,6 +183,19 @@ export async function assignTask(
     return {
       ok: false,
       response: assignValidationError('Task belongs to a case that is not active.'),
+    };
+  }
+
+  const alignmentError = validateAssignStartTimeAlignment(
+    input.start_time,
+    caseRow.is_internal,
+  );
+  if (alignmentError) {
+    return {
+      ok: false,
+      response: assignValidationError(alignmentError, [
+        { field: 'start_time', message: alignmentError },
+      ]),
     };
   }
 
@@ -400,6 +408,7 @@ export async function assignTask(
       duration_minutes: input.duration_minutes,
       is_overtime: isOvertime,
       notification_sent: notificationSent,
+      warnings: buildAssignOvertimeWarnings(isOvertime, staff.full_name, workingHours),
     },
   };
 }

@@ -110,6 +110,8 @@ The MVP is **operational as a free-tier pilot**: all ten MVP modules (M1–M10) 
 - **0109 schedule realtime colour refresh:** refetch active queries on task/assignment Realtime + status mutations — [Schedule realtime colour refresh](./0109-schedule-realtime-colour-refresh.md)
 - **0110b staff assign realtime refetch:** assignment INSERT → `refetchActiveTaskViewQueries` on My Tasks — [Staff My Tasks instant refetch on admin assign](./0110b-staff-assign-realtime-refetch.md)
 - **0110a notification poll backup:** 60s poll + Realtime resubscribe + AudioContext unlock — [Notification poll backup and Realtime resubscribe](./0110a-notification-poll-backup.md)
+- **0111 flexible firm assign API:** minute-precision firm assign; off-day block; overtime warnings — [Flexible firm assign API](./0111-flexible-firm-assign-api.md)
+- **0112 team assign modal date/time:** editable date + start time in team modal — [Team assign modal date + start time](./0112-team-assign-modal-date-time.md)
 
 ## Planned (Team Task OS epic 0091–0099) — **primary product path**
 
@@ -154,6 +156,13 @@ Production fixes after v1.1. See tickets 0106–0110b.
 | **0109** | `refetchActiveTaskViewQueries` on task status Realtime — **shipped** |
 | **0110b** | Assignment Realtime → staff My Tasks refetch — **shipped** |
 | **0110a** | Notification poll backup + Realtime resubscribe + AudioContext unlock — **shipped** |
+
+## Flexible firm assign (0111–0112) — **shipped**
+
+| Ticket | Scope |
+|--------|--------|
+| **0111** | Minute-precision firm assign API; `warnings[]` for outside hours — **shipped** |
+| **0112** | Team modal date + start time + client-side hours check — **shipped** |
 
 ## Paused (reminders & calendar epic 0080–0086)
 

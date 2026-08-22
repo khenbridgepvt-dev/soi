@@ -87,10 +87,16 @@ describe('scheduleAssignmentPillClassName (ticket 0096 Team OS)', () => {
 
   it('applies full yellow cell for in_progress assignments', () => {
     expect(
-      scheduleAssignmentPillClassName({
-        ...caseAssignment,
-        task_status: 'in_progress',
-      }),
+      scheduleAssignmentPillClassName(
+        {
+          ...caseAssignment,
+          task_status: 'in_progress',
+        },
+        {
+          viewedDate: '2026-08-22',
+          now: new Date('2026-08-22T13:00:00'),
+        },
+      ),
     ).toContain('!bg-[#FFF8E6]');
   });
 

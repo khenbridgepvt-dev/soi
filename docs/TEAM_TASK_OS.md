@@ -22,7 +22,7 @@ Case CRM (cases, 13-task checklist, documents, leads) stays in the product under
 | Cells | **Full background colour** by task status (see §3) |
 | Slot actions | Click empty slot → **Assign team task** modal directly (0103); click booked task → detail where applicable |
 
-**Assign flow (0093, 0102):** Opens simplified modal — **Assign to** staff picker, task name, duration, slot prefilled from grid or header CTA. Creates firm task via `POST /api/schedule/adhoc-task-assign` on `FIRM-GENERAL`. Schedule grid columns are **staff/senior only** (0101). **`GET /api/schedule` returns `role` per staff row** so the header CTA can prefill assignee (0106). **No** case search, **no** audit link to client case task.
+**Assign flow (0093, 0102, 0111–0112):** Opens simplified modal — **Assign to** staff picker, **date**, **start time** (any minute), task name, duration. Creates firm task via `POST /api/schedule/adhoc-task-assign` on `FIRM-GENERAL`. Off days blocked; outside working hours shows warning but allows submit. Schedule grid columns are **staff/senior only** (0101). **`GET /api/schedule` returns `role` per staff row** (0106). **No** case search, **no** audit link to client case task.
 
 **Firm task volume:** The internal case (`FIRM-GENERAL`) is **not** subject to the per-client-case cap of 5 custom tasks (migration `00058`, ADR-0019 addendum). Team schedules may create unlimited firm tasks.
 
@@ -173,6 +173,13 @@ Run after **0099** on pilot/staging.
 2. Staff **Done** → admin cell **green** within ~2s.
 3. Admin **assign** → staff **My Tasks** new row within ~2s (0110b).
 4. Toast may still arrive before or after list row; **0110a** improves notification reliability.
+
+### Flexible assign (0111–0112)
+
+1. **+ Assign task** → pick any date, **10:15** start, 90 min duration → succeeds (end **11:45**).
+2. Assign on staff **off day** → error, submit disabled.
+3. Assign **07:00–08:00** before staff start → amber warning, still assigns.
+4. Task board **client** assign at **10:15** → still rejected (30-min rule).
 
 **Pilot DB:** apply migrations `00056`–`00058` (`supabase db push`) before relying on realtime, status notifications, and unlimited firm tasks.
 

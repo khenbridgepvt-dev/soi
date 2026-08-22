@@ -90,6 +90,8 @@ Quick index for agents and developers. **Read this first** instead of re-auditin
 | [0109](../tracker/issues/0109-schedule-realtime-colour-refresh.md) | 2026-08-22 | `refetchActiveTaskViewQueries` on task Realtime; schedule 15s poll |
 | [0110b](../tracker/issues/0110b-staff-assign-realtime-refetch.md) | 2026-08-22 | Assignment Realtime → staff My Tasks refetch; `ignoreViewedDate` |
 | [0110a](../tracker/issues/0110a-notification-poll-backup.md) | 2026-08-22 | Notification 60s poll backup; Realtime resubscribe; AudioContext unlock |
+| [0111](../tracker/issues/0111-flexible-firm-assign-api.md) | 2026-08-22 | Minute-precision firm assign; off-day block; `warnings[]` for overtime |
+| [0112](../tracker/issues/0112-team-assign-modal-date-time.md) | 2026-08-22 | Team assign modal date + start time fields |
 | [0091](../tracker/issues/0091-admin-nav-landing.md) | 2026-08-22 | Admin Main nav Team Schedule + Team; login → `/schedule`; case CRM under Advanced |
 | [0092](../tracker/issues/0092-schedule-assign-cta.md) | 2026-08-22 | Schedule header + Assign task CTA → `CustomTaskAssignModal` with date/staff/slot defaults |
 | [0093](../tracker/issues/0093-simplified-assign-modal.md) | 2026-08-22 | Team assign modal (`variant="team"`): no case audit; Assign team task flow |

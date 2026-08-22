@@ -13,6 +13,8 @@ import { useInvalidateAfterMutation } from '@/lib/query/useInvalidateAfterMutati
 import type { AssignableCaseGroup } from '@/lib/tasks/fetch-assignable-tasks';
 import {
   calculateEndTime,
+  describeOutsideHoursWarning,
+  isSlotWithinWorkingHours,
   MAX_ASSIGNMENT_MINUTES,
   MIN_ASSIGNMENT_MINUTES,
 } from '@/lib/utils/availability';
@@ -70,8 +72,15 @@ export default function CustomTaskAssignModal({
 }: CustomTaskAssignModalProps) {
   const invalidate = useInvalidateAfterMutation();
   const showAuditSection = showsCustomTaskAssignAuditSection(variant);
-  const showStaffPicker = variant === 'team' && staffOptions.length > 0;
+  const isTeamVariant = variant === 'team';
+  const showStaffPicker = isTeamVariant && staffOptions.length > 0;
   const [selectedStaffId, setSelectedStaffId] = useState('');
+  const [assignDate, setAssignDate] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [workingHours, setWorkingHours] = useState<{ start: string; end: string } | null | undefined>(
+    undefined,
+  );
+  const [hoursChecked, setHoursChecked] = useState(false);
   const [caseGroups, setCaseGroups] = useState<AssignableCaseGroup[]>([]);
   const [auditExpanded, setAuditExpanded] = useState(false);
   const [caseSearch, setCaseSearch] = useState('');
@@ -87,7 +96,12 @@ export default function CustomTaskAssignModal({
   const [bannerError, setBannerError] = useState<string | null>(null);
 
   const resetForm = useCallback(
-    (durationMinutes = MIN_ASSIGNMENT_MINUTES, staffId = '') => {
+    (
+      durationMinutes = MIN_ASSIGNMENT_MINUTES,
+      staffId = '',
+      date = '',
+      time = '',
+    ) => {
       const parts = durationToParts(durationMinutes);
       setAuditExpanded(false);
       setCaseSearch('');
@@ -100,6 +114,10 @@ export default function CustomTaskAssignModal({
       setHours(parts.hours);
       setMinutes(parts.minutes);
       setSelectedStaffId(staffId);
+      setAssignDate(date);
+      setStartTime(time);
+      setWorkingHours(undefined);
+      setHoursChecked(false);
       setSubmitting(false);
       setBannerError(null);
     },
@@ -111,7 +129,12 @@ export default function CustomTaskAssignModal({
       return;
     }
 
-    resetForm(prefill?.durationMinutes ?? MIN_ASSIGNMENT_MINUTES, prefill?.staffId ?? '');
+    resetForm(
+      prefill?.durationMinutes ?? MIN_ASSIGNMENT_MINUTES,
+      prefill?.staffId ?? '',
+      prefill?.date ?? '',
+      prefill?.startTime ?? '',
+    );
 
     if (!showAuditSection) {
       return;
@@ -128,7 +151,7 @@ export default function CustomTaskAssignModal({
     }
 
     void loadCases();
-  }, [open, prefill?.durationMinutes, prefill?.staffId, resetForm, showAuditSection]);
+  }, [open, prefill?.date, prefill?.durationMinutes, prefill?.staffId, prefill?.startTime, resetForm, showAuditSection]);
 
   const filteredCaseGroups = useMemo(() => {
     const normalized = caseSearch.trim().toLowerCase();
@@ -154,10 +177,55 @@ export default function CustomTaskAssignModal({
 
   const resolvedStaffId = showStaffPicker ? selectedStaffId : prefill?.staffId ?? '';
   const resolvedStaffName = selectedStaff?.full_name ?? prefill?.staffName ?? 'Staff';
+  const activeDate = isTeamVariant ? assignDate : prefill?.date ?? '';
+  const activeStartTime = isTeamVariant ? startTime : prefill?.startTime ?? '';
+  const isOffDay = isTeamVariant && hoursChecked && workingHours === null;
+
+  useEffect(() => {
+    if (!open || !isTeamVariant || !resolvedStaffId || !assignDate) {
+      setWorkingHours(undefined);
+      setHoursChecked(false);
+      return;
+    }
+
+    let cancelled = false;
+    setHoursChecked(false);
+
+    async function loadWorkingHours() {
+      try {
+        const response = await fetch(
+          `/api/schedule/${resolvedStaffId}?date=${encodeURIComponent(assignDate)}`,
+        );
+        const json = (await response.json()) as {
+          data?: { staff?: { working_hours: { start: string; end: string } | null }[] };
+        };
+
+        if (cancelled) {
+          return;
+        }
+
+        setWorkingHours(json.data?.staff?.[0]?.working_hours ?? null);
+      } catch {
+        if (!cancelled) {
+          setWorkingHours(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setHoursChecked(true);
+        }
+      }
+    }
+
+    void loadWorkingHours();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, isTeamVariant, resolvedStaffId, assignDate]);
 
   const durationMinutes = partsToDuration(hours, minutes);
-  const endTimeResult = prefill?.startTime
-    ? calculateEndTime(prefill.startTime, durationMinutes)
+  const endTimeResult = activeStartTime
+    ? calculateEndTime(activeStartTime, durationMinutes)
     : null;
   const endTime = endTimeResult?.ok ? endTimeResult.end : null;
   const durationInvalid =
@@ -165,11 +233,25 @@ export default function CustomTaskAssignModal({
     durationMinutes > MAX_ASSIGNMENT_MINUTES ||
     !endTimeResult?.ok;
 
+  const outsideHoursWarning = useMemo(() => {
+    if (!isTeamVariant || !workingHours || !endTime || !activeStartTime) {
+      return null;
+    }
+
+    if (isSlotWithinWorkingHours(activeStartTime, endTime, workingHours)) {
+      return null;
+    }
+
+    return describeOutsideHoursWarning(resolvedStaffName, workingHours);
+  }, [activeStartTime, endTime, isTeamVariant, resolvedStaffName, workingHours]);
+
   const canSubmit =
     Boolean(resolvedStaffId) &&
-    Boolean(prefill?.startTime) &&
+    Boolean(activeStartTime) &&
+    Boolean(activeDate) &&
     Boolean(endTime) &&
     !durationInvalid &&
+    !isOffDay &&
     !submitting &&
     (!showAuditSection || !auditExpanded || !selectedCaseId || Boolean(linkedTaskId));
 
@@ -209,8 +291,8 @@ export default function CustomTaskAssignModal({
           name: nameResult.value,
           description: descriptionResult.value ?? undefined,
           staff_id: resolvedStaffId,
-          date: prefill.date,
-          start_time: prefill.startTime,
+          date: activeDate,
+          start_time: activeStartTime,
           duration_minutes: durationMinutes,
           linked_task_id:
             showAuditSection && auditExpanded && linkedTaskId ? linkedTaskId : undefined,
@@ -222,6 +304,7 @@ export default function CustomTaskAssignModal({
           staff_name: string;
           start_time: string;
           linked_case_id: string | null;
+          warnings?: string[];
         };
       };
 
@@ -238,8 +321,12 @@ export default function CustomTaskAssignModal({
       void invalidate('assign', { caseId: INTERNAL_CASE_ID });
 
       const staffName = json.data.staff_name ?? resolvedStaffName;
-      const assignedTime = json.data.start_time ?? prefill.startTime;
-      onAssigned(formatCustomTaskAssignSuccessMessage(variant, staffName, assignedTime));
+      const assignedTime = json.data.start_time ?? activeStartTime;
+      let message = formatCustomTaskAssignSuccessMessage(variant, staffName, assignedTime);
+      if (json.data.warnings?.length) {
+        message = `${message} ${json.data.warnings.join(' ')}`;
+      }
+      onAssigned(message);
       onClose();
     } catch {
       setBannerError('Failed to create and assign ad-hoc task.');
@@ -266,8 +353,8 @@ export default function CustomTaskAssignModal({
               {getCustomTaskAssignModalTitle(variant)}
             </h2>
             <p className="mt-1 text-sm text-text-secondary">
-              {showStaffPicker
-                ? `${formatLongDate(prefill.date)} · ${prefill.startTime}`
+              {isTeamVariant
+                ? 'Pick date, time, and assignee — firm work on FIRM-GENERAL.'
                 : `${prefill.staffName} · ${formatLongDate(prefill.date)} · ${prefill.startTime}`}
             </p>
             {variant === 'advanced' && (
@@ -294,7 +381,56 @@ export default function CustomTaskAssignModal({
             </div>
           )}
 
+          {isOffDay && (
+            <div className="mb-4 rounded-md border border-error bg-error-bg px-3 py-2 text-sm text-error">
+              {resolvedStaffName} is off on {formatLongDate(assignDate)}. Pick another date or staff
+              member.
+            </div>
+          )}
+
+          {outsideHoursWarning && (
+            <div className="mb-4 rounded-md border border-status-approaching-border bg-status-approaching-bg px-3 py-2 text-sm text-text">
+              {outsideHoursWarning}
+            </div>
+          )}
+
           <div className="space-y-4">
+            {isTeamVariant && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label
+                    className="mb-1 block text-sm font-medium text-text"
+                    htmlFor="custom-task-date"
+                  >
+                    Date *
+                  </label>
+                  <input
+                    id="custom-task-date"
+                    type="date"
+                    value={assignDate}
+                    onChange={(event) => setAssignDate(event.target.value)}
+                    className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label
+                    className="mb-1 block text-sm font-medium text-text"
+                    htmlFor="custom-task-start-time"
+                  >
+                    Start time *
+                  </label>
+                  <input
+                    id="custom-task-start-time"
+                    type="time"
+                    step={60}
+                    value={startTime}
+                    onChange={(event) => setStartTime(event.target.value)}
+                    className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
+                  />
+                </div>
+              </div>
+            )}
+
             {showStaffPicker && (
               <div>
                 <label
@@ -373,7 +509,7 @@ export default function CustomTaskAssignModal({
                   type="number"
                   min={0}
                   max={59}
-                  step={15}
+                  step={isTeamVariant ? 1 : 15}
                   value={minutes}
                   onChange={(event) => setMinutes(Number(event.target.value) || 0)}
                   className="w-20 rounded-md border border-border px-3 py-2 text-sm"
@@ -389,11 +525,13 @@ export default function CustomTaskAssignModal({
             </div>
 
             <div className="grid grid-cols-2 gap-3 text-sm">
-              <div>
-                <p className="text-text-secondary">Start time</p>
-                <p className="font-medium text-text">{prefill.startTime}</p>
-              </div>
-              <div>
+              {!isTeamVariant && (
+                <div>
+                  <p className="text-text-secondary">Start time</p>
+                  <p className="font-medium text-text">{prefill.startTime}</p>
+                </div>
+              )}
+              <div className={isTeamVariant ? 'col-span-2' : undefined}>
                 <p className="text-text-secondary">End time</p>
                 <p className="font-medium text-text">{endTime ?? '—'}</p>
               </div>

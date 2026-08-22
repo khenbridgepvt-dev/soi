@@ -466,7 +466,7 @@ Admin: Leave Management (S-13) → Pending tab → Review → Approve/Reject
 | Component | Detail |
 |-----------|--------|
 | **Date Selector** | Prev/Next day arrows + "Today" button. Clicking opens a date picker calendar. |
-| **+ Assign task** | Primary header CTA (Team Task OS). Opens **Assign team task** modal with **Assign to** staff picker (0102), name, optional description, duration, read-only slot — no case picker (ticket 0093). Prefill uses `role` from schedule API staff rows (0106). Shows toast if no assignable staff (0106). |
+| **+ Assign task** | Primary header CTA (Team Task OS). Opens **Assign team task** modal (0112): **Assign to**, **date**, **start time** (any minute), name, duration, computed end time. Off-day error blocks submit; outside-hours amber warning allows submit. Grid/slot click still prefills date/time. Prefill uses `role` from schedule API (0106). |
 | **Team workload strip** | Horizontal strip below header (ticket 0099): per staff — **in progress** (yellow), **done today** (green), **overdue** (red) counts for the viewed day. Updates with date picker and schedule refetch/Realtime. Optional link to `/team`. |
 | **Column per Staff** | One column per active **staff or senior** member (0101 — admins excluded). Header shows: name, working hours. |
 | **Time Rows** | Hourly rows from earliest staff start time to latest staff end time. |

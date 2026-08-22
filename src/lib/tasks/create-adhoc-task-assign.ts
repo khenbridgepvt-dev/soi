@@ -35,6 +35,7 @@ export type CreateAdhocTaskAssignResult = {
   duration_minutes: number;
   linked_task_id: string | null;
   linked_case_id: string | null;
+  warnings?: string[];
 };
 
 type CreateOutcome =
@@ -249,6 +250,7 @@ export async function createAdhocTaskAssign(
       duration_minutes: assignResult.data.duration_minutes,
       linked_task_id: input.linked_task_id ?? null,
       linked_case_id: linkedCaseId,
+      warnings: assignResult.data.warnings,
     },
   };
 }
