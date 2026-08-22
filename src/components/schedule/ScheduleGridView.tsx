@@ -22,7 +22,7 @@ import {
   isScheduleAssignmentNavigable,
   scheduleAssignmentPillClassName,
 } from '@/lib/schedule/assignment-label';
-import { REFETCH_INTERVAL_MS, queryKeys } from '@/lib/query/keys';
+import { queryKeys, SCHEDULE_REFETCH_INTERVAL_MS } from '@/lib/query/keys';
 import { useScheduleRealtime } from '@/lib/hooks/use-schedule-realtime';
 import { useTasksRealtime } from '@/lib/hooks/use-tasks-realtime';
 import { buildScheduleAssignPrefill } from '@/lib/schedule/build-assign-prefill';
@@ -150,7 +150,8 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
   } = useQuery({
     queryKey: queryKeys.schedule.day(date),
     queryFn: () => fetchScheduleDay(date),
-    refetchInterval: REFETCH_INTERVAL_MS,
+    refetchOnWindowFocus: true,
+    refetchInterval: SCHEDULE_REFETCH_INTERVAL_MS,
   });
 
   const bannerError =

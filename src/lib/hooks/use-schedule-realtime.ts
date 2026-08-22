@@ -4,7 +4,8 @@ import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
-import { REFETCH_INTERVAL_MS, queryKeys } from '@/lib/query/keys';
+import { refetchActiveScheduleQueries } from '@/lib/query/refetch-views';
+import { REFETCH_INTERVAL_MS } from '@/lib/query/keys';
 import {
   shouldInvalidateScheduleForAssignmentChange,
   type TaskAssignmentRealtimeRecord,
@@ -68,7 +69,7 @@ export function useScheduleRealtime({
               staffId: isStaffViewer ? userId : undefined,
             })
           ) {
-            void queryClient.invalidateQueries({ queryKey: queryKeys.schedule.all });
+            void refetchActiveScheduleQueries(queryClient);
           }
         },
       )

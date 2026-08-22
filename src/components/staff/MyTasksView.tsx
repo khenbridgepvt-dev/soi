@@ -7,6 +7,7 @@ import TaskActionStrip from '@/components/staff/TaskActionStrip';
 import type { StaffDashboardPayload, StaffDashboardTask } from '@/lib/dashboard/fetch-staff-dashboard';
 import type { StaffDashboardHistoryPayload } from '@/lib/dashboard/fetch-staff-dashboard-history';
 import { useInvalidateAfterMutation } from '@/lib/query/useInvalidateAfterMutation';
+import { refetchActiveTaskViewQueries } from '@/lib/query/refetch-views';
 import { useTasksRealtime } from '@/lib/hooks/use-tasks-realtime';
 import { queryKeys } from '@/lib/query/keys';
 import {
@@ -106,7 +107,6 @@ export default function MyTasksView({ userId, role }: MyTasksViewProps) {
     isLoading,
     isError,
     error,
-    refetch,
   } = useQuery({
     queryKey: queryKeys.staffTasks.dashboard(),
     queryFn: async () => {
@@ -179,13 +179,10 @@ export default function MyTasksView({ userId, role }: MyTasksViewProps) {
 
   async function handleStatusChanged() {
     await invalidate('taskStatus');
-    await queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.staffAll });
-    await queryClient.invalidateQueries({ queryKey: queryKeys.staffTasks.dashboard() });
-    // Ticket 0097: wire tasks Realtime invalidation here.
+    await refetchActiveTaskViewQueries(queryClient);
     setHistoryItems([]);
     setHistoryCursor(null);
     setHistoryHasMore(false);
-    void refetch();
     if (activeTab === 'done') {
       void loadHistory(null, true);
     }

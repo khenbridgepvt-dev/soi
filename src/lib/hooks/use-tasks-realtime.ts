@@ -4,10 +4,10 @@ import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
+import { refetchActiveTaskViewQueries } from '@/lib/query/refetch-views';
 import { REFETCH_INTERVAL_MS } from '@/lib/query/keys';
 import {
   shouldInvalidateViewsForTaskChange,
-  taskRealtimeQueryKeysToInvalidate,
   type TaskRealtimeRecord,
 } from '@/lib/tasks/realtime-invalidation';
 
@@ -62,9 +62,7 @@ export function useTasksRealtime({
           };
 
           if (shouldInvalidateViewsForTaskChange(change, { userId, role })) {
-            for (const queryKey of taskRealtimeQueryKeysToInvalidate()) {
-              void queryClient.invalidateQueries({ queryKey });
-            }
+            void refetchActiveTaskViewQueries(queryClient);
           }
         },
       )

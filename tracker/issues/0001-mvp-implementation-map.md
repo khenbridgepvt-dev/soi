@@ -107,6 +107,7 @@ The MVP is **operational as a free-tier pilot**: all ten MVP modules (M1–M10) 
 - **0100 Team Task OS v1.1:** pilot UX fixes 0101–0105 — [Team Task OS v1.1 epic](./0100-team-os-v11-epic.md)
 - **0106 schedule assign hotfix:** role in schedule API + internal unlimited custom tasks (`00058`) — [Schedule assign production hotfix](./0106-schedule-assign-production-hotfix.md)
 - **0107 schedule colour CSS fix:** Tailwind scans `src/lib`; `SlotBlock` defers booked bg when status override passed — [Schedule status colour CSS fix](./0107-schedule-status-colour-css-fix.md)
+- **0109 schedule realtime colour refresh:** refetch active queries on task/assignment Realtime + status mutations — [Schedule realtime colour refresh](./0109-schedule-realtime-colour-refresh.md)
 
 ## Planned (Team Task OS epic 0091–0099) — **primary product path**
 

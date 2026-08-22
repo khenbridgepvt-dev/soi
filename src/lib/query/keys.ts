@@ -5,6 +5,9 @@ export type ArchiveFilters = Record<string, string | undefined>;
 
 export const REFETCH_INTERVAL_MS = 60_000;
 
+/** Pilot fallback poll on Team Schedule when Realtime is slow/disconnected (0109). */
+export const SCHEDULE_REFETCH_INTERVAL_MS = 15_000;
+
 export const queryKeys = {
   schedule: {
     all: ['schedule'] as const,

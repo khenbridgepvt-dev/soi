@@ -1,5 +1,9 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { refetchNotificationsBackup } from '@/lib/query/notification-refetch';
+import {
+  refetchActiveScheduleQueries,
+  refetchActiveTaskViewQueries,
+} from '@/lib/query/refetch-views';
 import { queryKeys } from '@/lib/query/keys';
 
 export type MutationInvalidateType =
@@ -83,7 +87,7 @@ export async function invalidateAfterMutation(
   switch (type) {
     case 'assign':
       await Promise.all([
-        invalidateSchedule(),
+        refetchActiveScheduleQueries(queryClient),
         invalidateTaskBoard(),
         invalidateDashboardAdmin(),
         invalidateDashboardStaff(),
@@ -93,12 +97,9 @@ export async function invalidateAfterMutation(
       break;
     case 'taskStatus':
       await Promise.all([
-        invalidateTaskBoard(),
-        invalidateSchedule(),
+        refetchActiveTaskViewQueries(queryClient),
         invalidateDashboardAdmin(),
-        invalidateDashboardStaff(),
         invalidateCaseDetail(),
-        invalidateReminders(),
       ]);
       break;
     case 'block':
