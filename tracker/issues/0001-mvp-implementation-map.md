@@ -112,6 +112,7 @@ The MVP is **operational as a free-tier pilot**: all ten MVP modules (M1–M10) 
 - **0110a notification poll backup:** 60s poll + Realtime resubscribe + AudioContext unlock — [Notification poll backup and Realtime resubscribe](./0110a-notification-poll-backup.md)
 - **0111 flexible firm assign API:** minute-precision firm assign; off-day block; overtime warnings — [Flexible firm assign API](./0111-flexible-firm-assign-api.md)
 - **0112 team assign modal date/time:** editable date + start time in team modal — [Team assign modal date + start time](./0112-team-assign-modal-date-time.md)
+- **0113 team assign modal UX polish:** summary strip, presets, searchable assignee — [Team assign modal UX polish](./0113-team-assign-modal-ux-polish.md)
 
 ## Planned (Team Task OS epic 0091–0099) — **primary product path**
 
@@ -163,6 +164,12 @@ Production fixes after v1.1. See tickets 0106–0110b.
 |--------|--------|
 | **0111** | Minute-precision firm assign API; `warnings[]` for outside hours — **shipped** |
 | **0112** | Team modal date + start time + client-side hours check — **shipped** |
+
+## Team assign modal UX (0113) — **shipped**
+
+| Ticket | Scope |
+|--------|--------|
+| **0113** | Team assign modal UX polish: field order, summary strip, duration presets, searchable assignee, sticky footer — **shipped** |
 
 ## Paused (reminders & calendar epic 0080–0086)
 
