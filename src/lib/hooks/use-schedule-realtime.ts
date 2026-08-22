@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
-import { refetchActiveScheduleQueries } from '@/lib/query/refetch-views';
+import { refetchActiveTaskViewQueries } from '@/lib/query/refetch-views';
 import { REFETCH_INTERVAL_MS } from '@/lib/query/keys';
 import {
   shouldInvalidateScheduleForAssignmentChange,
@@ -18,20 +18,22 @@ type UseScheduleRealtimeOptions = {
   viewedDate: string;
   userId?: string;
   role?: ScheduleViewerRole;
+  /** Staff My Tasks: refetch on any assignment for this user, not only viewedDate. */
+  ignoreViewedDate?: boolean;
 };
 
 /**
- * ADR-0022 §4 / ADR-0003: Realtime on `task_assignments` only (not task board).
- * Invalidates `queryKeys.schedule.*` when assignments change on the viewed day.
+ * ADR-0022 §4 / ADR-0003: Realtime on `task_assignments`.
+ * Refetches active schedule + staff task views on assignment changes (0109, 0110b).
  *
- * Fallback: schedule queries keep `refetchInterval: REFETCH_INTERVAL_MS` (60s)
- * when Realtime disconnects — same pattern as notifications (ticket 0027).
+ * Fallback: views using `refetchInterval` (schedule 15s, My tasks 15s) when Realtime disconnects.
  */
 export function useScheduleRealtime({
   enabled = true,
   viewedDate,
   userId,
   role = 'admin',
+  ignoreViewedDate = false,
 }: UseScheduleRealtimeOptions) {
   const queryClient = useQueryClient();
 
@@ -47,7 +49,7 @@ export function useScheduleRealtime({
     let channel: RealtimeChannel | null = null;
 
     channel = supabase
-      .channel(`schedule-assignments:${userId}:${viewedDate}`)
+      .channel(`schedule-assignments:${userId}:${viewedDate}:${ignoreViewedDate ? 'all' : 'day'}`)
       .on(
         'postgres_changes',
         {
@@ -67,9 +69,10 @@ export function useScheduleRealtime({
             shouldInvalidateScheduleForAssignmentChange(change, {
               viewedDate,
               staffId: isStaffViewer ? userId : undefined,
+              ignoreViewedDate: isStaffViewer && ignoreViewedDate,
             })
           ) {
-            void refetchActiveScheduleQueries(queryClient);
+            void refetchActiveTaskViewQueries(queryClient);
           }
         },
       )
@@ -80,7 +83,7 @@ export function useScheduleRealtime({
         void supabase.removeChannel(channel);
       }
     };
-  }, [enabled, viewedDate, userId, role, queryClient]);
+  }, [enabled, viewedDate, userId, role, ignoreViewedDate, queryClient]);
 }
 
 export { REFETCH_INTERVAL_MS };

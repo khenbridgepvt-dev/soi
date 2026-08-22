@@ -108,6 +108,7 @@ The MVP is **operational as a free-tier pilot**: all ten MVP modules (M1–M10) 
 - **0106 schedule assign hotfix:** role in schedule API + internal unlimited custom tasks (`00058`) — [Schedule assign production hotfix](./0106-schedule-assign-production-hotfix.md)
 - **0107 schedule colour CSS fix:** Tailwind scans `src/lib`; `SlotBlock` defers booked bg when status override passed — [Schedule status colour CSS fix](./0107-schedule-status-colour-css-fix.md)
 - **0109 schedule realtime colour refresh:** refetch active queries on task/assignment Realtime + status mutations — [Schedule realtime colour refresh](./0109-schedule-realtime-colour-refresh.md)
+- **0110b staff assign realtime refetch:** assignment INSERT → `refetchActiveTaskViewQueries` on My Tasks — [Staff My Tasks instant refetch on admin assign](./0110b-staff-assign-realtime-refetch.md)
 
 ## Planned (Team Task OS epic 0091–0099) — **primary product path**
 
@@ -141,13 +142,18 @@ Pilot UX fixes after 0099. See [0100-team-os-v11-epic.md](./0100-team-os-v11-epi
 | **0104** | Green Tailwind fix + dual schedule legend — **shipped** |
 | **0105** | Staff notification on firm task assign — **shipped** |
 
-## Team Task OS hotfix (0106) — **shipped**
+## Team Task OS hotfix (0106–0110b) — **shipped**
 
-Production fixes after v1.1. See [0106-schedule-assign-production-hotfix.md](./0106-schedule-assign-production-hotfix.md).
+Production fixes after v1.1. See tickets 0106–0110b.
 
 | Ticket | Scope |
 |--------|--------|
 | **0106** | Schedule API returns `role`; internal case exempt from 5-custom-task cap (`00058`) — **shipped** |
+| **0107** | Tailwind scans `src/lib`; booked cell status colours — **shipped** |
+| **0109** | `refetchActiveTaskViewQueries` on task status Realtime — **shipped** |
+| **0110b** | Assignment Realtime → staff My Tasks refetch — **shipped** |
+
+**Planned:** [0110a](./0110a-notification-poll-backup.md) notification poll + AudioContext.
 
 ## Paused (reminders & calendar epic 0080–0086)
 

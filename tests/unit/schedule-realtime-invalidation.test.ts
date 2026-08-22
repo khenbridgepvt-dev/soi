@@ -95,6 +95,28 @@ describe('shouldInvalidateScheduleForAssignmentChange', () => {
       ),
     ).toBe(true);
   });
+
+  it('refetches any staff assignment when ignoreViewedDate is set (0110b)', () => {
+    expect(
+      shouldInvalidateScheduleForAssignmentChange(
+        {
+          eventType: 'INSERT',
+          record: { date: '2026-08-18', staff_id: STAFF_ID },
+        },
+        { viewedDate: VIEWED_DATE, staffId: STAFF_ID, ignoreViewedDate: true },
+      ),
+    ).toBe(true);
+
+    expect(
+      shouldInvalidateScheduleForAssignmentChange(
+        {
+          eventType: 'INSERT',
+          record: { date: '2026-08-18', staff_id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb' },
+        },
+        { viewedDate: VIEWED_DATE, staffId: STAFF_ID, ignoreViewedDate: true },
+      ),
+    ).toBe(false);
+  });
 });
 
 describe('scheduleQueryKeysToInvalidate', () => {

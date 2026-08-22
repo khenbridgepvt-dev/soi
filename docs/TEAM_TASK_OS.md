@@ -26,7 +26,7 @@ Case CRM (cases, 13-task checklist, documents, leads) stays in the product under
 
 **Firm task volume:** The internal case (`FIRM-GENERAL`) is **not** subject to the per-client-case cap of 5 custom tasks (migration `00058`, ADR-0019 addendum). Team schedules may create unlimited firm tasks.
 
-**Realtime:** Assignment INSERT/UPDATE/DELETE (0075) + task status UPDATE (0097) invalidate schedule and My tasks queries. **Implemented** — migration `00056_tasks_realtime.sql`, `useTasksRealtime` hook; 60s poll fallback when disconnected.
+**Realtime:** Assignment INSERT/UPDATE/DELETE (0075) + task status UPDATE (0097) **refetch** active views (not just invalidate). See **§9** for assign vs status latency. Migration `00056_tasks_realtime.sql`; hooks `useScheduleRealtime`, `useTasksRealtime`; 15s poll fallback on schedule and My tasks when disconnected.
 
 ---
 
@@ -46,6 +46,8 @@ Case CRM (cases, 13-task checklist, documents, leads) stays in the product under
 
 - **Start** → `PATCH /api/tasks/:id/status` `{ "status": "in_progress" }`
 - **Done** → `{ "status": "completed" }` (direct complete allowed for internal case per 0047)
+
+**Realtime (0110b):** `useTasksRealtime` + `useScheduleRealtime` (`ignoreViewedDate: true`) → `refetchActiveTaskViewQueries`; 15s poll + `refetchOnWindowFocus` on dashboard query. New assignments appear on `task_assignments` INSERT without waiting for `tasks.assigned_to` UPDATE.
 
 ---
 
@@ -165,6 +167,13 @@ Run after **0099** on pilot/staging.
 2. Assign sixth+ firm task on same day succeeds (internal case exempt from 5-custom cap).
 3. If no staff have timetables/slots, header CTA shows a toast instead of silent no-op.
 
+### Realtime refetch (0109, 0110b)
+
+1. Staff **Start** → admin schedule cell **yellow** within ~2s (no F5).
+2. Staff **Done** → admin cell **green** within ~2s.
+3. Admin **assign** → staff **My Tasks** new row within ~2s (0110b).
+4. Toast may still arrive before or after list row; **0110a** improves notification reliability.
+
 **Pilot DB:** apply migrations `00056`–`00058` (`supabase db push`) before relying on realtime, status notifications, and unlimited firm tasks.
 
 ## 8. Doc updates per downstream ticket
@@ -175,4 +184,25 @@ Run after **0099** on pilot/staging.
 | `design_system.md` | 0096 |
 | `api_specification.md` | 0098 (notification type), 0106 (schedule `role`, adhoc errors) |
 | `database_schema.md` | 0106 (internal custom-task limit exemption) |
+| `TEAM_TASK_OS.md` §9 | 0109, 0110b, 0110a (live update channels) |
 | `USER_WORKFLOWS.md` | 0099 or follow-up polish |
+
+---
+
+## 9. Live updates — assign vs status (0109, 0110b, 0110a)
+
+Three channels fire when admin assigns firm work:
+
+| Event | Table | Admin schedule | Staff My Tasks | Staff toast/bell |
+|--------|--------|----------------|----------------|------------------|
+| New slot booked | `task_assignments` INSERT | `useScheduleRealtime` → refetch (0110b) | `useScheduleRealtime` → refetch (0110b) | — |
+| Assignee set | `tasks` UPDATE (`assigned_to`) | `useTasksRealtime` → refetch (0109) | `useTasksRealtime` → refetch (0109) | — |
+| Notify staff | `notifications` INSERT | — | — | `useRealtime` (often fast) |
+
+**Why colours felt instant but assign felt ~7s (pre-0110b):** **0109** wired `tasks` UPDATE to `refetchActiveTaskViewQueries` — staff **Start/Done** updates admin cell colours within ~2s. Staff **My Tasks** only listened to `tasks` UPDATE, not `task_assignments` INSERT, and had no poll fallback — so the list often lagged until `assigned_to` propagated or manual F5. The **notification** could still arrive first via a separate Realtime channel.
+
+**0110b (shipped):** `use-schedule-realtime` calls `refetchActiveTaskViewQueries` (schedule + `staffTasks` + board + reminders). **My Tasks** mounts `useScheduleRealtime` with `ignoreViewedDate: true` so future-date assigns also refetch. Poll: 15s + window focus.
+
+**0110a (planned):** Notification poll backup (60s), Realtime resubscribe on error, AudioContext unlock on first click — toast/ringtone intermittency only; does not change assign API or fanout.
+
+**Code:** `src/lib/query/refetch-views.ts` — `refetchActiveScheduleQueries`, `refetchActiveTaskViewQueries`.

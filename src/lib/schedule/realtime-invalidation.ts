@@ -29,15 +29,20 @@ function involvesStaff(change: TaskAssignmentChange, staffId: string): boolean {
   );
 }
 
-/** Returns true when a Realtime payload should invalidate the viewed schedule day. */
+/** Returns true when a Realtime payload should invalidate schedule / task views. */
 export function shouldInvalidateScheduleForAssignmentChange(
   change: TaskAssignmentChange,
   options: {
     viewedDate: string;
     staffId?: string;
+    /** My Tasks: refetch on any assignment for this staff, not only viewedDate. */
+    ignoreViewedDate?: boolean;
   },
 ): boolean {
-  if (!relevantDates(change).includes(options.viewedDate)) {
+  if (
+    !options.ignoreViewedDate &&
+    !relevantDates(change).includes(options.viewedDate)
+  ) {
     return false;
   }
 

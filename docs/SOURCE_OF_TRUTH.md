@@ -87,6 +87,8 @@ Quick index for agents and developers. **Read this first** instead of re-auditin
 | [0076](../tracker/issues/0076-notification-toast-sound.md) | 2026-08-17 | Notification toast + sound; profile mute via EP-64 |
 | [0090](../tracker/issues/0090-team-task-os-adr.md) | 2026-08-22 | ADR-0023 + `TEAM_TASK_OS.md`; Team Task OS epic 0091–0099; pause reminders UI 0080–0086 |
 | [0106](../tracker/issues/0106-schedule-assign-production-hotfix.md) | 2026-08-22 | Schedule API `role` field; internal case exempt from 5-custom-task cap (`00058`) |
+| [0109](../tracker/issues/0109-schedule-realtime-colour-refresh.md) | 2026-08-22 | `refetchActiveTaskViewQueries` on task Realtime; schedule 15s poll |
+| [0110b](../tracker/issues/0110b-staff-assign-realtime-refetch.md) | 2026-08-22 | Assignment Realtime → staff My Tasks refetch; `ignoreViewedDate` |
 | [0091](../tracker/issues/0091-admin-nav-landing.md) | 2026-08-22 | Admin Main nav Team Schedule + Team; login → `/schedule`; case CRM under Advanced |
 | [0092](../tracker/issues/0092-schedule-assign-cta.md) | 2026-08-22 | Schedule header + Assign task CTA → `CustomTaskAssignModal` with date/staff/slot defaults |
 | [0093](../tracker/issues/0093-simplified-assign-modal.md) | 2026-08-22 | Team assign modal (`variant="team"`): no case audit; Assign team task flow |
@@ -96,7 +98,7 @@ Quick index for agents and developers. **Read this first** instead of re-auditin
 
 MVP modules (tickets 0002–0030) are implemented per the [implementation map](../tracker/issues/0001-mvp-implementation-map.md).
 
-**Current product path:** Team Task OS (0091–0099, v1.1 0100–0105, hotfix 0106) — see [TEAM_TASK_OS.md](./TEAM_TASK_OS.md). Case CRM remains under Advanced nav; not removed.
+**Current product path:** Team Task OS (0091–0099, v1.1 0100–0105, hotfixes 0106–0110b) — see [TEAM_TASK_OS.md](./TEAM_TASK_OS.md) §9. Case CRM remains under Advanced nav; not removed.
 
 ---
 

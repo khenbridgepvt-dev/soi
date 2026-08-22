@@ -8,8 +8,9 @@ import type { StaffDashboardPayload, StaffDashboardTask } from '@/lib/dashboard/
 import type { StaffDashboardHistoryPayload } from '@/lib/dashboard/fetch-staff-dashboard-history';
 import { useInvalidateAfterMutation } from '@/lib/query/useInvalidateAfterMutation';
 import { refetchActiveTaskViewQueries } from '@/lib/query/refetch-views';
+import { useScheduleRealtime } from '@/lib/hooks/use-schedule-realtime';
 import { useTasksRealtime } from '@/lib/hooks/use-tasks-realtime';
-import { queryKeys } from '@/lib/query/keys';
+import { queryKeys, SCHEDULE_REFETCH_INTERVAL_MS } from '@/lib/query/keys';
 import {
   countFirmTasksOverdue,
   countFirmTasksToday,
@@ -90,11 +91,18 @@ type MyTasksViewProps = {
 };
 
 export default function MyTasksView({ userId, role }: MyTasksViewProps) {
+  const today = todayISODate();
+
   useTasksRealtime({ userId, role });
+  useScheduleRealtime({
+    viewedDate: today,
+    userId,
+    role,
+    ignoreViewedDate: true,
+  });
 
   const queryClient = useQueryClient();
   const invalidate = useInvalidateAfterMutation();
-  const today = todayISODate();
   const [activeTab, setActiveTab] = useState<FirmTasksTab>('not_started');
   const [historyItems, setHistoryItems] = useState<StaffDashboardTask[]>([]);
   const [historyCursor, setHistoryCursor] = useState<string | null>(null);
@@ -129,6 +137,8 @@ export default function MyTasksView({ userId, role }: MyTasksViewProps) {
         }
       );
     },
+    refetchOnWindowFocus: true,
+    refetchInterval: SCHEDULE_REFETCH_INTERVAL_MS,
   });
 
   const firmTasks = useMemo(() => data?.firm_tasks ?? [], [data?.firm_tasks]);
