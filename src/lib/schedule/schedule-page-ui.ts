@@ -93,22 +93,14 @@ export function assignmentMatchesTaskViewFilter(
   return assignment.task_status !== 'completed';
 }
 
-export function computeDefaultTaskViewFilter(
-  staff: { assignments: ScheduleFilterableAssignment[] }[],
-): TaskViewFilter {
-  const hasActive = staff.some((member) =>
-    member.assignments.some(
-      (assignment) =>
-        !assignment.case_deleted &&
-        !assignment.task_deleted &&
-        assignment.task_status !== 'completed',
-    ),
-  );
-
-  return hasActive ? 'active' : 'all';
+export function computeDefaultTaskViewFilter(): TaskViewFilter {
+  return 'all';
 }
 
 /** Short pills (one grid row / under 40 min) use single-line title + time layout (0115). */
 export function isSchedulePillCompactLayout(span: number, durationMinutes: number): boolean {
   return span === 1 || durationMinutes < 40;
 }
+
+/** Alias for staff calendar + admin schedule shared compact pill rule. */
+export const shouldUseCompactSchedulePill = isSchedulePillCompactLayout;

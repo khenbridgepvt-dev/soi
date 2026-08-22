@@ -115,6 +115,8 @@ The MVP is **operational as a free-tier pilot**: all ten MVP modules (M1–M10) 
 - **0113 team assign modal UX polish:** summary strip, presets, searchable assignee — [Team assign modal UX polish](./0113-team-assign-modal-ux-polish.md)
 - **0114 team schedule page UX polish:** sticky toolbar, column header stats, view filter — [Team schedule page UX polish](./0114-team-schedule-page-ux-polish.md)
 - **0115 compact schedule pill layout:** single-line title + time for short pills — [Compact layout for short schedule pills](./0115-compact-schedule-pill-layout.md)
+- **0116 staff My tasks UX polish:** status chips, labelled actions, undo toast — [Staff My tasks UX polish](./0116-staff-my-tasks-ux.md)
+- **0117 staff calendar UX polish:** compact pills, Active/Done filter, colour key — [Staff calendar UX polish](./0117-staff-calendar-ux.md)
 
 ## Planned (Team Task OS epic 0091–0099) — **primary product path**
 

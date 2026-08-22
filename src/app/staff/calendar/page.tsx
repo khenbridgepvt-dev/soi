@@ -4,7 +4,7 @@ import StaffDayCalendarView from '@/components/staff/StaffDayCalendarView';
 import { getSessionWithRole } from '@/lib/auth/session';
 
 export const metadata: Metadata = {
-  title: 'My Calendar',
+  title: 'My calendar',
 };
 
 export default async function StaffCalendarPage() {

@@ -1,17 +1,17 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import ScheduleLegend from '@/components/schedule/ScheduleLegend';
 import SlotBlock, { type SlotBlockState } from '@/components/schedule/SlotBlock';
+import TaskStatusChip from '@/components/staff/TaskStatusChip';
 import {
   isScheduleAssignmentDeleted,
   scheduleAssignmentStatusDotClass,
-  scheduleAssignmentStatusSuffix,
 } from '@/lib/schedule/assignment-status';
 import {
   formatScheduleAssignmentAriaLabel,
-  formatScheduleAssignmentCompactLabel,
   formatScheduleAssignmentPrimaryLabel,
   isScheduleAssignmentNavigable,
   scheduleAssignmentPillClassName,
@@ -19,6 +19,23 @@ import {
 import { REFETCH_INTERVAL_MS, queryKeys } from '@/lib/query/keys';
 import { useScheduleRealtime } from '@/lib/hooks/use-schedule-realtime';
 import { useTasksRealtime } from '@/lib/hooks/use-tasks-realtime';
+import { shouldUseCompactSchedulePill } from '@/lib/schedule/schedule-page-ui';
+import {
+  assignmentMatchesStaffCalendarFilter,
+  computeDefaultStaffCalendarFilter,
+  formatStaffCalendarFilterLabel,
+  formatTimeRange,
+  getScheduleAssignmentChipVariants,
+  isScheduleAssignmentOverdue,
+  staffCalendarSubtitle,
+  STAFF_CALENDAR_COLUMN_HEADER,
+  STAFF_CALENDAR_FILTER_LABEL,
+  STAFF_CALENDAR_FILTER_OPTIONS,
+  STAFF_CALENDAR_FREE_SLOT_LABEL,
+  STAFF_CALENDAR_TITLE,
+  STAFF_CALENDAR_TODAY_CHIP,
+  type StaffCalendarFilter,
+} from '@/lib/schedule/staff-calendar-ui';
 import {
   CALENDAR_ROW_HEIGHT,
   currentTimeLabel,
@@ -59,6 +76,7 @@ type ScheduleAssignment = {
   end_time: string;
   duration_minutes: number;
   is_urgent: boolean;
+  is_overdue?: boolean;
   case_deleted: boolean;
   task_deleted: boolean;
   case_is_internal: boolean;
@@ -94,25 +112,16 @@ type StaffDayCalendarViewProps = {
   role?: 'staff' | 'senior';
 };
 
-function formatDuration(minutes: number): string {
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-
-  if (hours === 0) {
-    return `${rest}m`;
-  }
-
-  return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
-}
-
 export default function StaffDayCalendarView({
   staffId,
   role = 'staff',
 }: StaffDayCalendarViewProps) {
   const router = useRouter();
   const [date, setDate] = useState(() => todayISODate());
+  const [viewFilter, setViewFilter] = useState<StaffCalendarFilter>('active');
   const [bannerError, setBannerError] = useState<string | null>(null);
   const [nowTime, setNowTime] = useState(() => currentTimeLabel());
+  const filterInitializedForDate = useRef<string | null>(null);
 
   const isToday = date === todayISODate();
 
@@ -169,11 +178,29 @@ export default function StaffDayCalendarView({
         ? 'Unable to connect. Check your internet connection.'
         : null;
 
+  const member = payload?.staff[0] ?? null;
+  const timeline = payload?.grid.times ?? [];
+  const gridStart = payload?.grid.start_time;
+  const gridEnd = payload?.grid.end_time;
+
   useEffect(() => {
     if (scheduleErrorMessage) {
       setBannerError(scheduleErrorMessage);
     }
   }, [scheduleErrorMessage]);
+
+  useEffect(() => {
+    filterInitializedForDate.current = null;
+  }, [date]);
+
+  useEffect(() => {
+    if (!payload || payload.date !== date || filterInitializedForDate.current === date) {
+      return;
+    }
+
+    filterInitializedForDate.current = date;
+    setViewFilter(computeDefaultStaffCalendarFilter(payload.staff[0]?.assignments ?? []));
+  }, [date, payload]);
 
   useEffect(() => {
     if (date !== todayISODate()) {
@@ -187,10 +214,6 @@ export default function StaffDayCalendarView({
     return () => window.clearInterval(timer);
   }, [date]);
 
-  const member = payload?.staff[0] ?? null;
-  const timeline = payload?.grid.times ?? [];
-  const gridStart = payload?.grid.start_time;
-  const gridEnd = payload?.grid.end_time;
   const showNowMarker = Boolean(
     isToday && gridStart && gridEnd && isTimeWithinGrid(nowTime, gridStart, gridEnd),
   );
@@ -204,6 +227,57 @@ export default function StaffDayCalendarView({
   }, [gridStart, nowTime, showNowMarker]);
 
   const gridTemplateColumns = `${GUTTER_WIDTH}px minmax(${COLUMN_MIN_WIDTH}px, 1fr)`;
+
+  function renderBookedPillContent(assignment: ScheduleAssignment, span: number) {
+    const isCompact = shouldUseCompactSchedulePill(span, assignment.duration_minutes);
+    const chips = getScheduleAssignmentChipVariants(assignment);
+    const timeRange = formatTimeRange(assignment.start_time, assignment.end_time);
+
+    if (isCompact) {
+      return (
+        <span className="flex h-full min-w-0 items-center gap-1 overflow-hidden text-left">
+          <span
+            className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${scheduleAssignmentStatusDotClass(assignment, date)}`}
+            aria-hidden
+          />
+          {isScheduleAssignmentOverdue(assignment) && (
+            <span className="shrink-0 text-[10px] font-semibold leading-none text-error">
+              Overdue
+            </span>
+          )}
+          <span className="min-w-0 truncate text-xs font-semibold leading-none">
+            {formatScheduleAssignmentPrimaryLabel(assignment)}
+          </span>
+          <span className="ml-auto shrink-0 pl-1 text-[10px] tabular-nums leading-none text-text-secondary">
+            {timeRange}
+          </span>
+        </span>
+      );
+    }
+
+    return (
+      <span className="flex h-full flex-col justify-center gap-1 overflow-hidden text-left">
+        <span className="flex items-center gap-1">
+          <span
+            className={`inline-block h-2 w-2 shrink-0 rounded-full ${scheduleAssignmentStatusDotClass(assignment, date)}`}
+            aria-hidden
+          />
+          <span className="truncate text-sm font-semibold">
+            {formatScheduleAssignmentPrimaryLabel(assignment)}
+          </span>
+        </span>
+        <span className="flex flex-wrap items-center gap-1.5">
+          <span className="text-xs tabular-nums text-text-secondary">{timeRange}</span>
+          {chips.map((variant) => (
+            <TaskStatusChip key={variant} variant={variant} />
+          ))}
+        </span>
+        {!assignment.case_is_internal && assignment.case_reference && (
+          <span className="truncate text-xs text-text-muted">{assignment.case_reference}</span>
+        )}
+      </span>
+    );
+  }
 
   function renderDayColumn() {
     if (!member) {
@@ -223,10 +297,10 @@ export default function StaffDayCalendarView({
 
         const assignment = assignmentsById.get(slot.assignment_id);
         const span = slot.span;
-        const showDetail = span >= 2;
         const isNextAction = assignment?.task_id === nextActionTaskId;
         const isDeleted = assignment ? isScheduleAssignmentDeleted(assignment) : false;
-        const isInternal = assignment?.case_is_internal === true;
+        const matchesFilter =
+          !assignment || assignmentMatchesStaffCalendarFilter(assignment, viewFilter);
 
         cells.push(
           <div
@@ -251,7 +325,12 @@ export default function StaffDayCalendarView({
                   assignment
                     ? scheduleAssignmentPillClassName(assignment, {
                         viewedDate: date,
-                        extra: isDeleted ? 'opacity-80' : undefined,
+                        extra: [
+                          isDeleted ? 'opacity-80' : undefined,
+                          !matchesFilter ? 'pointer-events-none opacity-25' : undefined,
+                        ]
+                          .filter(Boolean)
+                          .join(' '),
                       })
                     : undefined
                 }
@@ -261,7 +340,9 @@ export default function StaffDayCalendarView({
                     : undefined
                 }
                 onClick={
-                  assignment && isScheduleAssignmentNavigable(assignment)
+                  assignment &&
+                  matchesFilter &&
+                  isScheduleAssignmentNavigable(assignment)
                     ? () =>
                         router.push(
                           `/staff/cases/${assignment.case_id}?task=${assignment.task_id}`,
@@ -270,34 +351,7 @@ export default function StaffDayCalendarView({
                 }
                 style={{ height: '100%', minHeight: ROW_HEIGHT * span - PILL_GAP }}
               >
-                {assignment && (
-                  <span className="flex w-full flex-col items-start gap-0.5 text-left">
-                    <span className="flex items-center gap-1 truncate">
-                      <span
-                        className={`inline-block h-2 w-2 shrink-0 rounded-full ${scheduleAssignmentStatusDotClass(assignment, date)}`}
-                        aria-hidden
-                      />
-                      <span className="truncate font-semibold">
-                        {showDetail
-                          ? formatScheduleAssignmentPrimaryLabel(assignment)
-                          : formatScheduleAssignmentCompactLabel(assignment)}
-                      </span>
-                    </span>
-                    {showDetail && (
-                      <>
-                        <span className="truncate text-xs font-normal text-text-secondary">
-                          {isInternal
-                            ? `${assignment.start_time}–${assignment.end_time}`
-                            : (assignment.case_reference ?? '—')}
-                          {scheduleAssignmentStatusSuffix(assignment)}
-                        </span>
-                        <span className="text-xs font-normal text-text-muted">
-                          {formatDuration(assignment.duration_minutes)} allocated
-                        </span>
-                      </>
-                    )}
-                  </span>
-                )}
+                {assignment ? renderBookedPillContent(assignment, span) : null}
               </SlotBlock>
             </div>
           </div>,
@@ -316,7 +370,9 @@ export default function StaffDayCalendarView({
         >
           <SlotBlock state={state} style={{ height: ROW_HEIGHT - PILL_GAP }}>
             {slot.state === 'available' ? (
-              <span className="text-xs font-medium text-slot-available-text">Available</span>
+              <span className="text-xs font-medium text-slot-available-text">
+                {STAFF_CALENDAR_FREE_SLOT_LABEL}
+              </span>
             ) : null}
           </SlotBlock>
         </div>,
@@ -328,38 +384,64 @@ export default function StaffDayCalendarView({
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold text-text">My Calendar — Day View</h1>
-          <p className="mt-1 text-sm text-text-secondary">
-            Your schedule for {formatLongDate(date)}.
-          </p>
+      <div className="sticky top-0 z-40 mb-3 border-b border-border bg-page pb-3">
+        <div className="mb-3">
+          <h1 className="text-xl font-semibold text-text">{STAFF_CALENDAR_TITLE}</h1>
+          <p className="mt-1 text-sm text-text-secondary">{staffCalendarSubtitle(date)}</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setDate((current) => addDays(current, -1))}
-            className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-text hover:bg-page"
-            aria-label="Previous day"
-          >
-            ◀ Prev
-          </button>
-          <button
-            type="button"
-            onClick={() => setDate(todayISODate())}
-            className="rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium text-text hover:bg-page"
-          >
-            Today · {formatLongDate(date)}
-          </button>
-          <button
-            type="button"
-            onClick={() => setDate((current) => addDays(current, 1))}
-            className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-text hover:bg-page"
-            aria-label="Next day"
-          >
-            Next ▶
-          </button>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setDate((current) => addDays(current, -1))}
+              className="min-h-[44px] rounded-md border border-border bg-surface px-3 py-2 text-sm text-text hover:bg-page"
+              aria-label="Previous day"
+            >
+              ◀
+            </button>
+            <span className="min-h-[44px] rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text">
+              {formatLongDate(date)}
+            </span>
+            <button
+              type="button"
+              onClick={() => setDate((current) => addDays(current, 1))}
+              className="min-h-[44px] rounded-md border border-border bg-surface px-3 py-2 text-sm text-text hover:bg-page"
+              aria-label="Next day"
+            >
+              ▶
+            </button>
+            <button
+              type="button"
+              onClick={() => setDate(todayISODate())}
+              className="min-h-[44px] rounded-full border border-border bg-surface px-4 py-2 text-sm font-medium text-text hover:bg-page"
+            >
+              {STAFF_CALENDAR_TODAY_CHIP}
+            </button>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm text-text-secondary">{STAFF_CALENDAR_FILTER_LABEL}</span>
+            {STAFF_CALENDAR_FILTER_OPTIONS.map((filter) => (
+              <button
+                key={filter.id}
+                type="button"
+                onClick={() => setViewFilter(filter.id)}
+                className={`min-h-[36px] rounded-full border px-3 py-1.5 text-xs font-medium ${
+                  viewFilter === filter.id
+                    ? 'border-primary bg-primary text-white'
+                    : 'border-border bg-surface text-text hover:bg-page'
+                }`}
+                aria-pressed={viewFilter === filter.id}
+              >
+                {formatStaffCalendarFilterLabel(filter.id)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-2">
+          <ScheduleLegend collapsible defaultExpanded={false} />
         </div>
       </div>
 
@@ -382,15 +464,15 @@ export default function StaffDayCalendarView({
       )}
 
       {!loading && member && timeline.length > 0 && (
-        <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+        <div className="max-h-[calc(100vh-280px)] overflow-x-auto overflow-y-auto rounded-lg border border-border bg-surface">
           <div className="min-w-[360px]">
             <div className="grid border-b border-slot-line" style={{ gridTemplateColumns }}>
-              <div className="sticky left-0 z-20 border-r border-slot-line bg-page px-2 py-2 text-xs font-semibold uppercase tracking-wide text-text-muted">
+              <div className="sticky left-0 top-0 z-20 border-r border-slot-line bg-page px-2 py-2 text-xs font-semibold uppercase tracking-wide text-text-muted">
                 Time
               </div>
-              <div className="border-l border-slot-line bg-page px-3 py-2 text-sm font-semibold text-text">
-                {member.full_name}
-                {member.is_on_leave ? ' · On Leave' : ''}
+              <div className="sticky top-0 z-20 border-l border-slot-line bg-page px-3 py-2 text-sm font-semibold text-text">
+                {STAFF_CALENDAR_COLUMN_HEADER}
+                {member.is_on_leave ? ' · On leave' : ''}
               </div>
             </div>
 
@@ -419,7 +501,7 @@ export default function StaffDayCalendarView({
                   data-testid="calendar-now-marker"
                 >
                   <span className="bg-error/50 px-1 text-[10px] font-semibold uppercase text-error">
-                    NOW
+                    Now
                   </span>
                   <div className="h-0.5 flex-1 bg-error opacity-50" />
                 </div>

@@ -463,7 +463,7 @@ Admin: Leave Management (S-13) → Pending tab → Review → Approve/Reject
 | **Sticky toolbar** | Page title, subtitle, **+ Assign task**, date navigator (◀ · long date · ▶ · **Today** chip — no separate date input), **Show:** filter chips (All · Active · Done), collapsible **Colour key** (default collapsed). |
 | **+ Assign task** | Opens **Assign team task** modal (0112/0113). |
 | **Column per staff** | Header: name; working hours or **Off today**; stats line `{booked} / {working}h booked · Active {n} · Done {n} · Overdue {n}` (0114 — replaces separate workload strip + chips). |
-| **Task view filter** | Client-side only (0114): **Active** hides completed pills at 25% opacity; **Done** shows only completed; default **Active** when any non-completed tasks exist. |
+| **Task view filter** | Client-side only (0114): **Active** hides completed pills at 25% opacity; **Done** shows only completed; default **All**. |
 | **Time Rows** | Hourly rows from earliest staff start to latest end. |
 | **Task Block** | Always shows **task title** + **start–end** time on every span (0114). Third line (client / status suffix) when span ≥ 2. Internal/ad-hoc: no case ref/client. Status dot + **Done** suffix when applicable. |
 | **Available Slot** | Hover: **Assign task at {time}**. Click opens assign modal with prefill. |
@@ -906,17 +906,20 @@ Admin: Leave Management (S-13) → Pending tab → Review → Approve/Reject
 
 ### S-10b · My Tasks (Team Task OS)
 
-**Scope:** Team OS v1 (ticket 0095)  
+**Scope:** Team OS v1 (tickets 0095, 0116)  
 **Route:** `/staff/tasks` (default staff login)
 
 | Component | Detail |
 |-----------|--------|
-| **Tabs** | Not started · In progress · Done (firm tasks only) |
-| **Row** | Task name, optional description snippet, scheduled time, status left bar (grey/yellow/green prep for 0096) |
-| **Actions** | ✓ Done · ◉ Start — 44px touch targets; no case link for firm tasks |
-| **Done tab** | Paginated completed firm tasks via `GET /api/dashboard/staff/history?internalOnly=true` |
-| **Metrics** | Today count, Overdue (firm tasks) |
-| **Link** | My calendar → S-11 |
+| **Header** | My tasks · subtitle “Tasks assigned to you” · **View my calendar** button |
+| **Overdue banner** | When overdue count &gt; 0: “{n} overdue task(s) needs attention now” + **Show overdue** |
+| **Metrics** | Clickable **Today** / **Overdue** counts (`aria-pressed` when filter active) |
+| **Search** | Local filter on task name + description |
+| **Filters** | All active · Today · Overdue · Not started · In progress · Done (default **All active**) |
+| **Active row** | Status chips (Not started / In progress / Overdue / Done) + overdue helper + schedule + **Start** / **Mark complete** text buttons |
+| **Done row** | Compact `py-3`: Done chip · title · **Was {start}–{end}** · **Done on {date}** |
+| **Complete** | Toast “Task marked done” + **Undo** (8s, re-PATCH prior status) |
+| **Empty active** | “No tasks waiting. You're all caught up.” + calendar link |
 
 **Scope:** MVP  
 **Purpose:** Legacy staff dashboard — prioritised **client** task list with clear "next action" highlighting. Firm tasks live on S-10b.
@@ -1000,51 +1003,19 @@ Admin: Leave Management (S-13) → Pending tab → Review → Approve/Reject
 
 ### S-11 · Staff Day View Calendar
 
-**Scope:** MVP  
-**Purpose:** Hour-by-hour view of the staff member's day.
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│  MY CALENDAR — DAY VIEW     [◀ Prev] [Today: Mon 7 Jul] [Next ▶]  │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  09:00  ┌─────────────────────────────────────────────────┐         │
-│         │ 🟢 CCL · Mariya Ivanova · 072604/SKW/MAR       │         │
-│  10:00  │     2 hours allocated                           │         │
-│         └─────────────────────────────────────────────────┘         │
-│                                                                     │
-│  11:00  ┌─────────────────────────────────────────────────┐         │
-│  ──NOW──│ 🔴 Application Preparation · Vishnu Patel      │         │
-│  12:00  │     072601/SKW/VIS · URGENT                     │         │
-│         │     2 hours allocated                           │         │
-│  13:00  └─────────────────────────────────────────────────┘         │
-│                                                                     │
-│  13:00  ┌─────────────────────────────────────────────────┐         │
-│         │ 🟡 Review · Rahman family · 072603/ILR/RAH      │         │
-│  14:00  │     Approaching deadline                        │         │
-│         │     2 hours allocated                           │         │
-│  15:00  └─────────────────────────────────────────────────┘         │
-│                                                                     │
-│  15:00  ┌─────────────────────────────────────────────────┐         │
-│         │ 🟢 CCL/LOA · Mariya Ivanova · 072604/SKW/MAR   │         │
-│  16:00  │     1 hour allocated                            │         │
-│         └─────────────────────────────────────────────────┘         │
-│                                                                     │
-│  16:00  ░░░░░░░░░ Available ░░░░░░░░░░░░░░░░░░░░░░        │
-│  17:00  ─── End of working hours ───                               │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-**Components:**
+**Scope:** MVP + Team OS v1.1 (ticket 0117)  
+**Purpose:** Hour-by-hour view of the staff member's day. Route `/staff/calendar`.
 
 | Component | Detail |
 |-----------|--------|
-| **Date Navigation** | Same as S-04: Prev, Today, Next, date picker |
-| **Current Time Marker** | Horizontal red line labelled "NOW" at the current time position |
-| **Task Blocks** | Colour-coded blocks spanning their allocated hours. Shows: colour dot, task name, client, case reference, status label (`URGENT` / `BLOCKED` / `COMPLETED` when applicable; ticket 0039), duration. |
-| **Available Slots** | Dotted/hatched background indicating unbooked time |
-| **Off-Hours** | Below the working hours end time, greyed out with label |
+| **Header** | **My calendar** · subtitle “Your schedule for {long date}” |
+| **Sticky toolbar** | ◀ · **Sat 22 Aug 2026** · ▶ · **Today** chip · **Show:** All · Active · Done (default **Active** when non-done tasks exist) |
+| **Colour key** | Collapsible legend (default collapsed); **Done** not Completed |
+| **Column** | **Your day** (not staff name on self-view) |
+| **Task blocks** | Compact single-line pills (`span === 1` or `duration < 40`): title + time; multi-span: title + time + `TaskStatusChip` (Done / Overdue / In progress) |
+| **Filter** | Client-side dim (`opacity-25`) for pills hidden by Active/Done filter |
+| **Free slots** | Label **Free** (not Available) |
+| **Now line** | Red horizontal marker on today when within grid hours |
 
 **Actions:**
 

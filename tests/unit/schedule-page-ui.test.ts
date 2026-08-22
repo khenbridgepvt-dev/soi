@@ -63,17 +63,8 @@ describe('schedule-page-ui', () => {
     expect(assignmentMatchesTaskViewFilter(active, 'all')).toBe(true);
   });
 
-  it('defaults to active when non-completed assignments exist', () => {
-    expect(
-      computeDefaultTaskViewFilter([
-        { assignments: [{ task_status: 'completed' }] },
-        { assignments: [{ task_status: 'in_progress' }] },
-      ]),
-    ).toBe('active');
-
-    expect(
-      computeDefaultTaskViewFilter([{ assignments: [{ task_status: 'completed' }] }]),
-    ).toBe('all');
+  it('defaults task view filter to all', () => {
+    expect(computeDefaultTaskViewFilter()).toBe('all');
   });
 
   it('detects compact pill layout for short spans and durations', () => {

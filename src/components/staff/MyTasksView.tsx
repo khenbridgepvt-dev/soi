@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import TaskActionStrip from '@/components/staff/TaskActionStrip';
+import TaskStatusChip from '@/components/staff/TaskStatusChip';
+import Toast from '@/components/ui/Toast';
 import type { StaffDashboardPayload, StaffDashboardTask } from '@/lib/dashboard/fetch-staff-dashboard';
 import type { StaffDashboardHistoryPayload } from '@/lib/dashboard/fetch-staff-dashboard-history';
 import { useInvalidateAfterMutation } from '@/lib/query/useInvalidateAfterMutation';
@@ -12,74 +14,132 @@ import { useScheduleRealtime } from '@/lib/hooks/use-schedule-realtime';
 import { useTasksRealtime } from '@/lib/hooks/use-tasks-realtime';
 import { queryKeys, SCHEDULE_REFETCH_INTERVAL_MS } from '@/lib/query/keys';
 import {
-  countFirmTasksOverdue,
-  countFirmTasksToday,
   descriptionSnippet,
-  filterFirmTasksByTab,
   firmTaskStatusBarClass,
-  formatCompletedAt,
   formatFirmTaskSchedule,
-  type FirmTasksTab,
 } from '@/lib/tasks/firm-tasks';
+import {
+  applyMyTasksListFilters,
+  formatDoneOnDate,
+  formatOverdueBannerMessage,
+  formatWasScheduled,
+  getTaskStatusChipVariants,
+  MY_TASKS_CALENDAR_CTA,
+  MY_TASKS_COMPLETE_TOAST,
+  MY_TASKS_DEFAULT_FILTER,
+  MY_TASKS_EMPTY_ACTIVE,
+  MY_TASKS_EMPTY_ACTIVE_LINK,
+  MY_TASKS_EMPTY_DONE,
+  MY_TASKS_FILTER_OPTIONS,
+  MY_TASKS_OVERDUE_HELPER,
+  MY_TASKS_PAGE_SUBTITLE,
+  MY_TASKS_SEARCH_LABEL,
+  MY_TASKS_SHOW_OVERDUE_ACTION,
+  MY_TASKS_UNDO_LABEL,
+  type MyTasksFilter,
+} from '@/lib/tasks/firm-tasks-ui';
 import { todayISODate } from '@/lib/utils/dates';
 
 type ApiError = {
   error?: { message?: string };
 };
 
-const TABS: { id: FirmTasksTab; label: string }[] = [
-  { id: 'not_started', label: 'Not started' },
-  { id: 'in_progress', label: 'In progress' },
-  { id: 'done', label: 'Done' },
-];
+type UndoState = {
+  taskId: string;
+  previousStatus: 'not_started' | 'in_progress';
+};
 
-function SummaryMetric({
+function SummaryMetricButton({
   label,
   value,
   tone = 'default',
+  pressed = false,
+  onClick,
 }: {
   label: string;
   value: number;
   tone?: 'default' | 'danger';
+  pressed?: boolean;
+  onClick: () => void;
 }) {
   const valueClass = tone === 'danger' ? 'text-error' : 'text-text';
 
   return (
-    <div className="flex-1 px-4 py-3 text-center">
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={pressed}
+      className={`flex-1 px-4 py-3 text-center transition-colors hover:bg-page ${
+        pressed ? 'bg-page' : ''
+      }`}
+    >
       <p className={`text-2xl font-semibold leading-tight tabular-nums ${valueClass}`}>{value}</p>
       <p className="mt-1 text-xs text-text-muted">{label}</p>
+    </button>
+  );
+}
+
+function ActiveTaskRow({
+  task,
+  onStatusChanged,
+  onCompleted,
+}: {
+  task: StaffDashboardTask;
+  onStatusChanged: () => void;
+  onCompleted: (taskId: string, previousStatus: 'not_started' | 'in_progress') => void;
+}) {
+  const schedule = formatFirmTaskSchedule(task);
+  const snippet = descriptionSnippet(task.description);
+  const chips = getTaskStatusChipVariants(task);
+  const showOverdueHelper = task.is_overdue && task.status !== 'completed';
+
+  return (
+    <div className={`rounded-md border-[1.5px] p-4 ${firmTaskStatusBarClass(task)}`}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            {chips.map((variant) => (
+              <TaskStatusChip key={variant} variant={variant} />
+            ))}
+          </div>
+          <p className="mt-2 text-sm font-semibold text-text">{task.name}</p>
+          {snippet && <p className="mt-1 text-sm text-text-secondary">{snippet}</p>}
+          {showOverdueHelper && (
+            <p className="mt-1 text-xs font-medium text-error">{MY_TASKS_OVERDUE_HELPER}</p>
+          )}
+          {schedule && (
+            <p className="mt-1 text-xs font-medium text-text-secondary tabular-nums">{schedule}</p>
+          )}
+        </div>
+        <TaskActionStrip
+          task={task}
+          onStatusChanged={onStatusChanged}
+          onCompleted={onCompleted}
+          showOpenCase={!task.case_is_internal}
+        />
+      </div>
     </div>
   );
 }
 
-function FirmTaskRow({
-  task,
-  onStatusChanged,
-}: {
-  task: StaffDashboardTask;
-  onStatusChanged: () => void;
-}) {
-  const schedule = formatFirmTaskSchedule(task);
-  const snippet = descriptionSnippet(task.description);
+function DoneTaskRow({ task }: { task: StaffDashboardTask }) {
+  const wasScheduled = task.current_assignment
+    ? formatWasScheduled(
+        task.current_assignment.start_time,
+        task.current_assignment.end_time,
+      )
+    : null;
+  const doneOn = formatDoneOnDate(task.completed_at);
+  const meta = [wasScheduled, doneOn].filter(Boolean).join(' · ');
 
   return (
-    <div
-      className={`rounded-md border-[1.5px] p-4 ${firmTaskStatusBarClass(task)}`}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-text">{task.name}</p>
-          {snippet && <p className="mt-1 text-sm text-text-secondary">{snippet}</p>}
-          {schedule && (
-            <p className="mt-1 text-xs font-medium text-text-secondary tabular-nums">{schedule}</p>
-          )}
-          {task.status === 'completed' && formatCompletedAt(task.completed_at) && (
-            <p className="mt-1 text-xs text-text-muted">
-              Completed {formatCompletedAt(task.completed_at)}
-            </p>
-          )}
-        </div>
-        <TaskActionStrip task={task} onStatusChanged={onStatusChanged} showOpenCase={false} />
+    <div className="rounded-md border border-border bg-surface px-4 py-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <TaskStatusChip variant="done" />
+        <p className="min-w-0 flex-1 truncate text-sm font-medium text-text">
+          {task.name}
+          {meta ? <span className="font-normal text-text-secondary"> · {meta}</span> : null}
+        </p>
       </div>
     </div>
   );
@@ -103,12 +163,16 @@ export default function MyTasksView({ userId, role }: MyTasksViewProps) {
 
   const queryClient = useQueryClient();
   const invalidate = useInvalidateAfterMutation();
-  const [activeTab, setActiveTab] = useState<FirmTasksTab>('not_started');
+  const [listFilter, setListFilter] = useState<MyTasksFilter>(MY_TASKS_DEFAULT_FILTER);
+  const [searchQuery, setSearchQuery] = useState('');
   const [historyItems, setHistoryItems] = useState<StaffDashboardTask[]>([]);
   const [historyCursor, setHistoryCursor] = useState<string | null>(null);
   const [historyHasMore, setHistoryHasMore] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [undoState, setUndoState] = useState<UndoState | null>(null);
+  const [undoError, setUndoError] = useState<string | null>(null);
 
   const {
     data,
@@ -142,12 +206,18 @@ export default function MyTasksView({ userId, role }: MyTasksViewProps) {
   });
 
   const firmTasks = useMemo(() => data?.firm_tasks ?? [], [data?.firm_tasks]);
-  const todayCount = countFirmTasksToday(firmTasks, today);
-  const overdueCount = countFirmTasksOverdue(firmTasks);
+  const todayCount = useMemo(
+    () => firmTasks.filter((task) => task.current_assignment?.date === today).length,
+    [firmTasks, today],
+  );
+  const overdueCount = useMemo(
+    () => firmTasks.filter((task) => task.is_overdue && task.status !== 'completed').length,
+    [firmTasks],
+  );
 
   const visibleTasks = useMemo(
-    () => filterFirmTasksByTab(firmTasks, historyItems, activeTab),
-    [activeTab, firmTasks, historyItems],
+    () => applyMyTasksListFilters(firmTasks, historyItems, listFilter, today, searchQuery),
+    [firmTasks, historyItems, listFilter, searchQuery, today],
   );
 
   async function loadHistory(cursor?: string | null, replace = false) {
@@ -180,12 +250,12 @@ export default function MyTasksView({ userId, role }: MyTasksViewProps) {
   }
 
   useEffect(() => {
-    if (activeTab !== 'done' || historyItems.length > 0) {
+    if (listFilter !== 'done' || historyItems.length > 0) {
       return;
     }
 
     void loadHistory(null, true);
-  }, [activeTab, historyItems.length]);
+  }, [listFilter, historyItems.length]);
 
   async function handleStatusChanged() {
     await invalidate('taskStatus');
@@ -193,8 +263,45 @@ export default function MyTasksView({ userId, role }: MyTasksViewProps) {
     setHistoryItems([]);
     setHistoryCursor(null);
     setHistoryHasMore(false);
-    if (activeTab === 'done') {
+    if (listFilter === 'done') {
       void loadHistory(null, true);
+    }
+  }
+
+  function handleTaskCompleted(
+    taskId: string,
+    previousStatus: 'not_started' | 'in_progress',
+  ) {
+    setUndoState({ taskId, previousStatus });
+    setToastMessage(MY_TASKS_COMPLETE_TOAST);
+    setUndoError(null);
+  }
+
+  async function handleUndoComplete() {
+    if (!undoState) {
+      return;
+    }
+
+    setUndoError(null);
+
+    try {
+      const response = await fetch(`/api/tasks/${undoState.taskId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: undoState.previousStatus }),
+      });
+
+      const json = (await response.json()) as ApiError;
+      if (!response.ok) {
+        setUndoError(json.error?.message ?? 'Failed to undo.');
+        return;
+      }
+
+      setToastMessage(null);
+      setUndoState(null);
+      await handleStatusChanged();
+    } catch {
+      setUndoError('Failed to undo.');
     }
   }
 
@@ -205,15 +312,25 @@ export default function MyTasksView({ userId, role }: MyTasksViewProps) {
         ? 'Unable to connect. Check your internet connection.'
         : null;
 
+  const showEmptyActive =
+    !isLoading &&
+    listFilter !== 'done' &&
+    visibleTasks.length === 0 &&
+    !searchQuery.trim();
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-xl font-semibold text-text">My tasks</h1>
-          <Link href="/staff/calendar" className="mt-1 inline-block text-sm font-medium text-primary hover:underline">
-            My calendar →
-          </Link>
+          <p className="mt-1 text-sm text-text-secondary">{MY_TASKS_PAGE_SUBTITLE}</p>
         </div>
+        <Link
+          href="/staff/calendar"
+          className="inline-flex min-h-[44px] items-center rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-primary hover:bg-page"
+        >
+          {MY_TASKS_CALENDAR_CTA}
+        </Link>
       </div>
 
       {errorMessage && (
@@ -222,30 +339,71 @@ export default function MyTasksView({ userId, role }: MyTasksViewProps) {
         </div>
       )}
 
+      {undoError && (
+        <div className="rounded-md border border-error bg-error-bg px-3 py-2 text-sm text-error">
+          {undoError}
+        </div>
+      )}
+
+      {!isLoading && overdueCount > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-error bg-error-bg px-4 py-3 text-sm text-error">
+          <p>{formatOverdueBannerMessage(overdueCount)}</p>
+          <button
+            type="button"
+            onClick={() => setListFilter('overdue')}
+            className="rounded-md border border-error bg-surface px-3 py-1.5 text-sm font-medium text-error hover:bg-page"
+          >
+            {MY_TASKS_SHOW_OVERDUE_ACTION}
+          </button>
+        </div>
+      )}
+
       <section className="overflow-hidden rounded-lg border border-border bg-surface">
         <div className="grid grid-cols-2 divide-x divide-border">
-          <SummaryMetric label="Today" value={isLoading ? 0 : todayCount} />
-          <SummaryMetric
+          <SummaryMetricButton
+            label="Today"
+            value={isLoading ? 0 : todayCount}
+            pressed={listFilter === 'today'}
+            onClick={() => setListFilter('today')}
+          />
+          <SummaryMetricButton
             label="Overdue"
             value={isLoading ? 0 : overdueCount}
             tone={overdueCount > 0 ? 'danger' : 'default'}
+            pressed={listFilter === 'overdue'}
+            onClick={() => setListFilter('overdue')}
           />
         </div>
       </section>
 
+      <div>
+        <label className="mb-1 block text-sm font-medium text-text" htmlFor="my-tasks-search">
+          {MY_TASKS_SEARCH_LABEL}
+        </label>
+        <input
+          id="my-tasks-search"
+          type="search"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          placeholder="Search by task name or notes"
+          className="min-h-[44px] w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
+        />
+      </div>
+
       <div className="flex flex-wrap gap-2">
-        {TABS.map((tab) => (
+        {MY_TASKS_FILTER_OPTIONS.map((filter) => (
           <button
-            key={tab.id}
+            key={filter.id}
             type="button"
-            onClick={() => setActiveTab(tab.id)}
-            className={`rounded-full px-4 py-2 text-sm font-medium ${
-              activeTab === tab.id
+            onClick={() => setListFilter(filter.id)}
+            className={`min-h-[36px] rounded-full px-4 py-2 text-sm font-medium ${
+              listFilter === filter.id
                 ? 'bg-primary text-white'
                 : 'border border-border bg-surface text-text-secondary hover:bg-page'
             }`}
+            aria-pressed={listFilter === filter.id}
           >
-            {tab.label}
+            {filter.label}
           </button>
         ))}
       </div>
@@ -258,28 +416,44 @@ export default function MyTasksView({ userId, role }: MyTasksViewProps) {
           </div>
         )}
 
-        {!isLoading && historyError && activeTab === 'done' && (
+        {!isLoading && historyError && listFilter === 'done' && (
           <p className="text-sm text-error">{historyError}</p>
         )}
 
-        {!isLoading && visibleTasks.length === 0 && !historyLoading && (
+        {showEmptyActive && (
+          <div className="rounded-lg border border-border bg-surface px-4 py-8 text-center text-sm text-text-secondary">
+            <p>{MY_TASKS_EMPTY_ACTIVE}</p>
+            <Link href="/staff/calendar" className="mt-2 inline-block font-medium text-primary hover:underline">
+              {MY_TASKS_EMPTY_ACTIVE_LINK}
+            </Link>
+          </div>
+        )}
+
+        {!isLoading && !showEmptyActive && visibleTasks.length === 0 && !historyLoading && (
           <p className="rounded-lg border border-border bg-surface px-4 py-8 text-center text-sm text-text-secondary">
-            {activeTab === 'done'
-              ? 'No completed tasks yet.'
-              : 'No tasks waiting — check My calendar or ask your manager.'}
+            {listFilter === 'done' ? MY_TASKS_EMPTY_DONE : 'No tasks match your search.'}
           </p>
         )}
 
         {!isLoading &&
-          visibleTasks.map((task) => (
-            <FirmTaskRow key={task.id} task={task} onStatusChanged={handleStatusChanged} />
-          ))}
+          visibleTasks.map((task) =>
+            listFilter === 'done' || task.status === 'completed' ? (
+              <DoneTaskRow key={task.id} task={task} />
+            ) : (
+              <ActiveTaskRow
+                key={task.id}
+                task={task}
+                onStatusChanged={handleStatusChanged}
+                onCompleted={handleTaskCompleted}
+              />
+            ),
+          )}
 
-        {activeTab === 'done' && historyLoading && (
+        {listFilter === 'done' && historyLoading && (
           <p className="text-sm text-text-secondary">Loading…</p>
         )}
 
-        {activeTab === 'done' && historyHasMore && !historyLoading && (
+        {listFilter === 'done' && historyHasMore && !historyLoading && (
           <button
             type="button"
             onClick={() => loadHistory(historyCursor)}
@@ -289,6 +463,17 @@ export default function MyTasksView({ userId, role }: MyTasksViewProps) {
           </button>
         )}
       </section>
+
+      <Toast
+        message={toastMessage}
+        durationMs={8000}
+        actionLabel={undoState ? MY_TASKS_UNDO_LABEL : undefined}
+        onAction={undoState ? handleUndoComplete : undefined}
+        onDismiss={() => {
+          setToastMessage(null);
+          setUndoState(null);
+        }}
+      />
     </div>
   );
 }

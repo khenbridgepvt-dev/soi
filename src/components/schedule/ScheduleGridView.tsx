@@ -25,7 +25,6 @@ import { useTasksRealtime } from '@/lib/hooks/use-tasks-realtime';
 import { buildScheduleAssignPrefill } from '@/lib/schedule/build-assign-prefill';
 import {
   assignmentMatchesTaskViewFilter,
-  computeDefaultTaskViewFilter,
   formatScheduleColumnStats,
   formatScheduleEmptyDayMessage,
   formatScheduleEmptySlotHover,
@@ -186,8 +185,8 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
   );
 
   useEffect(() => {
-    setTaskViewFilter(computeDefaultTaskViewFilter(staff));
-  }, [date, staff]);
+    setTaskViewFilter('all');
+  }, [date]);
 
   const staffOptions = useMemo(
     () => staff.map((member) => ({ id: member.id, full_name: member.full_name })),
