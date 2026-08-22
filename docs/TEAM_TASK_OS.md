@@ -22,7 +22,9 @@ Case CRM (cases, 13-task checklist, documents, leads) stays in the product under
 | Cells | **Full background colour** by task status (see §3) |
 | Slot actions | Click empty slot → **Assign team task** modal directly (0103); click booked task → detail where applicable |
 
-**Assign flow (0093, 0102):** Opens simplified modal — **Assign to** staff picker, task name, duration, slot prefilled from grid or header CTA. Creates firm task via `POST /api/schedule/adhoc-task-assign` on `FIRM-GENERAL`. Schedule grid columns are **staff/senior only** (0101). **No** case search, **no** audit link to client case task.
+**Assign flow (0093, 0102):** Opens simplified modal — **Assign to** staff picker, task name, duration, slot prefilled from grid or header CTA. Creates firm task via `POST /api/schedule/adhoc-task-assign` on `FIRM-GENERAL`. Schedule grid columns are **staff/senior only** (0101). **`GET /api/schedule` returns `role` per staff row** so the header CTA can prefill assignee (0106). **No** case search, **no** audit link to client case task.
+
+**Firm task volume:** The internal case (`FIRM-GENERAL`) is **not** subject to the per-client-case cap of 5 custom tasks (migration `00058`, ADR-0019 addendum). Team schedules may create unlimited firm tasks.
 
 **Realtime:** Assignment INSERT/UPDATE/DELETE (0075) + task status UPDATE (0097) invalidate schedule and My tasks queries. **Implemented** — migration `00056_tasks_realtime.sql`, `useTasksRealtime` hook; 60s poll fallback when disconnected.
 
@@ -157,7 +159,13 @@ Run after **0099** on pilot/staging.
 4. Complete a firm task → cell **green** (`status-onTrack-bg`).
 5. Staff receives **Team task assigned** toast/sound on assign.
 
----
+### Production hotfix (0106)
+
+1. **+ Assign task** opens modal (schedule API includes `role` on staff rows).
+2. Assign sixth+ firm task on same day succeeds (internal case exempt from 5-custom cap).
+3. If no staff have timetables/slots, header CTA shows a toast instead of silent no-op.
+
+**Pilot DB:** apply migrations `00056`–`00058` (`supabase db push`) before relying on realtime, status notifications, and unlimited firm tasks.
 
 ## 8. Doc updates per downstream ticket
 
@@ -165,5 +173,6 @@ Run after **0099** on pilot/staging.
 |----------|---------|
 | `ui_wireframe_spec.md` | 0091, 0092, 0095, 0096 |
 | `design_system.md` | 0096 |
-| `api_specification.md` | 0098 (notification type) |
+| `api_specification.md` | 0098 (notification type), 0106 (schedule `role`, adhoc errors) |
+| `database_schema.md` | 0106 (internal custom-task limit exemption) |
 | `USER_WORKFLOWS.md` | 0099 or follow-up polish |

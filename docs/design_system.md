@@ -306,7 +306,7 @@ Board maps red → `overdue` / `urgent` tokens; blocked keeps ⊘ stripe (§4.2)
 
 ### §7.9 Team Task OS status colours (schedule + My tasks)
 
-Full **cell background** on S-04 / S-11 booked slots and matching list rows on `/staff/tasks`. Mapper: `src/lib/tasks/team-task-status-colour.ts`.
+Full **cell background** on S-04 / S-11 booked slots and matching list rows on `/staff/tasks`. Mapper: `src/lib/tasks/team-task-status-colour.ts`. Tailwind `content` must include `src/lib/**` so status utility classes are emitted in production (0107).
 
 | Status | Colour | Classes (summary) |
 |--------|--------|-------------------|

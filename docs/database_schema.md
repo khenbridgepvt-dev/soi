@@ -228,7 +228,7 @@ CREATE TYPE case_link_type AS ENUM ('follow_up', 'related', 'dependant_applicati
 | T2 | `application_types` | Admin-configurable visa/application types | Referenced by cases |
 | T3 | `cases` | Central case record (lead → active → completed) | Has many tasks, dependants |
 | T4 | `dependants` | Client's family members linked to a case | Belongs to case |
-| T5 | `tasks` | Individual work items (13 default + up to 5 custom per case) | Belongs to case, assigned to profile |
+| T5 | `tasks` | Individual work items (13 default + up to 5 custom per client case; unlimited on internal case) | Belongs to case, assigned to profile |
 | T6 | `task_assignments` | Scheduled time slots for tasks | Belongs to task + profile |
 | T7 | `staff_timetables` | Weekly working hours per staff member | Belongs to profile |
 | T8 | `notifications` | In-app notification records | Belongs to profile (recipient) |
@@ -465,9 +465,11 @@ Each case has exactly one non-deleted task per sequence number.
 
 ```sql
 -- Enforced at the API level, with a database-level backstop trigger:
--- Maximum 5 custom tasks (is_custom = true) per case.
+-- Maximum 5 custom tasks (is_custom = true) per **client** case.
+-- Internal case (cases.is_internal = true, FIRM-GENERAL) is exempt — migration 00058.
 -- A BEFORE INSERT trigger on tasks checks:
---   SELECT count(*) FROM tasks WHERE case_id = NEW.case_id AND is_custom = true AND is_deleted = false
+--   IF case is internal → allow
+--   ELSE SELECT count(*) FROM tasks WHERE case_id = NEW.case_id AND is_custom = true ...
 -- If count >= 5, raise exception 'Maximum of 5 custom tasks per case reached'.
 ```
 
@@ -503,7 +505,7 @@ Each case has exactly one non-deleted task per sequence number.
 - **Status transitions:** `not_started` → `in_progress` → `completed` | `blocked`. `blocked` → `in_progress`. `completed` → `in_progress` (Advanced: admin reversal only).
 - **Completion protection (MVP):** Once `status = 'completed'`, staff cannot change it. Only admin can reverse (Advanced feature).
 - **Blocking:** When `status` changes to `blocked`, `blocked_at` is set to `now()`. When unblocked, `blocked_at` is cleared.
-- **Custom task limit:** A maximum of 5 custom tasks (`is_custom = true`) may be added per case. Enforced by API and database trigger.
+- **Custom task limit:** A maximum of 5 custom tasks (`is_custom = true`) may be added per **client** case. The internal firm-operations case (`is_internal = true`, `FIRM-GENERAL`) is **exempt** — team schedule firm tasks may exceed five (migration `00058_internal_case_unlimited_custom_tasks.sql`). Enforced by API and database trigger on client cases only.
 
 **Realtime (0097):** `tasks` is in the `supabase_realtime` publication (migration `00056_tasks_realtime.sql`). Staff receive events for assigned rows via RLS + client filter (`assigned_to=eq.{userId}`); admin receives broader updates. Clients invalidate schedule, staff dashboard, and My tasks query keys on status / assignee / overdue changes.
 
@@ -971,7 +973,7 @@ erDiagram
 | profiles → leave_requests | 1:many | Staff submits many requests over time |
 | profiles → notifications | 1:many | User receives many notifications |
 | application_types → cases | 1:many | One type, many cases |
-| cases → tasks | 1:many (13 default + up to 5 custom) | Fixed 13-task lifecycle + optional custom tasks |
+| cases → tasks | 1:many (13 default + up to 5 custom on client cases; unlimited custom on internal case) | Fixed 13-task lifecycle + optional custom tasks |
 | cases → dependants | 1:many | 0 or more dependants per case |
 | tasks → task_assignments | 1:many | Task may be rescheduled (multiple slots) |
 | profiles → task_assignments | 1:many | Staff has many scheduled slots |

@@ -319,6 +319,8 @@ Reversing this order will cause runtime errors (code references columns/tables t
 
 **Internal case (ADR-0019):** Cloud environments must apply migrations through `00045_internal_case_operational_rules.sql` (includes `00044_seed_internal_case.sql`). The `FIRM-GENERAL` row is upserted when an admin profile exists; local `supabase db reset` also seeds it via `seed.sql`.
 
+**Team Task OS (ADR-0023):** Pilot/production must also apply `00056_tasks_realtime.sql`, `00057_task_status_changed_notification.sql`, and `00058_internal_case_unlimited_custom_tasks.sql` before deploying schedule assign fixes (0106). Push these **before** the Vercel deploy that depends on them.
+
 ### 4.5 Release Checklist
 
 ```markdown

@@ -884,7 +884,7 @@ After any code change, re-run the full automated suite (unit + integration + E2E
 
 ---
 
-#### TC-033c · Custom Task Limit (Max 5)
+#### TC-033c · Custom Task Limit (Max 5 — client cases only)
 
 | Field | Value |
 |-------|-------|
@@ -895,9 +895,26 @@ After any code change, re-run the full automated suite (unit + integration + E2E
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Create a case and add 5 custom tasks | 5 tasks added successfully |
-| 2 | Try to add a 6th custom task | Error: "Maximum of 5 custom tasks allowed per case." |
+| 1 | Create a **client** case and add 5 custom tasks | 5 tasks added successfully |
+| 2 | Try to add a 6th custom task on that case | Error: "Maximum of 5 custom tasks allowed per case." |
 | 3 | Verify task count | Remains at 13 default + 5 custom = 18 total |
+
+---
+
+#### TC-033d · Firm Task Assign — No Custom Task Cap (0106)
+
+| Field | Value |
+|-------|-------|
+| ID | TC-033d |
+| Requirement | ADR-0019, EP-11b adhoc, ticket 0106 |
+| Priority | P1 — Must |
+| Type | Functional, Integration |
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | As Admin on Team Schedule, assign 6+ firm tasks via **+ Assign task** or empty slot | Each `POST /api/schedule/adhoc-task-assign` returns 201 |
+| 2 | Verify internal case task count | More than 5 `is_custom = true` rows on `FIRM-GENERAL` |
+| 3 | **+ Assign task** header CTA | Modal opens with first staff/senior pre-selected |
 
 ---
 

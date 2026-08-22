@@ -105,6 +105,8 @@ The MVP is **operational as a free-tier pilot**: all ten MVP modules (M1–M10) 
 - **0098 firm task complete notify:** `task_status_changed` fanout to admins on staff Done — [Admin notification on firm task complete](./0098-status-notifications.md)
 - **0099 team workload strip:** per-staff in progress / done / overdue counts on schedule — [Team workload strip on schedule](./0099-team-workload-strip.md)
 - **0100 Team Task OS v1.1:** pilot UX fixes 0101–0105 — [Team Task OS v1.1 epic](./0100-team-os-v11-epic.md)
+- **0106 schedule assign hotfix:** role in schedule API + internal unlimited custom tasks (`00058`) — [Schedule assign production hotfix](./0106-schedule-assign-production-hotfix.md)
+- **0107 schedule colour CSS fix:** Tailwind scans `src/lib`; `SlotBlock` defers booked bg when status override passed — [Schedule status colour CSS fix](./0107-schedule-status-colour-css-fix.md)
 
 ## Planned (Team Task OS epic 0091–0099) — **primary product path**
 
@@ -137,6 +139,14 @@ Pilot UX fixes after 0099. See [0100-team-os-v11-epic.md](./0100-team-os-v11-epi
 | **0103** | Empty slot → custom task modal — **shipped** |
 | **0104** | Green Tailwind fix + dual schedule legend — **shipped** |
 | **0105** | Staff notification on firm task assign — **shipped** |
+
+## Team Task OS hotfix (0106) — **shipped**
+
+Production fixes after v1.1. See [0106-schedule-assign-production-hotfix.md](./0106-schedule-assign-production-hotfix.md).
+
+| Ticket | Scope |
+|--------|--------|
+| **0106** | Schedule API returns `role`; internal case exempt from 5-custom-task cap (`00058`) — **shipped** |
 
 ## Paused (reminders & calendar epic 0080–0086)
 

@@ -28,3 +28,8 @@ Generic calendar work ("clear emails", "help invoices") is usually not tied to a
 - Cloud seed via migration `00044_seed_internal_case.sql` (admin `created_by` subquery).
 - Staff dashboard **firm tasks** section: task name only; quick complete (`not_started → completed`); history list.
 - Case detail, PATCH, DELETE, dependants, and reference edit return **404** for internal case id.
+
+## Addendum (ticket 0106 — Team Task OS)
+
+- Firm tasks on `FIRM-GENERAL` are `is_custom = true` but **not** counted toward the per-client-case limit of 5 custom tasks. Migration `00058_internal_case_unlimited_custom_tasks.sql` updates `enforce_custom_task_limit()` to skip when `cases.is_internal = true`.
+- Schedule API (`GET /api/schedule`) must return each staff member's `role` so the **+ Assign task** header CTA can prefill the first assignable staff/senior column.

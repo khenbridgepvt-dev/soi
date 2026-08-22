@@ -122,6 +122,14 @@ ADR-0022 (reminders epic) added valuable infrastructure but deepened case-adjace
 | Completed colour | `!bg-status-onTrack-bg` (Tailwind nested token) |
 | Staff notify on assign | `task_status_changed` title **Team task assigned** — mirrors 0098 complete fanout |
 
+## Production hotfix addendum (ticket 0106)
+
+| Fix | Decision |
+|-----|----------|
+| Schedule API | Return `role` on each staff row — required for header **+ Assign task** prefill |
+| Internal custom-task cap | `enforce_custom_task_limit` skips `cases.is_internal` — firm tasks are unlimited on `FIRM-GENERAL` |
+| Deploy | Migration `00058` before Vercel deploy |
+
 ## Out of scope (Team OS v1)
 
 - `staff_personal_tasks` UI (0079 API only)

@@ -5,6 +5,13 @@ const config: Config = {
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/lib/**/*.{js,ts,jsx,tsx}',
+  ],
+  safelist: [
+    'bg-status-onTrack-bg',
+    'border-status-onTrack-border',
+    'bg-[#FFF8E6]',
+    'border-[#B86E00]',
   ],
   theme: {
     extend: {

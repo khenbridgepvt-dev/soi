@@ -10,6 +10,13 @@ export type SlotBlockState =
   | 'conflict'
   | 'off_hours';
 
+const LAYOUT_CLASSES =
+  'flex min-h-[36px] min-w-[72px] flex-col justify-center overflow-hidden rounded-md border-[1.5px] px-1.5 text-center text-sm font-semibold';
+
+/** Booked layout without default slot colours — used when status override className is passed. */
+const BOOKED_STATUS_OVERRIDE_CLASSES =
+  'cursor-pointer text-left';
+
 const STATE_CLASSES: Record<SlotBlockState, string> = {
   available:
     'bg-slot-available-bg border-slot-available-border text-slot-available-text hover:bg-slot-available-bgHover cursor-pointer',
@@ -40,7 +47,11 @@ export default function SlotBlock({
   style,
   className: extraClassName,
 }: SlotBlockProps) {
-  const className = `flex min-h-[36px] min-w-[72px] flex-col justify-center overflow-hidden rounded-md border-[1.5px] px-1.5 text-center text-sm font-semibold ${STATE_CLASSES[state]}${extraClassName ? ` ${extraClassName}` : ''}`;
+  const hasStatusOverride = state === 'booked' && Boolean(extraClassName);
+  const stateClasses = hasStatusOverride
+    ? BOOKED_STATUS_OVERRIDE_CLASSES
+    : STATE_CLASSES[state];
+  const className = `${LAYOUT_CLASSES} ${stateClasses}${extraClassName ? ` ${extraClassName}` : ''}`;
 
   if (state === 'off_hours' || !onClick) {
     return (

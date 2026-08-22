@@ -801,7 +801,7 @@ GET /api/cases?sort_by=created_at&sort_order=desc
 | `description` | string | No | Max 1000 chars |
 
 **Server-Side:**
-1. Verify case exists and is active (not completed or rejected).
+1. Verify case exists and is active (not completed or rejected). Reject if `cases.is_internal = true` (use EP-11b adhoc endpoint for firm work).
 2. Check count of existing custom tasks (`is_custom = true`) for this case. If >= 5, return 400.
 3. Determine next sequence number (max existing sequence + 1).
 4. Insert task record (`is_custom = true`, `status = 'not_started'`).
@@ -864,13 +864,13 @@ Creates generic firm work on the hidden internal case (`FIRM-GENERAL`, ADR-0019)
 
 **Server-Side:**
 1. Validate input; derive `abbreviation` from `name` (not accepted from client).
-2. Insert custom task on internal case — **no** 5-per-case limit on internal case.
+2. Insert custom task on internal case — **no** 5-per-case limit on internal case (trigger exemption, migration `00058`).
 3. Assign slot via same rules as EP-13.
 4. If `linked_task_id` set: verify task belongs to an active, non-internal case; append one timestamped audit line to `tasks.notes` (`[YYYY-MM-DD HH:mm UTC] Staff — Task — Description`).
 
 **Response — `201 Created`:** EP-13 assign payload plus `case_id` (internal), `linked_task_id`, `linked_case_id`.
 
-**Errors:** EP-13 conflict/unavailable errors; 400 if linked task invalid.
+**Errors:** EP-13 conflict/unavailable errors; 400 if linked task invalid; 400 `VALIDATION_ERROR` if custom-task limit message returned from DB (client cases only — should not occur on internal case after `00058`); 500 if internal case missing or inactive.
 
 ---
 
@@ -1662,6 +1662,8 @@ Admin notification centre shows **Approve** / **Reject** on unread `reschedule_r
 |-------|------|----------|-------------|
 | `date` | date | Yes | The day to show |
 
+**Notes (0101, 0106):** Response `staff` array includes only profiles with `role` of `staff` or `senior` (admins excluded from grid columns). Each staff object includes `role` for client-side assign prefill.
+
 **Response — `200 OK`:**
 
 ```json
@@ -1672,6 +1674,7 @@ Admin notification centre shows **Approve** / **Reject** on unread `reschedule_r
       {
         "id": "uuid",
         "full_name": "Asha",
+        "role": "staff",
         "online_status": "online",
         "working_hours": { "start": "09:00", "end": "17:00" },
         "is_on_leave": false,
