@@ -220,6 +220,7 @@ GET /api/cases?sort_by=created_at&sort_order=desc
 | 15 | POST | `/api/tasks/:id/unblock` | Unblock task | admin, staff (own) |
 | 16 | PATCH | `/api/tasks/:id` | Update task notes / reminders | admin, staff, senior (own) |
 | 11d| PATCH | `/api/tasks/:id/firm` | Update firm custom task title and notes | admin |
+| 11d| GET | `/api/tasks/:id/firm` | Load firm custom task for edit modal | admin |
 | 11e| DELETE | `/api/tasks/:id/firm` | Soft-delete firm custom task + release assignments | admin |
 | 16b| GET | `/api/reminders` | List task reminders (due / at-risk filters) | admin, staff, senior |
 | 17 | POST | `/api/tasks/:id/senior-review` | Submit senior review outcome (Task 8) | admin, senior |
@@ -2534,7 +2535,42 @@ Same as EP-24 but filtered to a single staff member. Staff can only query their 
 
 ---
 
-### EP-11d · Update Firm Custom Task (ticket 0121)
+### EP-11d · Firm Custom Task Edit (tickets 0121, 0123)
+
+#### GET — load for edit modal (ticket 0123)
+
+| Field | Value |
+|-------|-------|
+| Method | `GET` |
+| Path | `/api/tasks/:id/firm` |
+| Role | `admin` |
+
+Same eligibility guard as PATCH. Returns current task fields plus the active (non-released) assignment if present.
+
+**Response — `200 OK`:**
+
+```json
+{
+  "data": {
+    "id": "uuid",
+    "name": "yoo",
+    "description": "yooo",
+    "status": "not_started",
+    "case_id": "f0000000-0000-4000-8000-000000000001",
+    "assignment": {
+      "id": "uuid",
+      "staff_id": "uuid",
+      "staff_name": "Asha Staff",
+      "date": "2026-08-22",
+      "start_time": "14:00",
+      "end_time": "14:15",
+      "duration_minutes": 15
+    }
+  }
+}
+```
+
+#### PATCH — update title and notes (ticket 0121)
 
 | Field | Value |
 |-------|-------|

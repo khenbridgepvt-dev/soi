@@ -187,7 +187,7 @@ Production fixes after v1.1. See tickets 0106–0110b.
 |--------|--------|
 | **0121** | `PATCH /api/tasks/:id/firm` — admin update firm custom task name/notes — **shipped** |
 | **0122** | `DELETE /api/tasks/:id/firm` — soft delete + release assignments — **shipped** |
-| **0123** | Schedule pill → edit modal → PATCH firm + reassign |
+| **0123** | Schedule pill → edit modal → PATCH firm + reassign — **shipped** |
 | **0124** | Remove task confirm, in-progress warning, toasts |
 
 ## Paused (reminders & calendar epic 0080–0086)

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildTeamAssignSummary,
+  formatCustomTaskAssignEditSuccessMessage,
   formatCustomTaskAssignSuccessMessage,
   formatTeamAssignDuration,
   formatTeamAssignDurationError,
@@ -23,9 +24,15 @@ describe('custom-task-assign-ui', () => {
 
   it('uses team copy for title, subtitle, and submit labels', () => {
     expect(getCustomTaskAssignModalTitle('team')).toBe('Assign team task');
+    expect(getCustomTaskAssignModalTitle('team', 'edit')).toBe('Edit team task');
     expect(getCustomTaskAssignSubtitle('team')).toContain('Internal firm task');
+    expect(getCustomTaskAssignSubtitle('team', 'edit')).toBe(
+      'Update title, schedule, or notes.',
+    );
     expect(getCustomTaskAssignSubmitLabel('team', false)).toBe('Assign to schedule');
     expect(getCustomTaskAssignSubmitLabel('team', true)).toBe('Assigning…');
+    expect(getCustomTaskAssignSubmitLabel('team', false, 'edit')).toBe('Save changes');
+    expect(getCustomTaskAssignSubmitLabel('team', true, 'edit')).toBe('Saving…');
   });
 
   it('uses advanced copy for title and submit labels', () => {
@@ -63,6 +70,13 @@ describe('custom-task-assign-ui', () => {
     );
     expect(formatTeamAssignDurationError()).toBe(
       'Length must be between 15 minutes and 8 hours.',
+    );
+  });
+
+  it('formats edit success toast with optional warnings', () => {
+    expect(formatCustomTaskAssignEditSuccessMessage()).toBe('Task updated.');
+    expect(formatCustomTaskAssignEditSuccessMessage(['Outside hours.'])).toBe(
+      'Task updated. Outside hours.',
     );
   });
 });

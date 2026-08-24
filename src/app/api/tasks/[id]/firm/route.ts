@@ -1,6 +1,7 @@
 import { requireAdminApiAuth } from '@/lib/api/auth';
 import { apiError } from '@/lib/api/response';
 import { deleteFirmCustomTask } from '@/lib/tasks/delete-firm-custom-task';
+import { fetchFirmCustomTaskForEdit } from '@/lib/tasks/fetch-firm-custom-task';
 import {
   parseUpdateFirmCustomTaskBody,
   updateFirmCustomTask,
@@ -10,6 +11,26 @@ import { isUuid } from '@/lib/utils/lead-form';
 type RouteContext = {
   params: Promise<{ id: string }>;
 };
+
+/** EP-11d · GET /api/tasks/:id/firm — load firm custom task for edit (ticket 0123) */
+export async function GET(_request: Request, context: RouteContext) {
+  const auth = await requireAdminApiAuth();
+  if (auth instanceof Response) {
+    return auth;
+  }
+
+  const { id } = await context.params;
+  if (!isUuid(id)) {
+    return apiError(404, 'NOT_FOUND', 'Task not found.');
+  }
+
+  const result = await fetchFirmCustomTaskForEdit(auth.supabase, id);
+  if (!result.ok) {
+    return result.response;
+  }
+
+  return Response.json({ data: result.data });
+}
 
 /** EP-11d · DELETE /api/tasks/:id/firm — soft-delete firm custom task (ticket 0122) */
 export async function DELETE(_request: Request, context: RouteContext) {

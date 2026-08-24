@@ -3,6 +3,8 @@ import { MIN_ASSIGNMENT_MINUTES } from '@/lib/utils/availability';
 
 export type CustomTaskAssignVariant = 'team' | 'advanced';
 
+export type CustomTaskAssignMode = 'create' | 'edit';
+
 export const TEAM_ASSIGN_DURATION_PRESETS = [15, 30, 60, 120] as const;
 
 export type TeamAssignDurationPreset = (typeof TEAM_ASSIGN_DURATION_PRESETS)[number];
@@ -13,13 +15,27 @@ export function showsCustomTaskAssignAuditSection(
   return variant === 'advanced';
 }
 
-export function getCustomTaskAssignModalTitle(variant: CustomTaskAssignVariant): string {
+export function getCustomTaskAssignModalTitle(
+  variant: CustomTaskAssignVariant,
+  mode: CustomTaskAssignMode = 'create',
+): string {
+  if (variant === 'team' && mode === 'edit') {
+    return 'Edit team task';
+  }
+
   return variant === 'team' ? 'Assign team task' : 'Add custom task & assign';
 }
 
-export function getCustomTaskAssignSubtitle(variant: CustomTaskAssignVariant): string | null {
+export function getCustomTaskAssignSubtitle(
+  variant: CustomTaskAssignVariant,
+  mode: CustomTaskAssignMode = 'create',
+): string | null {
   if (variant !== 'team') {
     return null;
+  }
+
+  if (mode === 'edit') {
+    return 'Update title, schedule, or notes.';
   }
 
   return 'Set who does the task and when it appears on the schedule. Internal firm task — not a client case.';
@@ -28,12 +44,45 @@ export function getCustomTaskAssignSubtitle(variant: CustomTaskAssignVariant): s
 export function getCustomTaskAssignSubmitLabel(
   variant: CustomTaskAssignVariant,
   submitting: boolean,
+  mode: CustomTaskAssignMode = 'create',
 ): string {
   if (submitting) {
+    if (mode === 'edit') {
+      return 'Saving…';
+    }
+
     return variant === 'team' ? 'Assigning…' : 'Creating…';
   }
 
+  if (mode === 'edit') {
+    return 'Save changes';
+  }
+
   return variant === 'team' ? 'Assign to schedule' : 'Create & assign';
+}
+
+export function formatTeamTaskStatusLabel(status: string): string {
+  switch (status) {
+    case 'not_started':
+      return 'Not started';
+    case 'in_progress':
+      return 'In progress';
+    case 'completed':
+      return 'Done';
+    case 'blocked':
+      return 'Blocked';
+    default:
+      return status;
+  }
+}
+
+export function formatCustomTaskAssignEditSuccessMessage(warnings?: string[]): string {
+  const base = 'Task updated.';
+  if (!warnings?.length) {
+    return base;
+  }
+
+  return `${base} ${warnings.join(' ')}`;
 }
 
 export function formatTeamAssignDuration(minutes: number): string {

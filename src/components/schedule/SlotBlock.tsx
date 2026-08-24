@@ -34,6 +34,7 @@ type SlotBlockProps = {
   state: SlotBlockState;
   children?: React.ReactNode;
   label?: string;
+  title?: string;
   onClick?: () => void;
   style?: React.CSSProperties;
   className?: string;
@@ -43,6 +44,7 @@ export default function SlotBlock({
   state,
   children,
   label,
+  title,
   onClick,
   style,
   className: extraClassName,
@@ -62,7 +64,14 @@ export default function SlotBlock({
   }
 
   return (
-    <button type="button" onClick={onClick} className={className} style={style} title={label}>
+    <button
+      type="button"
+      onClick={onClick}
+      className={className}
+      style={style}
+      title={title ?? label}
+      aria-label={label}
+    >
       {children}
     </button>
   );

@@ -112,8 +112,14 @@ type ApiError = {
 };
 
 type CustomTaskModalState = {
+  mode: 'create' | 'edit';
   open: boolean;
   prefill: CustomTaskAssignPrefill | null;
+  edit?: {
+    taskId: string;
+    assignmentId: string;
+    status: string;
+  };
 };
 
 const TASK_VIEW_FILTERS: TaskViewFilter[] = ['all', 'active', 'done'];
@@ -143,6 +149,7 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
   const [date, setDate] = useState(() => todayISODate());
   const [taskViewFilter, setTaskViewFilter] = useState<TaskViewFilter>('all');
   const [customTaskModal, setCustomTaskModal] = useState<CustomTaskModalState>({
+    mode: 'create',
     open: false,
     prefill: null,
   });
@@ -201,7 +208,35 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
   const assignTaskDisabled = isLoading || staff.length === 0;
 
   function openCustomTaskAssign(prefill: CustomTaskAssignPrefill) {
-    setCustomTaskModal({ open: true, prefill });
+    setCustomTaskModal({ mode: 'create', open: true, prefill });
+  }
+
+  function openEditFirmTask(input: {
+    taskId: string;
+    assignmentId: string;
+    staffId: string;
+    staffName: string;
+    date: string;
+    startTime: string;
+    durationMinutes: number;
+    status: string;
+  }) {
+    setCustomTaskModal({
+      mode: 'edit',
+      open: true,
+      prefill: {
+        staffId: input.staffId,
+        staffName: input.staffName,
+        date: input.date,
+        startTime: input.startTime,
+        durationMinutes: input.durationMinutes,
+      },
+      edit: {
+        taskId: input.taskId,
+        assignmentId: input.assignmentId,
+        status: input.status,
+      },
+    });
   }
 
   function handleHeaderAssignTask() {
@@ -244,6 +279,27 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
         const statusSuffix = assignment
           ? formatSchedulePageStatusSuffix(assignment)
           : '';
+        const pillAriaLabel = assignment
+          ? formatScheduleAssignmentAriaLabel(assignment, 'admin')
+          : undefined;
+        const pillClickHandler =
+          assignment && matchesFilter && !isDeleted
+            ? isInternal
+              ? () =>
+                  openEditFirmTask({
+                    taskId: assignment.task_id,
+                    assignmentId: assignment.id,
+                    staffId: member.id,
+                    staffName: member.full_name,
+                    date,
+                    startTime: assignment.start_time,
+                    durationMinutes: assignment.duration_minutes,
+                    status: assignment.task_status,
+                  })
+              : isScheduleAssignmentNavigable(assignment)
+                ? () => router.push(`/cases/${assignment.case_id}`)
+                : undefined
+            : undefined;
 
         cells.push(
           <div
@@ -260,24 +316,16 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
                       extra: [
                         isDeleted ? 'opacity-80' : undefined,
                         !matchesFilter ? 'pointer-events-none opacity-25' : undefined,
+                        isInternal && !isDeleted && matchesFilter ? 'cursor-pointer' : undefined,
                       ]
                         .filter(Boolean)
                         .join(' '),
                     })
                   : undefined
               }
-              label={
-                assignment
-                  ? formatScheduleAssignmentAriaLabel(assignment, 'admin')
-                  : undefined
-              }
-              onClick={
-                assignment &&
-                matchesFilter &&
-                isScheduleAssignmentNavigable(assignment)
-                  ? () => router.push(`/cases/${assignment.case_id}`)
-                  : undefined
-              }
+              label={pillAriaLabel}
+              title={isInternal && !isDeleted && matchesFilter ? 'Edit team task' : undefined}
+              onClick={pillClickHandler}
               style={{ height: span * ROW_HEIGHT - PILL_GAP }}
             >
               {isCompact && assignment ? (
@@ -526,15 +574,19 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
 
       <CustomTaskAssignModal
         variant="team"
+        mode={customTaskModal.mode}
         open={customTaskModal.open}
         prefill={customTaskModal.prefill}
+        editTaskId={customTaskModal.edit?.taskId}
+        editAssignmentId={customTaskModal.edit?.assignmentId}
+        editTaskStatus={customTaskModal.edit?.status}
         staffOptions={staffOptions}
         onClose={() => {
-          setCustomTaskModal({ open: false, prefill: null });
+          setCustomTaskModal({ mode: 'create', open: false, prefill: null });
         }}
         onAssigned={(message) => {
           setToastMessage(message);
-          setCustomTaskModal({ open: false, prefill: null });
+          setCustomTaskModal({ mode: 'create', open: false, prefill: null });
           void refetch();
         }}
       />

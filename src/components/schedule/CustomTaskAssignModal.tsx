@@ -5,10 +5,12 @@ import AssigneeCombobox from '@/components/schedule/AssigneeCombobox';
 import { INTERNAL_CASE_ID } from '@/lib/cases/internal-case';
 import {
   buildTeamAssignSummary,
+  formatCustomTaskAssignEditSuccessMessage,
   formatCustomTaskAssignSuccessMessage,
   formatTeamAssignDuration,
   formatTeamAssignDurationError,
   formatTeamAssignOffDayError,
+  formatTeamTaskStatusLabel,
   getCustomTaskAssignModalTitle,
   getCustomTaskAssignSubmitLabel,
   getCustomTaskAssignSubtitle,
@@ -16,6 +18,7 @@ import {
   isTeamAssignDurationPreset,
   showsCustomTaskAssignAuditSection,
   TEAM_ASSIGN_DURATION_PRESETS,
+  type CustomTaskAssignMode,
   type CustomTaskAssignVariant,
 } from '@/lib/schedule/custom-task-assign-ui';
 import { useInvalidateAfterMutation } from '@/lib/query/useInvalidateAfterMutation';
@@ -50,9 +53,22 @@ type CustomTaskAssignModalProps = {
   open: boolean;
   prefill: CustomTaskAssignPrefill | null;
   variant?: CustomTaskAssignVariant;
+  mode?: CustomTaskAssignMode;
+  editTaskId?: string;
+  editAssignmentId?: string;
+  editTaskStatus?: string;
   staffOptions?: CustomTaskAssignStaffOption[];
   onClose: () => void;
   onAssigned: (message: string) => void;
+};
+
+type EditSnapshot = {
+  name: string;
+  description: string;
+  staffId: string;
+  date: string;
+  startTime: string;
+  durationMinutes: number;
 };
 
 type ApiError = {
@@ -81,6 +97,9 @@ export default function CustomTaskAssignModal({
   open,
   prefill,
   variant = 'team',
+  mode = 'create',
+  editTaskId,
+  editTaskStatus,
   staffOptions = [],
   onClose,
   onAssigned,
@@ -89,6 +108,7 @@ export default function CustomTaskAssignModal({
   const titleInputRef = useRef<HTMLInputElement>(null);
   const showAuditSection = showsCustomTaskAssignAuditSection(variant);
   const isTeamVariant = variant === 'team';
+  const isEditMode = mode === 'edit';
   const showStaffPicker = isTeamVariant && staffOptions.length > 0;
   const [selectedStaffId, setSelectedStaffId] = useState('');
   const [assignDate, setAssignDate] = useState('');
@@ -113,6 +133,8 @@ export default function CustomTaskAssignModal({
   const [durationMode, setDurationMode] = useState<'preset' | 'custom'>('preset');
   const [selectedPreset, setSelectedPreset] = useState<number | null>(60);
   const [submitting, setSubmitting] = useState(false);
+  const [loadingEdit, setLoadingEdit] = useState(false);
+  const [originalSnapshot, setOriginalSnapshot] = useState<EditSnapshot | null>(null);
   const [bannerError, setBannerError] = useState<string | null>(null);
 
   const resetForm = useCallback(
@@ -144,24 +166,12 @@ export default function CustomTaskAssignModal({
       setWorkingHours(undefined);
       setHoursChecked(false);
       setSubmitting(false);
+      setLoadingEdit(false);
+      setOriginalSnapshot(null);
       setBannerError(null);
     },
     [],
   );
-
-  const requestClose = useCallback(() => {
-    if (submitting) {
-      return;
-    }
-
-    if (isTeamVariant && (name.trim() || description.trim())) {
-      if (!window.confirm('Discard this task?')) {
-        return;
-      }
-    }
-
-    onClose();
-  }, [description, isTeamVariant, name, onClose, submitting]);
 
   useEffect(() => {
     if (!open) {
@@ -202,7 +212,7 @@ export default function CustomTaskAssignModal({
   ]);
 
   useEffect(() => {
-    if (!open || !isTeamVariant) {
+    if (!open || !isTeamVariant || loadingEdit) {
       return;
     }
 
@@ -211,22 +221,94 @@ export default function CustomTaskAssignModal({
     });
 
     return () => window.cancelAnimationFrame(frame);
-  }, [isTeamVariant, open]);
+  }, [isTeamVariant, loadingEdit, open]);
 
   useEffect(() => {
-    if (!open) {
+    if (!open || mode !== 'edit' || !editTaskId) {
       return;
     }
 
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        requestClose();
+    let cancelled = false;
+    setLoadingEdit(true);
+    setBannerError(null);
+
+    async function loadEditTask() {
+      try {
+        const response = await fetch(`/api/tasks/${editTaskId}/firm`);
+        const json = (await response.json()) as ApiError & {
+          data?: {
+            name: string;
+            description: string | null;
+            assignment: {
+              staff_id: string;
+              date: string;
+              start_time: string;
+              duration_minutes: number;
+            } | null;
+          };
+        };
+
+        if (!response.ok || !json.data) {
+          if (!cancelled) {
+            setBannerError(json.error?.message ?? 'Failed to load task.');
+          }
+          return;
+        }
+
+        const { data } = json;
+        const assignment = data.assignment;
+        const duration =
+          assignment?.duration_minutes ?? prefill?.durationMinutes ?? MIN_ASSIGNMENT_MINUTES;
+        const parts = durationToParts(duration);
+        const preset = isTeamAssignDurationPreset(duration) ? duration : null;
+
+        if (cancelled) {
+          return;
+        }
+
+        setName(data.name);
+        setDescription(data.description ?? '');
+        setNotesExpanded(Boolean(data.description?.trim()));
+        setSelectedStaffId(assignment?.staff_id ?? prefill?.staffId ?? '');
+        setAssignDate(assignment?.date ?? prefill?.date ?? '');
+        setStartTime(assignment?.start_time ?? prefill?.startTime ?? '');
+        setHours(parts.hours);
+        setMinutes(parts.minutes);
+        setDurationMode(preset ? 'preset' : 'custom');
+        setSelectedPreset(preset);
+        setOriginalSnapshot({
+          name: data.name,
+          description: data.description?.trim() ?? '',
+          staffId: assignment?.staff_id ?? prefill?.staffId ?? '',
+          date: assignment?.date ?? prefill?.date ?? '',
+          startTime: assignment?.start_time ?? prefill?.startTime ?? '',
+          durationMinutes: duration,
+        });
+      } catch {
+        if (!cancelled) {
+          setBannerError('Failed to load task.');
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingEdit(false);
+        }
       }
     }
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [open, requestClose]);
+    void loadEditTask();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    editTaskId,
+    mode,
+    open,
+    prefill?.date,
+    prefill?.durationMinutes,
+    prefill?.staffId,
+    prefill?.startTime,
+  ]);
 
   const filteredCaseGroups = useMemo(() => {
     const normalized = caseSearch.trim().toLowerCase();
@@ -344,6 +426,61 @@ export default function CustomTaskAssignModal({
     resolvedStaffName,
   ]);
 
+  const isDirty = useCallback(() => {
+    if (isEditMode && originalSnapshot) {
+      return (
+        name.trim() !== originalSnapshot.name ||
+        description.trim() !== originalSnapshot.description ||
+        resolvedStaffId !== originalSnapshot.staffId ||
+        activeDate !== originalSnapshot.date ||
+        activeStartTime !== originalSnapshot.startTime ||
+        durationMinutes !== originalSnapshot.durationMinutes
+      );
+    }
+
+    return isTeamVariant && (name.trim().length > 0 || description.trim().length > 0);
+  }, [
+    activeDate,
+    activeStartTime,
+    description,
+    durationMinutes,
+    isEditMode,
+    isTeamVariant,
+    name,
+    originalSnapshot,
+    resolvedStaffId,
+  ]);
+
+  const requestClose = useCallback(() => {
+    if (submitting) {
+      return;
+    }
+
+    if (isDirty()) {
+      const message = isEditMode ? 'Discard changes?' : 'Discard this task?';
+      if (!window.confirm(message)) {
+        return;
+      }
+    }
+
+    onClose();
+  }, [isDirty, isEditMode, onClose, submitting]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        requestClose();
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, requestClose]);
+
   const canSubmit =
     Boolean(resolvedStaffId) &&
     Boolean(activeStartTime) &&
@@ -352,6 +489,8 @@ export default function CustomTaskAssignModal({
     !durationInvalid &&
     !isOffDay &&
     !submitting &&
+    !loadingEdit &&
+    (mode !== 'edit' || Boolean(originalSnapshot)) &&
     (!showAuditSection || !auditExpanded || !selectedCaseId || Boolean(linkedTaskId));
 
   function applyDurationMinutes(totalMinutes: number) {
@@ -434,6 +573,82 @@ export default function CustomTaskAssignModal({
     setSubmitting(true);
 
     try {
+      if (isEditMode) {
+        if (!editTaskId || !originalSnapshot) {
+          return;
+        }
+
+        const metadataChanged =
+          nameResult.value !== originalSnapshot.name ||
+          (descriptionResult.value ?? '') !== originalSnapshot.description;
+
+        const scheduleChanged =
+          resolvedStaffId !== originalSnapshot.staffId ||
+          activeDate !== originalSnapshot.date ||
+          activeStartTime !== originalSnapshot.startTime ||
+          durationMinutes !== originalSnapshot.durationMinutes;
+
+        if (!metadataChanged && !scheduleChanged) {
+          onClose();
+          return;
+        }
+
+        if (metadataChanged) {
+          const patchBody: { name?: string; description?: string | null } = {};
+          if (nameResult.value !== originalSnapshot.name) {
+            patchBody.name = nameResult.value;
+          }
+          if ((descriptionResult.value ?? '') !== originalSnapshot.description) {
+            patchBody.description = descriptionResult.value;
+          }
+
+          const patchResponse = await fetch(`/api/tasks/${editTaskId}/firm`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(patchBody),
+          });
+          const patchJson = (await patchResponse.json()) as ApiError;
+
+          if (!patchResponse.ok) {
+            setBannerError(patchJson.error?.message ?? 'Failed to update task.');
+            return;
+          }
+        }
+
+        let warnings: string[] | undefined;
+
+        if (scheduleChanged) {
+          const reassignResponse = await fetch(`/api/tasks/${editTaskId}/reassign`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              staff_id: resolvedStaffId,
+              date: activeDate,
+              start_time: activeStartTime,
+              duration_minutes: durationMinutes,
+            }),
+          });
+          const reassignJson = (await reassignResponse.json()) as ApiError & {
+            data?: { warnings?: string[] };
+          };
+
+          if (!reassignResponse.ok || !reassignJson.data) {
+            setBannerError(reassignJson.error?.message ?? 'Failed to reschedule task.');
+            return;
+          }
+
+          warnings = reassignJson.data.warnings;
+        }
+
+        void invalidate('assign', { caseId: INTERNAL_CASE_ID });
+        void invalidate('taskStatus');
+        void invalidate('customTask');
+
+        onAssigned(formatCustomTaskAssignEditSuccessMessage(warnings));
+        onClose();
+        return;
+      }
+
       const response = await fetch('/api/schedule/adhoc-task-assign', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -492,7 +707,7 @@ export default function CustomTaskAssignModal({
     return null;
   }
 
-  const teamSubtitle = getCustomTaskAssignSubtitle(variant);
+  const teamSubtitle = getCustomTaskAssignSubtitle(variant, mode);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 md:items-center md:p-4">
@@ -505,7 +720,7 @@ export default function CustomTaskAssignModal({
         <div className="flex items-start justify-between border-b border-border px-5 py-4">
           <div className="pr-3">
             <h2 id="custom-task-assign-title" className="text-lg font-semibold text-text">
-              {getCustomTaskAssignModalTitle(variant)}
+              {getCustomTaskAssignModalTitle(variant, mode)}
             </h2>
             {isTeamVariant && teamSubtitle ? (
               <p className="mt-1 text-sm text-text-secondary">{teamSubtitle}</p>
@@ -514,6 +729,11 @@ export default function CustomTaskAssignModal({
                 {`${prefill.staffName} · ${formatLongDate(prefill.date)} · ${prefill.startTime}`}
               </p>
             )}
+            {isTeamVariant && isEditMode && editTaskStatus ? (
+              <p className="mt-1 text-xs text-text-muted">
+                Status: {formatTeamTaskStatusLabel(editTaskStatus)}
+              </p>
+            ) : null}
             {variant === 'advanced' && (
               <p className="text-sm text-text-secondary">
                 Generic firm work — not tied to a client case unless you add an audit link below.
@@ -553,6 +773,10 @@ export default function CustomTaskAssignModal({
         )}
 
         <div className="flex-1 overflow-y-auto px-5 py-4">
+          {loadingEdit ? (
+            <p className="text-sm text-text-secondary">Loading task…</p>
+          ) : (
+            <>
           {bannerError && (
             <div className="mb-4 rounded-md border border-error bg-error-bg px-3 py-2 text-sm text-error">
               {bannerError}
@@ -962,6 +1186,8 @@ export default function CustomTaskAssignModal({
               )}
             </div>
           )}
+            </>
+          )}
         </div>
 
         <div className="sticky bottom-0 flex justify-end gap-3 border-t border-border bg-surface px-5 py-4">
@@ -979,7 +1205,7 @@ export default function CustomTaskAssignModal({
             onClick={handleSubmit}
             className="min-h-[44px] rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50"
           >
-            {getCustomTaskAssignSubmitLabel(variant, submitting)}
+            {getCustomTaskAssignSubmitLabel(variant, submitting, mode)}
           </button>
         </div>
       </div>
