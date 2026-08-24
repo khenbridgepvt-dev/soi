@@ -476,7 +476,7 @@ Admin: Leave Management (S-13) → Pending tab → Review → Approve/Reject
 | Click available slot | Opens **Assign team task** modal directly (0103) — no slot action menu on Team Schedule |
 | Assign existing (menu) | Opens S-09 pre-filled with staff member, date, and start time; case-first task picker (ticket 0033) |
 | Add custom task & assign (menu) | Single-screen modal (ticket 0044): task name, optional description, duration (prefilled from slot); optional collapsed **Record on case task** for audit note. Creates ad-hoc task on internal case (EP-11b addendum) and assigns slot (EP-13). Pills show **task name**; internal slots omit ref/client (ticket 0045). |
-| Click task block | Client-case pill → Case Detail (S-06). **Internal firm pill** → **Edit team task** modal (0123). |
+| Click task block | Client-case pill → Case Detail (S-06). **Internal firm pill** → **Edit team task** modal (0123); **Remove task** in edit footer with status-aware confirm (0124). |
 | Hover task block | Tooltip: full task name, case reference, client name, remaining time |
 | Prev/Next/Today | Navigate days. Date picker for jumping to specific dates. |
 

@@ -85,6 +85,44 @@ export function formatCustomTaskAssignEditSuccessMessage(warnings?: string[]): s
   return `${base} ${warnings.join(' ')}`;
 }
 
+export const FIRM_TASK_REMOVE_BUTTON_LABEL = 'Remove task';
+
+export const FIRM_TASK_REMOVING_LABEL = 'Removing…';
+
+export const FIRM_TASK_REMOVE_SUCCESS_TOAST = 'Task removed.';
+
+export const FIRM_TASK_REMOVE_CANCEL_LABEL = 'Cancel';
+
+export const FIRM_TASK_REMOVE_CONFIRM_LABEL = 'Remove task';
+
+export type FirmTaskRemoveConfirmCopy = {
+  title: string;
+  message: string;
+};
+
+export function getFirmTaskRemoveConfirmCopy(
+  status: string,
+  staffName: string,
+): FirmTaskRemoveConfirmCopy {
+  switch (status) {
+    case 'in_progress':
+      return {
+        title: 'Staff has started this task',
+        message: `${staffName} is working on it. Remove anyway?`,
+      };
+    case 'completed':
+      return {
+        title: 'Remove this completed task?',
+        message: 'It will disappear from the schedule and history lists.',
+      };
+    default:
+      return {
+        title: 'Remove this task?',
+        message: `${staffName} will no longer see it on the schedule or My tasks.`,
+      };
+  }
+}
+
 export function formatTeamAssignDuration(minutes: number): string {
   const hours = Math.floor(minutes / 60);
   const remainder = minutes % 60;

@@ -591,7 +591,7 @@ export default function ScheduleGridView({ userId }: { userId: string }) {
         }}
       />
 
-      <Toast message={toastMessage} onDismiss={() => setToastMessage(null)} />
+      <Toast message={toastMessage} onDismiss={() => setToastMessage(null)} durationMs={8000} />
     </div>
   );
 }

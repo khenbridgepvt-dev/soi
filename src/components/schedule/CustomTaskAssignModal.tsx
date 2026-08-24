@@ -2,9 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AssigneeCombobox from '@/components/schedule/AssigneeCombobox';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { INTERNAL_CASE_ID } from '@/lib/cases/internal-case';
 import {
   buildTeamAssignSummary,
+  FIRM_TASK_REMOVE_BUTTON_LABEL,
+  FIRM_TASK_REMOVE_CANCEL_LABEL,
+  FIRM_TASK_REMOVE_CONFIRM_LABEL,
+  FIRM_TASK_REMOVE_SUCCESS_TOAST,
+  FIRM_TASK_REMOVING_LABEL,
   formatCustomTaskAssignEditSuccessMessage,
   formatCustomTaskAssignSuccessMessage,
   formatTeamAssignDuration,
@@ -14,6 +20,7 @@ import {
   getCustomTaskAssignModalTitle,
   getCustomTaskAssignSubmitLabel,
   getCustomTaskAssignSubtitle,
+  getFirmTaskRemoveConfirmCopy,
   getTeamAssignEmptySummary,
   isTeamAssignDurationPreset,
   showsCustomTaskAssignAuditSection,
@@ -133,6 +140,8 @@ export default function CustomTaskAssignModal({
   const [durationMode, setDurationMode] = useState<'preset' | 'custom'>('preset');
   const [selectedPreset, setSelectedPreset] = useState<number | null>(60);
   const [submitting, setSubmitting] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
   const [loadingEdit, setLoadingEdit] = useState(false);
   const [originalSnapshot, setOriginalSnapshot] = useState<EditSnapshot | null>(null);
   const [bannerError, setBannerError] = useState<string | null>(null);
@@ -166,6 +175,8 @@ export default function CustomTaskAssignModal({
       setWorkingHours(undefined);
       setHoursChecked(false);
       setSubmitting(false);
+      setRemoving(false);
+      setRemoveConfirmOpen(false);
       setLoadingEdit(false);
       setOriginalSnapshot(null);
       setBannerError(null);
@@ -452,7 +463,7 @@ export default function CustomTaskAssignModal({
   ]);
 
   const requestClose = useCallback(() => {
-    if (submitting) {
+    if (submitting || removing) {
       return;
     }
 
@@ -464,7 +475,7 @@ export default function CustomTaskAssignModal({
     }
 
     onClose();
-  }, [isDirty, isEditMode, onClose, submitting]);
+  }, [isDirty, isEditMode, onClose, removing, submitting]);
 
   useEffect(() => {
     if (!open) {
@@ -489,6 +500,7 @@ export default function CustomTaskAssignModal({
     !durationInvalid &&
     !isOffDay &&
     !submitting &&
+    !removing &&
     !loadingEdit &&
     (mode !== 'edit' || Boolean(originalSnapshot)) &&
     (!showAuditSection || !auditExpanded || !selectedCaseId || Boolean(linkedTaskId));
@@ -512,8 +524,43 @@ export default function CustomTaskAssignModal({
     setMinutes(nextMinutes);
   }
 
+  async function handleRemoveConfirm() {
+    if (!editTaskId || removing || submitting) {
+      return;
+    }
+
+    setRemoving(true);
+    setBannerError(null);
+
+    try {
+      const response = await fetch(`/api/tasks/${editTaskId}/firm`, {
+        method: 'DELETE',
+      });
+      const json = (await response.json()) as ApiError;
+
+      if (!response.ok) {
+        setBannerError(json.error?.message ?? 'Failed to remove task.');
+        setRemoveConfirmOpen(false);
+        return;
+      }
+
+      void invalidate('assign', { caseId: INTERNAL_CASE_ID });
+      void invalidate('taskStatus');
+      void invalidate('customTask');
+
+      setRemoveConfirmOpen(false);
+      onAssigned(FIRM_TASK_REMOVE_SUCCESS_TOAST);
+      onClose();
+    } catch {
+      setBannerError('Failed to remove task.');
+      setRemoveConfirmOpen(false);
+    } finally {
+      setRemoving(false);
+    }
+  }
+
   async function handleSubmit() {
-    if (!prefill || submitting) {
+    if (!prefill || submitting || removing) {
       return;
     }
 
@@ -708,6 +755,9 @@ export default function CustomTaskAssignModal({
   }
 
   const teamSubtitle = getCustomTaskAssignSubtitle(variant, mode);
+  const removeConfirmCopy = isEditMode
+    ? getFirmTaskRemoveConfirmCopy(editTaskStatus ?? 'not_started', resolvedStaffName)
+    : null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 md:items-center md:p-4">
@@ -1190,25 +1240,58 @@ export default function CustomTaskAssignModal({
           )}
         </div>
 
-        <div className="sticky bottom-0 flex justify-end gap-3 border-t border-border bg-surface px-5 py-4">
-          <button
-            type="button"
-            onClick={isTeamVariant ? requestClose : onClose}
-            disabled={submitting}
-            className="min-h-[44px] rounded-full border border-border px-5 py-2.5 text-sm text-text hover:bg-page disabled:opacity-50"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            disabled={!canSubmit}
-            onClick={handleSubmit}
-            className="min-h-[44px] rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50"
-          >
-            {getCustomTaskAssignSubmitLabel(variant, submitting, mode)}
-          </button>
+        <div className="sticky bottom-0 flex w-full items-center justify-between gap-3 border-t border-border bg-surface px-5 py-4">
+          {isEditMode ? (
+            <button
+              type="button"
+              onClick={() => setRemoveConfirmOpen(true)}
+              disabled={submitting || removing || loadingEdit}
+              className="min-h-[44px] rounded-full border border-error px-5 py-2.5 text-sm font-medium text-error hover:bg-error-bg disabled:opacity-50"
+            >
+              {FIRM_TASK_REMOVE_BUTTON_LABEL}
+            </button>
+          ) : (
+            <span aria-hidden="true" />
+          )}
+
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={isTeamVariant ? requestClose : onClose}
+              disabled={submitting || removing}
+              className="min-h-[44px] rounded-full border border-border px-5 py-2.5 text-sm text-text hover:bg-page disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={!canSubmit || removing}
+              onClick={handleSubmit}
+              className="min-h-[44px] rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50"
+            >
+              {getCustomTaskAssignSubmitLabel(variant, submitting, mode)}
+            </button>
+          </div>
         </div>
       </div>
+
+      {removeConfirmCopy && (
+        <ConfirmDialog
+          open={removeConfirmOpen}
+          title={removeConfirmCopy.title}
+          message={removeConfirmCopy.message}
+          confirmLabel={FIRM_TASK_REMOVE_CONFIRM_LABEL}
+          cancelLabel={FIRM_TASK_REMOVE_CANCEL_LABEL}
+          confirming={removing}
+          confirmingLabel={FIRM_TASK_REMOVING_LABEL}
+          onConfirm={handleRemoveConfirm}
+          onCancel={() => {
+            if (!removing) {
+              setRemoveConfirmOpen(false);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

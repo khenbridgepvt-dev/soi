@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildTeamAssignSummary,
+  FIRM_TASK_REMOVE_SUCCESS_TOAST,
   formatCustomTaskAssignEditSuccessMessage,
   formatCustomTaskAssignSuccessMessage,
   formatTeamAssignDuration,
@@ -10,6 +11,7 @@ import {
   getCustomTaskAssignModalTitle,
   getCustomTaskAssignSubmitLabel,
   getCustomTaskAssignSubtitle,
+  getFirmTaskRemoveConfirmCopy,
   getTeamAssignEmptySummary,
   isTeamAssignDurationPreset,
   showsCustomTaskAssignAuditSection,
@@ -78,5 +80,21 @@ describe('custom-task-assign-ui', () => {
     expect(formatCustomTaskAssignEditSuccessMessage(['Outside hours.'])).toBe(
       'Task updated. Outside hours.',
     );
+  });
+
+  it('formats firm task remove confirm copy by status', () => {
+    expect(getFirmTaskRemoveConfirmCopy('not_started', 'Asha Staff')).toEqual({
+      title: 'Remove this task?',
+      message: 'Asha Staff will no longer see it on the schedule or My tasks.',
+    });
+    expect(getFirmTaskRemoveConfirmCopy('in_progress', 'Bless')).toEqual({
+      title: 'Staff has started this task',
+      message: 'Bless is working on it. Remove anyway?',
+    });
+    expect(getFirmTaskRemoveConfirmCopy('completed', 'Asha Staff')).toEqual({
+      title: 'Remove this completed task?',
+      message: 'It will disappear from the schedule and history lists.',
+    });
+    expect(FIRM_TASK_REMOVE_SUCCESS_TOAST).toBe('Task removed.');
   });
 });
