@@ -219,6 +219,7 @@ GET /api/cases?sort_by=created_at&sort_order=desc
 | 14 | POST | `/api/tasks/:id/block` | Mark task as blocked | admin, staff (own) |
 | 15 | POST | `/api/tasks/:id/unblock` | Unblock task | admin, staff (own) |
 | 16 | PATCH | `/api/tasks/:id` | Update task notes / reminders | admin, staff, senior (own) |
+| 11d| PATCH | `/api/tasks/:id/firm` | Update firm custom task title and notes | admin |
 | 16b| GET | `/api/reminders` | List task reminders (due / at-risk filters) | admin, staff, senior |
 | 17 | POST | `/api/tasks/:id/senior-review` | Submit senior review outcome (Task 8) | admin, senior |
 | **Staff / Profiles** | | | | |
@@ -2529,6 +2530,59 @@ Same as EP-24 but filtered to a single staff member. Staff can only query their 
 **Response — `201 Created`:** Same as EP-13.
 
 **Errors:** Same as EP-13 (CONFLICT, UNPROCESSABLE, VALIDATION_ERROR).
+
+---
+
+### EP-11d · Update Firm Custom Task (ticket 0121)
+
+| Field | Value |
+|-------|-------|
+| Method | `PATCH` |
+| Path | `/api/tasks/:id/firm` |
+| Role | `admin` |
+| Scope | Team Task OS epic 0120 |
+
+Admin edits **title** (`name`) and **notes** (`description`) on firm ad-hoc tasks created via EP-11b adhoc assign (`is_custom = true` on internal `FIRM-GENERAL` case). Schedule/assignee changes use EP-59 reassign (ticket 0123). Soft delete is EP-11e (ticket 0122).
+
+**Eligibility (all required):** `tasks.is_deleted = false`, `tasks.is_custom = true`, parent case `cases.is_internal = true` and `cases.id = INTERNAL_CASE_ID`. Client-case custom tasks and default lifecycle tasks return `403 FORBIDDEN`.
+
+**Request Body** (at least one field required):
+
+```json
+{
+  "name": "Updated title",
+  "description": "Notes or null to clear"
+}
+```
+
+| Field | Type | Required |
+|-------|------|----------|
+| `name` | string | optional |
+| `description` | string \| null | optional |
+
+**Server-Side:**
+1. `requireAdminApiAuth`
+2. Load task with case join; enforce eligibility guard
+3. Validate `name` / `description` via `validateCustomTaskName` / `validateCustomTaskDescription`
+4. When `name` changes, recompute `abbreviation` via `deriveCustomTaskAbbreviation`
+5. Update only `name`, `abbreviation`, `description` — do not change `status`, `assigned_to`, schedule, `sequence`, or `case_id`
+
+**Response — `200 OK`:**
+
+```json
+{
+  "data": {
+    "id": "uuid",
+    "name": "Updated title",
+    "abbreviation": "UPD",
+    "description": "Notes",
+    "status": "not_started",
+    "case_id": "f0000000-0000-4000-8000-000000000001"
+  }
+}
+```
+
+**Errors:** `404 NOT_FOUND` (bad UUID or missing/deleted task), `403 FORBIDDEN` (ineligible task or non-admin), `400 VALIDATION_ERROR` (name/description validation).
 
 ---
 

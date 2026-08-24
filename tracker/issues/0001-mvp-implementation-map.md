@@ -181,6 +181,15 @@ Production fixes after v1.1. See tickets 0106–0110b.
 |--------|--------|
 | **0114** | Team schedule page UX: title/copy, sticky toolbar, column header stats, view filter, collapsible legend — **shipped** |
 
+## Admin firm task edit/delete (0120–0124)
+
+| Ticket | Scope |
+|--------|--------|
+| **0121** | `PATCH /api/tasks/:id/firm` — admin update firm custom task name/notes — **shipped** |
+| **0122** | `DELETE /api/tasks/:id/firm` — soft delete + release assignments |
+| **0123** | Schedule pill → edit modal → PATCH firm + reassign |
+| **0124** | Remove task confirm, in-progress warning, toasts |
+
 ## Paused (reminders & calendar epic 0080–0086)
 
 Paused until Team Task OS 0091–0099 ships (ADR-0023). API/DB from 0071–0079 remains; UI deferred.
