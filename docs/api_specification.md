@@ -220,6 +220,7 @@ GET /api/cases?sort_by=created_at&sort_order=desc
 | 15 | POST | `/api/tasks/:id/unblock` | Unblock task | admin, staff (own) |
 | 16 | PATCH | `/api/tasks/:id` | Update task notes / reminders | admin, staff, senior (own) |
 | 11d| PATCH | `/api/tasks/:id/firm` | Update firm custom task title and notes | admin |
+| 11e| DELETE | `/api/tasks/:id/firm` | Soft-delete firm custom task + release assignments | admin |
 | 16b| GET | `/api/reminders` | List task reminders (due / at-risk filters) | admin, staff, senior |
 | 17 | POST | `/api/tasks/:id/senior-review` | Submit senior review outcome (Task 8) | admin, senior |
 | **Staff / Profiles** | | | | |
@@ -2542,7 +2543,7 @@ Same as EP-24 but filtered to a single staff member. Staff can only query their 
 | Role | `admin` |
 | Scope | Team Task OS epic 0120 |
 
-Admin edits **title** (`name`) and **notes** (`description`) on firm ad-hoc tasks created via EP-11b adhoc assign (`is_custom = true` on internal `FIRM-GENERAL` case). Schedule/assignee changes use EP-59 reassign (ticket 0123). Soft delete is EP-11e (ticket 0122).
+Admin edits **title** (`name`) and **notes** (`description`) on firm ad-hoc tasks created via EP-11b adhoc assign (`is_custom = true` on internal `FIRM-GENERAL` case). Schedule/assignee changes use EP-59 reassign (ticket 0123). Soft delete uses EP-11e below (ticket 0122).
 
 **Eligibility (all required):** `tasks.is_deleted = false`, `tasks.is_custom = true`, parent case `cases.is_internal = true` and `cases.id = INTERNAL_CASE_ID`. Client-case custom tasks and default lifecycle tasks return `403 FORBIDDEN`.
 
@@ -2583,6 +2584,40 @@ Admin edits **title** (`name`) and **notes** (`description`) on firm ad-hoc task
 ```
 
 **Errors:** `404 NOT_FOUND` (bad UUID or missing/deleted task), `403 FORBIDDEN` (ineligible task or non-admin), `400 VALIDATION_ERROR` (name/description validation).
+
+---
+
+### EP-11e · Delete Firm Custom Task (ticket 0122)
+
+| Field | Value |
+|-------|-------|
+| Method | `DELETE` |
+| Path | `/api/tasks/:id/firm` |
+| Role | `admin` |
+| Scope | Team Task OS epic 0120 |
+
+Admin **removes** a firm ad-hoc custom task from the schedule and staff My tasks. Same eligibility guard as EP-11d PATCH. Allowed for any task status (`not_started`, `in_progress`, `completed`).
+
+**Server-Side:**
+1. `requireAdminApiAuth`
+2. Load task with case join; enforce eligibility guard
+3. Release all non-released `task_assignments` for the task (`is_released = true`, `released_at = now()`)
+4. Soft-delete task: `is_deleted = true`, `deleted_at = now()`, `deleted_by = auth.user.id`, `assigned_to = null`
+5. Do not hard-delete rows or touch linked client-case audit notes
+
+**Response — `200 OK`:**
+
+```json
+{
+  "data": {
+    "id": "uuid",
+    "is_deleted": true,
+    "released_assignment_ids": ["uuid"]
+  }
+}
+```
+
+**Errors:** `404 NOT_FOUND` (bad UUID, missing, or already deleted task), `403 FORBIDDEN` (ineligible task or non-admin).
 
 ---
 

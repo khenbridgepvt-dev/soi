@@ -93,7 +93,7 @@ export async function loadFirmCustomTaskForAdmin(
   if (!isFirmCustomTaskEditable(data, caseRow)) {
     return {
       ok: false,
-      response: apiError(403, 'FORBIDDEN', 'This firm task cannot be edited.'),
+      response: apiError(403, 'FORBIDDEN', 'This firm task cannot be modified.'),
     };
   }
 

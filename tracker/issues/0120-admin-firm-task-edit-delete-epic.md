@@ -16,7 +16,7 @@ Admins can fix mistakes on firm team tasks they created from the schedule: edit 
 | ID | Scope | Status |
 |----|--------|--------|
 | **0121** | `PATCH /api/tasks/:id/firm` — name + description | closed |
-| **0122** | `DELETE /api/tasks/:id/firm` — soft delete | open |
+| **0122** | `DELETE /api/tasks/:id/firm` — soft delete | closed |
 | **0123** | Schedule pill edit modal (PATCH + reassign) | open |
 | **0124** | Remove confirm, in-progress warning, toasts | open |
 
